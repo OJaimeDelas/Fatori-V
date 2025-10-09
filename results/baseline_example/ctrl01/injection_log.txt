@@ -1,0 +1,34 @@
+==============================================================================================================
+Fatori-V - SEM log
+--------------------------------------------------------------------------------------------------------------
+Run: baseline_example
+Session: ctrl01
+Device: /dev/ttyUSB0 @ 1250000 baud
+SEM clock: 100000000 Hz
+--------------------------------------------------------------------------------------------------------------
+Area Profile: modules
+  run_name  : baseline_example
+  seed      : 123456
+  session_label: ctrl01
+Time Profile: uniform
+  ack       : False
+  duration_s: 20
+  period_s  : 0.2
+  rate_hz   : 5
+--------------------------------------------------------------------------------------------------------------
+Logged tags:
+  - SEM CMD
+  - INFO
+  - ERROR
+  - CNSL CMD
+  - CNSL MODE
+  - PROF TIME
+  - PROF AREA
+TAG Log can be configured in fi/settings.py
+--------------------------------------------------------------------------------------------------------------
+Conventions:
+  - Transmission ([SEND]) entries are marked with '*' in this log.
+==============================================================================================================
+[+   2.509s] SEM CMD [SEND]: I               *
+[+   5.016s] SEM CMD [SEND]: S               *
+[+   5.316s] ERROR Preflight connectivity check failed: status not confirmed.

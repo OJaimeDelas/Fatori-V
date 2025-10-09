@@ -1,0 +1,83 @@
+# FATORI‑V — Top‑Level Orchestrator
+
+FATORI‑V runs YAML‑defined campaigns, prepares RTL/Vivado artifacts, and launches the fault‑injection (FI) engine that talks to AMD/Xilinx SEM IP over UART. Each run produces deterministic artifacts and logs under `results/<run_name>/`.
+
+## Folder map (purpose of each top‑level item)
+
+- **fi/** — FI engine: console, serial protocol, area/time profiles, logging.
+- **runs/** — Input YAMLs. Each file describes one campaign (“run”).
+- **results/** — Mirrored artifacts and logs per run (human‑readable).
+- **scripts/** — Generators that emit headers/TCL (e.g., pblocks) for the RTL/Vivado flow.
+- **build/** — Helper scripts or temporary products used by tooling.
+- **settings.py** — Orchestrator configuration (paths, mirroring options).
+- **fatori-v.py** — Entry point that executes runs from `runs/`.
+- **(generated at runtime)** convenience copies written to `DEFINES_FINAL_PATH`:  
+  `fatori_defines.svh`, `fatori_pblocks.svh`, `fatori_pblocks.tcl`.
+
+## Execution order (per YAML in `runs/`)
+
+1. **Discover & banner** — FATORI‑V lists runs and prints the banner.
+2. **NEW RUN header** — Shows run name, YAML file, selected **area**/**time** profiles, and the global seed.
+3. **Artifacts generation** — Calls `scripts/fatori_defines.py` to emit:
+   - `fatori_defines.svh` — master include for the RTL.
+   - `fatori_pblocks.svh` — per‑module attribute macros.
+   - `fatori_pblocks.tcl` — Vivado pblocks for enabled modules.  
+   These are written to `DEFINES_FINAL_PATH` and mirrored to `results/<run>/gen/`.
+4. **Vivado integration (user flow)** — Source `fatori_pblocks.tcl` **after synth, before place/route**. After route, export **EBD** to `fi/build/design.ebd`.
+5. **Launch FI** — Starts the FI engine with the chosen profiles and parameters.
+6. **Logging & close** — Per‑session logs under `results/<run>/<session>/injection_log.txt`. The run ends with a clear reason; the tool advances to the next YAML, if any.
+
+## What appears in the terminal
+
+- A multi‑run banner with the list of YAMLs.
+- For each run:
+  - The **NEW RUN** header.
+  - Two concise info lines (blue) pointing to the mirrored pblocks artifacts:
+    - `results/<run>/gen/fatori_pblocks.svh`
+    - `results/<run>/gen/fatori_pblocks.tcl`
+  - The FI engine’s “Currently Running” block and live console output.
+- A closing line indicating the end condition of the run.
+
+## YAML overview (inputs to a run)
+
+```yaml
+run:
+  identification: { name, seed, session }      # identifiers and reproducibility
+  hardware:       { board: <key> }             # selects scripts/pblocks/boards/<board>/modules.yaml
+general:
+  fault_injection:
+    area_profile:  <address_list|device|modules>
+    time_profile:  <uniform|ramp|poisson|mmpp2>
+  results:                                      # mirroring/retention controls (per run)
+    gen: true                                   # mirror generated headers/scripts
+    run_yaml: true                              # copy the YAML under results/<run>/
+    reports: false                              # optional Vivado reports
+    injection_log: true                         # write the FI log
+specifics:
+  fault_injection:
+    area:   { ... }                             # parameters for the selected area profile
+    time:   { ... }                             # parameters for the selected time profile
+```
+
+**Notes**
+- Serial device/baud/SEM clock and console appearance live in `fi/settings.py` and `fi/console/console_settings.py`.
+- Paths and mirroring defaults live in the top‑level `settings.py`.
+
+## Settings (top‑level `settings.py`)
+
+- `RUNS_DIR_NAME` — folder name for input YAMLs (`runs`).
+- `RESULTS_DIR_NAME` — root for mirrored artifacts (`results`).
+- `DEFINES_FINAL_PATH` — directory where generated headers/TCL are written for RTL/Vivado (e.g., inside your Vivado project).
+- `DEFINES_RESULTS_SUBDIR` — subfolder under results for header/TCL mirrors (`gen`).
+- `DEFINES_COPY_TO_RESULTS` — enable mirroring of generated artifacts into `results/<run>/gen`.
+
+## RTL integration (quick reference)
+
+- Include once in your top/common header:  
+  `` `include "fatori_defines.svh" ``
+- At each instance you want to gate:  
+  ```verilog
+  `FATORI_ATTR_ALU
+  alu u_alu (...);
+  ```
+  When the target is enabled, the macro expands to `(* keep_hierarchy = "yes", dont_touch = "true" *)`; otherwise it expands to empty.

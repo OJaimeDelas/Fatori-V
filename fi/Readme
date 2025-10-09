@@ -1,0 +1,232 @@
+# FATORI-V — Fault Injection (FI) Engine
+
+Controls AMD/Xilinx **SEM IP** over UART. Campaigns are defined by an **area profile** (WHERE to inject) and a **time profile** (WHEN to inject). The engine produces deterministic, human-readable, per-session logs under `results/<run>/<session>/`.
+
+---
+
+## What this folder contains
+
+```
+fi/
+  console/
+    sem_console.py            # Interactive console (driven/manual)
+    console_settings.py       # Colors, section styles, prompt behavior
+  semio/
+    transport.py              # UART I/O, background RX reader, CR/LF framing
+    protocol.py               # SEM helpers: sync, Idle/Observe, Status, Inject
+  core/
+    injector.py               # Helpers: ensure_idle, go_observe, status, inject_once
+  area/
+    address_list.py           # Area profile: LFAs from a file (sequential/shuffle)
+    # device.py               # (if present) Whole-device ACME-derived LFAs
+    # modules.py              # (if present) Pblock-scoped LFAs via ACME + pblocks
+  time/
+    base.py                   # Shared time-profile utilities (TX discipline, ACK hook)
+    uniform.py                # Constant cadence (Hz or period)
+    # ramp.py / poisson.py / mmpp2.py ...  (if present)
+  log/
+    events.py                 # Deferred writer for per-session logs
+  fault_injection.py          # Orchestrator for driven campaigns
+  settings.py                 # Engine defaults (serial, SEM freq, caps, logging)
+```
+
+> Files commented with “if present” are optional modules your tree may or may not include yet. The engine discovers profiles dynamically.
+
+---
+
+## How it works (overview)
+
+- **UART model.** A single background RX thread in `semio/transport.py` continuously frames CR/LF-terminated lines; TX never waits on RX.  
+- **Protocol layer.** `semio/protocol.py` offers `sync_prompt()`, `goto_idle()`, `goto_observe()`, `status()`, and **non-blocking** `inject_lfa(lfa_hex)`.  
+- **Profiles.**  
+  - **Area** picks the **next address** to inject.  
+  - **Time** decides **when** to inject and calls the protocol to transmit.  
+- **Logging.** `log/events.py` buffers lines and writes one file per session on close.  
+- **Reproducibility.** Global and per-profile seeds make randomized modes deterministic.
+
+---
+
+## Running it (standalone)
+
+Uniform cadence from a file of LFAs:
+```bash
+python3 -m fi.fault_injection   --dev /dev/ttyUSB0 --baud 1250000   --run-name demo --session s01   --area address_list   --area-args path=fi/area/addresses_example.txt,order=sequential   --time uniform   --time-args rate_hz=5
+```
+
+Interactive console (manual or driven):
+```bash
+python3 -m fi.console.sem_console --dev /dev/ttyUSB0 --baud 1250000
+```
+
+The orchestrator prints a “Currently Running” block with selected profiles and parameters, performs a quick I/S preflight, then starts the campaign. On end, it reports a clear reason (duration reached, list exhausted, etc.).
+
+---
+
+## Area profiles — WHERE to inject (`fi/area/`)
+
+### `address_list`
+Inject exactly the addresses in a text file.
+
+- **Args**:  
+  - `path=<file>` — text file with one 10-hex LFA per line (comments with `#` allowed).  
+  - `order=sequential|shuffle` — `shuffle` uses a seed.  
+  - `seed=<int>` — optional; inherits the global seed if omitted.
+
+- **End condition**: the list is exhausted.
+
+### `device` *(ACME)* — if present
+Whole-device addresses derived from an **Essential Bits (.EBD)** file.
+
+- **Args** (typical):  
+  - `ebd_file=<path>` — ASCII EBD from your implemented design.  
+  - `board=<key>` — device/board key the ACME plug-in understands.  
+  - `order=sequential|shuffle`, `seed=<int>`.
+
+- **What happens** (in brief):  
+  ACME parses the EBD payload, maps frames to **Linear Frame Addresses (LFAs)**, and de-duplicates. The engine can cache device-level results for fast reuse and, if configured, write a human copy of the addresses used into the run’s results.
+
+### `modules` *(ACME + pblocks)* — if present
+Addresses restricted to RTL modules mapped to pblocks (coordinates come from the board’s `modules.yaml` in the top-level scripts area, and the design’s **EBD**).
+
+- **Args** (typical):  
+  - `targets=<label:on/off,...>` — enable labels defined by your board map (e.g., `alu`, `multiplier`).  
+  - `mode=sequential|random|round_robin` — mixing strategy across labels.  
+  - `seed=<int>` — optional; overrides the global seed for address mixing.  
+  - `root=<dir>` — optional root where per-label `<label>.txt` are stored/loaded.
+
+- **Behavior**:  
+  Uses existing per-label files when found. If missing and `modules.yaml + .EBD` are available, the engine can derive `<label>.txt` on demand (ACME filtered to the pblock rectangles) so subsequent runs are deterministic.
+
+---
+
+## Time profiles — WHEN to inject (`fi/time/`)
+
+### `uniform`
+Constant cadence.
+
+- **Args**: `rate_hz=<float>` **or** `period_s=<float>` (if both are provided, `period_s` wins).  
+  Optional: `duration_s=<float>` (stop after this time), `ack=true|false` (gate on SEM ACK if supported).
+
+- **Scheduler**: drift-corrected deadlines from a monotonic clock; sleep-then-spin strategy keeps cadence tight without busy-looping.
+
+### others (if present)
+`ramp` (sweep start→end rate, optional hold), `poisson` (exp inter-arrival), `mmpp2` (bursty 2-state Poisson), etc. All share the same lifecycle and end-message conventions.
+
+---
+
+## Logging (what you get)
+
+Per session:
+```
+results/<run>/<session>/injection_log.txt
+```
+- Header: start time, run/session, device, baud, SEM clock, and enabled tag classes.
+- Each line is timestamped `[+ ss.mmm s]`.
+- TX lines end with a trailing `*` for quick visual scanning.
+- Tags include: `SEM CMD` (TX/RX), `INFO`, `CNSL CMD`, `CNSL MODE`, `PROF TIME`, `PROF AREA`, `ERR`.  
+  Enable/disable tags in `fi/settings.py`.
+
+---
+
+## Settings you can tune (`fi/settings.py`)
+
+- **Serial & SEM**: `SERIAL_DEVICE`, `SERIAL_BAUDRATE`, `SEM_CLOCK_HZ`.
+- **Session & results**: defaults for run/session labels and results root.
+- **Rate cap model**: `SEM_ICAP_FMAX_HZ`, `SEM_INJECT_LATENCY_US_AT_FMAX`,  
+  `INJECTION_RATE_SAFETY_DERATE`, `INJECTION_RATE_UART_CAP_HZ`.  
+  The orchestrator reconciles requested cadence against these ceilings and will cap with a clear note.
+- **ACME** (if used): `EBD_PATH`, `ACME_DEFAULT_BOARD`, `ACME_CACHE_DIR` (device/module profiles).
+- **Logging toggles**: per-class enable flags for the tags listed above.
+
+---
+
+## Console look & feel (`fi/console/console_settings.py`)
+
+- ANSI palette, rulers, headers, and prompt style.
+- Start mode (Idle or Observe) when the console opens.
+- Quiet-prompt gating in manual mode so replies don’t garble the `>` prompt.
+- Help/cheatsheet bodies displayed in the banner.
+
+---
+
+## Vivado & ACME (quick reference)
+
+1. Implement the design (synth/place/route).  
+2. Enable **Essential Bits (.EBD)** generation for the implemented design.  
+3. Use the produced `.EBD` as `ebd_file` for `device`/`modules` area profiles.  
+4. When using `modules`, ensure pblocks are created before route and that the board’s `modules.yaml` matches your hierarchy/rectangles.
+
+The EBD file should be ASCII with a header, a blank line, then the 0/1 payload. ACME ignores whitespace in the payload and maps frames to device LFAs.
+
+---
+
+## Extending the engine
+
+### Add an area profile
+Create `fi/area/<name>.py` and expose:
+
+```python
+class Profile:
+    name = "NAME"
+
+    def __init__(self, **kwargs):
+        # parse kwargs from --area-args key=value,...
+        ...
+
+    def describe(self) -> str:
+        # short human summary for the banner/log
+        ...
+
+    def iter_addresses(self):
+        # yield uppercase 10-hex LFAs as strings; stop when exhausted
+        for lfa in ...:
+            yield lfa
+```
+
+### Add a time profile
+Create `fi/time/<name>.py`, subclass the base, and call `_inject(...)` at your deadlines:
+
+```python
+from .base import ProfileBase
+
+class Profile(ProfileBase):
+    name = "NAME"
+
+    def describe(self) -> str:
+        return f"...params..."
+
+    def run(self):
+        self._maybe_first_shot_delay()
+        for deadline in self._schedule():      # your scheduling generator
+            if self._should_stop():             # check stop/pause events
+                break
+            addr = self._addr_next()            # pulls from area profile
+            if addr is None:
+                break
+            self._wait_until(deadline)
+            self._inject(addr, use_ack=self._use_ack, ack_timeout=self._ack_timeout_s)
+```
+
+`ProfileBase` provides safe TX discipline, optional ACK gating, first-shot delay, and efficient address iteration.
+
+---
+
+## Typical CLI snippets
+
+Interactive console only:
+```bash
+python3 -m fi.console.sem_console --dev /dev/ttyUSB0 --baud 1250000
+# commands: status | watch | manual | resume | sem | help | exit
+```
+
+Driven campaign (uniform 5 Hz over a file):
+```bash
+python3 -m fi.fault_injection   --dev /dev/ttyUSB0 --baud 1250000   --run-name demo --session s01   --area address_list --area-args path=fi/area/addresses_example.txt,order=sequential   --time uniform --time-args rate_hz=5
+```
+
+---
+
+## Outputs at a glance
+
+- `results/<run>/<session>/injection_log.txt` — canonical session log.  
+- Optional **address mirrors** (device/modules) and cached ACME artifacts may be produced when those profiles are used and the settings enable them.

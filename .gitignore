@@ -1,0 +1,4 @@
+# Build/artefactos pesados
+build/
+*.ebd
+*.ebc

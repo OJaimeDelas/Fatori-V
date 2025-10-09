@@ -1,0 +1,35 @@
+# FATORI‑V — `results/`
+
+Per‑run artifacts mirrored for traceability and analysis.
+
+## Layout
+
+```
+results/<run_name>/
+  <session_label>/
+    injection_log.txt      # FI session log
+  gen/
+    fatori_defines.svh     # Master include generated for this run
+    fatori_pblocks.svh     # Per‑target macros (attributes)
+    fatori_pblocks.tcl     # Vivado pblocks for enabled modules
+    addrsets/              # Per‑label address lists (if generated on demand)
+  <original_run>.yaml      # Copy of the run YAML (if enabled)
+  reports/                 # Optional Vivado reports (if enabled)
+  plots/                   # Optional figures (if enabled)
+  metrics.xls              # Optional workbook (if enabled)
+```
+
+### Meaning of key items
+
+- **`<session_label>/injection_log.txt`** — Canonical log of UART/SEM activity with timestamps and class tags.
+- **`gen/`** — Canonical mirror of headers/TCL used for the run.
+- **`addrsets/`** — When `modules` is selected and a per‑label file is missing, the system can derive it from `.EBD` + pblocks and store it here.
+- **`<original_run>.yaml`** — The exact run YAML for reproduction.
+
+## Controlling what is saved
+
+- **YAML → `general.results`**: per‑run retention controls (e.g., `gen`, `run_yaml`, `reports`, `injection_log`, `plots`, `metrics_xls`).  
+- **Top‑level `settings.py`**: global defaults for paths and mirroring:
+  - `RESULTS_DIR_NAME` — root folder name (`results`)
+  - `DEFINES_RESULTS_SUBDIR` — subfolder for headers/TCL mirrors (`gen`)
+  - `DEFINES_COPY_TO_RESULTS` — enable mirroring of generated artifacts

@@ -1,0 +1,493 @@
+#######################################################################################################################################
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------       FATORI-V RUN CONFIG       --------------------------------------------------#
+#-------------------------------------------------------------------------------------------------------------------------------------#
+# This is the TOP configuration file for ONE run of the Fatori-V Fault-Tolerance Framework.                                           #
+# The system will run the framwork for each .yaml file in the folder, creating separate result reports for each run.                  #
+# With this organization, it is possible to automate and fasten testing and FTM analysis by creating multiple .yaml files and run     #
+# the system just once.                                                                                                               #
+#-------------------------------------------------------------------------------------------------------------------------------------#
+# This file follows this structure:
+#                                                                                                                                     #
+#     * RUN IDENTIFICATION: Selects names, seeds and other parameters that help identify the run and implement reproducibility;       #
+#                                                                                                                                     # 
+#     * ARCHITECTURAL CONFIGURATION: The main config section, very top-level; where each feature can be turned on/off; the benchmarks #
+#       are selected; the fault injection profile is determined;                                                                      #
+#                                                                                                                                     #  
+#     * SPECIFIC CONFIGURATION: This section deals with the specifics. If a parameter allows further detailing, it's defined here     #
+#                                                                                                                                     #  
+#     * INCOMPATIBILITY WARNINGS (*): This section is purelly text. Any incompatibility inbetween two parameters drived by this file  #
+#       must be signaled in it's definition (along the whole file) with "(*'x')", where 'x' is an identifier.                         #
+#       In this section the explanation and conditions must be exposed.                                                               #
+#                                                                                                                                     #
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#                                                                                                                                     #
+# IMPORTANT - When modifying parameters signaled with "(*'x')" - (*1), for example - look for explanations on the last section.       #
+#             Careless drive of these parameters will result in an overall system malfunctioning.                                     #
+#                                                                                                                                     #
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#######################################################################################################################################
+
+
+#######################################################################################################################################
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#---------------------------------------------------       RUN IDENTIFICATION       --------------------------------------------------#
+#-------------------------------------------------------------------------------------------------------------------------------------#
+# This section is meant to identify the current run of the Fatori-V system.                                                           #     
+# These parameters will influence generated file's names, such as reports or graphs.                                                  #
+# Particularly, the SEED parameter will define the used seed for every feature that requires one.                                     #
+#-------------------------------------------------------------------------------------------------------------------------------------#
+# Run Description:                                                                                                                    #
+# This YAML file intends to serve as an example of how to configure a Fatori-V run.                                                   #
+# Effectively, this file runs Fatori-V in it's simplest form: the Ibex simplest version, a RISC-V I implementation, with no active    # 
+# Fault Tolerance Mechanisms or performance boosters. It runs a simple "hello world" benchmark, developed for the IOb-SoC system.     #
+# It's used as a Baseline.                                                                                                            #
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#######################################################################################################################################
+run:
+
+  identification:
+    name: "baseline_example" # Name of the run, used for file name generation and identification
+    description: "Simple Ibex, no FTM, Hello World, no FI"
+    seed: 123456 # Used for reproducibility. Will be used by any feature that requires a seed. It's possible to override in SPECIFIC CONFIGURATION
+
+  hardware:
+    # Will influence the fault injection system. PY2HWSW board requesites must be met. (*1)
+    board: xcku040 # Oficial name for: aes_ku040_bd_g                
+
+#######################################################################################################################################
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------       GENERAL SYSTEM CONFIGURATION       ------------------------------------------#
+#-------------------------------------------------------------------------------------------------------------------------------------#
+# This is the most important section - the one that actually changes the architecture and behaviour of the system.                    #
+# Turn to 'on' the features you want to enable in this run, select the benchmarks that will execute and the FI model.                 #
+# The system will reset after each benchmark, and all the results will be benchmark-independant.                                      #
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#######################################################################################################################################
+general:
+
+  # Overal Fatori-V features
+  features:
+
+    fault_manager: off
+
+    # Enable/Disable Fault Tolerance Mechanisms
+    # Must also enable 'fault_manager' first
+    fault_tolerance_mechanisms:
+      tmr: off
+      self_testing: off
+      lockstep: off
+      shadow_csrs: off # (*2)
+      regfile_ecc: off
+      regfile_we_glitch: off
+      regfile_raddr_glitch: off
+      mem_ecc: off # Not Working
+      icache_ecc: off # (*3)
+      dummy_instr: off # (*4)
+      hard_pc: off
+      secure_guards: off
+      data_indep_timing: off
+      pmp: off
+
+    # Enable/Disable Performance Boosters
+    performance_mechanisms:
+      icache: off
+      branch_pred: off
+      branch_target_alu: off
+      wstage: off
+      multiplier: none # (*5) none; fast; slow; single_cycle
+
+    # Enables/Disables RISC-V ISA Extensions
+    # I extension is mandatory
+    isa_extensions:
+      M: off # (*5)
+
+  # Software for the run
+  # These are all benchmarks currently implemented, turn on the ones you want
+  # They will run sequentially in this order, reconfiguring in between each
+  benchmarks:
+
+    # Just the Hello World, the original from IOb-SoC
+    hello_world:
+      enable: on
+      timeout_s: 120 # Set -1 for infinite/until break
+      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+
+    # Usual benchmark for space aplications
+    startrek:
+      enable: off
+      timeout_s: 120 # Set -1 for infinite/until break
+      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+
+    coremark:
+      enable: off
+      timeout_s: 120 # Set -1 for infinite/until break
+      iterations: 20000
+      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+
+    dhrystone:
+      enable: off
+      timeout_s: 120 # Set -1 for infinite/until break
+      loops: 500000
+      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+
+    # ADD MORE BENCHMARKS HERE
+
+
+  # Where and how often will faults be injected
+  fault_injection:
+
+    # Decide about fault correction handler
+    # 'native' - use native FTMs, and SEM only injects (*8)
+    # 'sem' - after injection, switch SEM to Observation to deal with errors
+    # 'sem_critical' - only if native FTMs fail to solve, call upon SEM
+    corrector: sem_critical 
+
+    # Where should the faults land.
+    # 'device' - Full device. Equal probability anywhere 
+    # 'modules' - Select specific targets from the available list (in the next section)
+    # 'address_list' - Specify (in the next section) a file of LFA/WORD/BIT addresses
+    area_profile: modules
+
+    # How often should we inject faults.
+    # 'uniform'   - Injects at a constant rate
+    # 'ramp'      - Linearly go from a starting frequency to an ending frequency
+    # 'poisson'   - Realistic random arrivals with a fixed mean rate
+    # 'mmpp2'     - Poisson arrivals that switch between 'slow' and 'fast' bursty states
+    # 'trace'     - Follow a schedule from a file (absolute times or inter-arrival gaps)
+    # 'microburst'- k-shot bursts separated by quiet gaps
+    # 'manual'    - Let the user drive the SEM console with SEM IP commands
+    time_profile: uniform
+
+
+    # Enables thresholds that interrupt the execution (configurable in the next section)
+    ceiling: off
+
+  # Configure what it's meant to be stored in the output
+  # The system will generate multiple files under the "results/<run_name>-<timestamp>/" folder:
+  # .yaml - A copy of the run file
+  # reports/(...) - A folder with all Vivado reports
+  # injection_log.txt - A record of the SEM communication
+  # plots/(...) - Generated plots
+  # gen/(...) - Copies of all generated files
+  # metrics.xls - All metric's results (error metrics, performance metrics)
+  results:
+    run_yaml: on           # Save a copy of the input YAML for traceability.
+    reports: on            # Save Vivado reports under results/<run>/reports/.
+    injection_log: on      # Write the injection log file (recommended).
+    plots: on              # Generate plots under results/<run>/<session>/plots/.
+    gen: on                # Copy all generated files to results/<run>/gen/
+    metrics_xls: on        # Export metrics workbook (error/performance) as metrics.xls.
+
+
+######################################################################################################################################
+#------------------------------------------------------------------------------------------------------------------------------------#
+#----------------------------------------------------       SPECIFIC CONFIGURATION       --------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------#
+# This section is meant to drive enabled features defined above.                                                                     #     
+# If a feature has extra parameters that were not exposed in the General System Configuration, they can be configured here.          #
+# IMPORTANT - The following configurations will only apply if the whole feature is enabled in General System Configuration.          #
+#------------------------------------------------------------------------------------------------------------------------------------#
+######################################################################################################################################
+specifics:
+
+  # Fault-Injection Specifics
+  fault_injection:
+  
+    # Parameters related to time_profile
+    time:
+
+      uniform:
+        # REQUIRED: set either rate_hz OR period_s.
+        # If both are set, period_s takes precedence and rate_hz is ignored.
+        rate_hz: 5.0              # (optional if period_s is set) mean injections per second
+        period_s: null            # (optional) seconds between shots; overrides rate_hz when > 0
+
+        duration_s: 20          # (optional) stop after this many seconds; otherwise run until external stop
+
+        ack: off                  # (optional) enable ACK gating (wait for SC 00 before scheduling the next interval)
+        ack_timeout_s: 1.5        # (optional; only used when ack is on) max wait, in seconds, for ACK per shot
+
+        max_shots: null           # (optional) stop after this many injections (profile-complete reason)
+        startup_delay_ms: null    # (optional) one-time delay before the first injection is sent
+
+
+      ramp:
+        # REQUIRED edges: for each edge provide EITHER *_hz OR *_period_s.
+        # For each edge, *_period_s takes precedence over *_hz when both are set.
+        start_hz: 1.0             # (optional if start_period_s is set) starting rate in Hz
+        start_period_s: null      # (optional) starting period in seconds; overrides start_hz when > 0
+
+        end_hz: 5.0               # (optional if end_period_s is set) final rate in Hz
+        end_period_s: null        # (optional) final period in seconds; overrides end_hz when > 0
+
+        # Choose ONE interpolation mode:
+        duration_s: 20          # (optional) time-based ramp: linearly vary from start to end over this many seconds;
+                                  #           stops by duration once elapsed ≥ duration_s.
+        steps: null               # (optional; used only if duration_s is null) number of shots across which the rate is interpolated
+
+        # End-of-ramp behaviour (only applies when 'steps' is used and duration_s is null):
+        hold_end_rate: on         # (optional) when 'on' the profile keeps injecting at the end rate indefinitely
+                                  #           (until external stop or area exhaustion). When 'off' the profile stops at ramp completion.
+
+        ack: off                  # (optional) enable ACK gating (wait for SC 00 before scheduling the next interval)
+        ack_timeout_s: 1.5        # (optional; only used when ack is on) max wait, in seconds, for ACK per shot
+
+        max_shots: null           # (optional) stop after this many injections (applies across ramp and hold)
+        startup_delay_ms: null    # (optional) one-time delay before the first injection is sent
+
+
+      poisson:
+        # REQUIRED: set either rate_hz (aka lambda_hz/hz) OR period_s.
+        # If both are set, period_s takes precedence and the rate fields are ignored.
+        rate_hz: 2.0              # (optional if period_s is set) mean rate λ in Hz; synonyms accepted by CLI: lambda_hz, hz
+        period_s: null            # (optional) mean period in seconds; overrides rate_hz when > 0
+
+        duration_s: 20          # (optional) stop after this many seconds; otherwise run until external stop
+
+        seed: null                # (optional) RNG seed for reproducible inter-arrival times.
+                                  #           If null, the controller may pass the global run seed when available; otherwise a random seed is used.
+
+        ack: off                  # (optional) enable ACK gating (wait for SC 00 before scheduling the next interval)
+        ack_timeout_s: 1.5        # (optional; only used when ack is on) max wait, in seconds, for ACK per shot
+
+        max_shots: null           # (optional) stop after this many injections (profile-complete reason)
+        startup_delay_ms: null    # (optional) one-time delay before the first injection is sent
+
+
+      mmpp2:
+        # Two-State Markov–Modulated Poisson Process (MMPP-2).
+        # The rate switches between LOW and HIGH after each shot with the given probabilities.
+
+        low_hz: 1.0                 # Poisson rate (Hz) in LOW state. Required unless you set a different default upstream.
+        high_hz: 10.0               # Poisson rate (Hz) in HIGH state. Required unless you set a different default upstream.
+
+        p_low_to_high: 0.05         # Probability in [0,1] to switch LOW→HIGH after a shot.
+        p_high_to_low: 0.05         # Probability in [0,1] to switch HIGH→LOW after a shot.
+
+        start_state: low            # Initial state for the Markov chain: "low" or "high".
+
+        duration_s: 20            # (optional) Stop after this many seconds (profile-owned end: "Duration limit reached.")
+        seed: null                  # (optional) RNG seed for reproducibility (affects state switches and inter-arrivals).
+        ack: off                    # (optional) ACK gating (waits for SC 00 before scheduling the next interval).
+        ack_timeout_s: 1.5          # (optional; used only when ack is on) Max seconds to wait for ACK.
+        max_shots: null             # (optional) Stop after this many shots (end: "Profile shot limit reached.")
+        startup_delay_ms: null      # (optional) One-time delay before the first shot is sent.
+
+
+      trace:
+        # Trace-driven schedule read from file: one float per non-comment line.
+        # mode='relative': values are absolute times since t0 (seconds).
+        # mode='intervals': values are non-negative inter-arrival gaps Δt (seconds).
+
+        file: fi/time/schedules/example_trace.txt   # Path to the schedule file. You may also use 'path:'.
+        mode: relative               # "relative" | "intervals"
+        repeat: 1                    # (optional) Integer ≥1; number of times to replay the whole sequence.
+
+        duration_s: 20            # (optional) Stop after this many seconds even if the schedule has entries left.
+        ack: off                    # (optional) ACK gating (waits for SC 00 before advancing).
+        ack_timeout_s: 1.5          # (optional; used only when ack is on) Max seconds to wait for ACK.
+        max_shots: null             # (optional) Global shot cap across repeats (end: "Profile shot limit reached.")
+        startup_delay_ms: null      # (optional) One-time delay before the first shot is sent.
+
+        # Notes:
+        # - Lines beginning with '#' or blank lines are ignored.
+        # - In 'relative' mode, times are treated as offsets from t0; if they’re not in order,
+        #   they are sorted ascending for robustness.
+        # - In 'intervals' mode, each value is a non-negative Δt before the next shot.
+
+
+      microburst:
+        # Bursts of k shots separated by a longer off period.
+        # Inside each burst, shots are spaced by 'intra_burst_period_s' (or ASAP if <= 0).
+
+        shots_per_burst: 5          # Integer ≥1; number of shots per burst.
+        intra_burst_period_s: 0.0   # (optional) Seconds between shots inside a burst. <= 0 => ASAP.
+        inter_burst_s: 2.0          # (optional) Seconds between bursts (off period). 0 => bursts back-to-back.
+
+        bursts: null                # (optional) Total number of bursts to emit (end: "Requested number of bursts completed.")
+        duration_s: 20            # (optional) Overall time limit; whichever occurs first (bursts vs duration) ends the profile.
+        ack: off                    # (optional) ACK gating (waits for SC 00 inside and between bursts when active).
+        ack_timeout_s: 1.5          # (optional; used only when ack is on) Max seconds to wait for ACK.
+        max_shots: null             # (optional) Global shot cap across all bursts (end: "Maximum shots limit reached.")
+        startup_delay_ms: null      # (optional) One-time delay before the first shot is sent.
+
+        # Interactions / precedence:
+        # - If both 'bursts' and 'duration_s' are set, the first to trigger ends the profile.
+        # - 'max_shots' is checked at every shot and ends the profile immediately when reached.
+
+    # Parameters related to area_profile
+    area:     
+      
+      # Parameters for when injecting on the full device
+      device:
+        # Even with a narrowed down target, multiple possible addresses for injection will exist
+        # These two parameters determine the address selection:
+        # - sequential - Injects in the order of the addresses in the injection file
+        # - random - Injects randomly with a seed
+        mode: random
+        # Determines a seed for random. Defaults to the run's seed using 'null'
+        seed: null # If NULL, it'll use the run seed
+
+      # Where to inject the errors for "area_profile" 'modules'
+      # WARNING: Directioning the errors to certain blocks requires extra overhead (pblocks are used)
+      modules:
+        # Even with a narrowed down target, multiple possible addresses for injection will exist
+        # These two parameters determine the address selection:
+        # - sequential - Injects in the order of the addresses in the injection file
+        # - random - Injects randomly with a seed
+        # - round_robin - Alternates through the modules. One address per module
+        mode: sequential
+        # Determines a seed for random/round_robin. Defaults to the run's seed using 'null'
+        seed: null # If NULL, it'll use the run seed
+        targets:                  
+          alu: on
+          branch_predictor: on # (*7)
+          multiplier: off # (*4)
+          # TODO - implement more places
+      
+      # File with configuration addresses to hit (in file appearence order)
+      # FORMAT: LFA_HEX,WORD,BIT (10 digits)
+      address_list:
+        file: address_list.txt
+        # Even with a narrowed down target, multiple possible addresses for injection will exist
+        # These two parameters determine the address selection:
+        # - sequential - Injects in the order of the addresses in the injection file
+        # - random - Injects randomly with a seed
+        mode: sequential
+        # Determines a seed for random. Defaults to the run's seed using 'null'
+        seed: null # If NULL, it'll use the run seed 
+
+    ceiling:
+      max_SEM_uncorrectable: 1 # How many SEM criticals before reconfiguring
+      max_NATIVE_uncorrectables: 5 # How many NATIVE FTMs uncorrectables before reconfiguring
+
+  # Fault Manager Specifics
+  fault_manager:
+    rst_on_major: off # Should the system reset when a major error is detected
+    wait_sleep_before_rst: on # Upon a reset, should the system wait for the pipeline to complete and flush itself
+  
+  #TMR Specifics
+  tmr:
+    tmr_seed: null # Leave as 'null' to use the default run seed
+    tmr_percentage: 0 # Enables TMR on a certain random percentage of registers. If override is 'on', this is ignored
+
+    # If 'on' you should manually provide a "forced_enabled_files.json" with the registers you want TMR applied
+    # Go to "tmr_config.py" to check a .json example to understand the format
+    override: off
+
+    # Apply TMR in certain registers
+    # If override is 'on', this is ignored
+    target:
+      fault_mgr.sv: off
+      dummy_instr: off
+      lockstep: off
+      ibex_top: off # Top module from ibex
+      ibex_core: off # Second Ibex module
+      load_store_unit: off
+      prefetch_buffer: off
+      controller.sv: off
+      cs_registers: off
+      csr: off
+      decoder: off
+      fetch_fifo: off
+      id_stage: off # Only the top ID module, it does not check submodules. ALU result goes here
+      if_stage: off # Only the top IF module, it does not check submodules
+      wb_stage: off # Only the top WB module, it does not check submodules
+    
+  # Ibex Architecture Specifics
+  ibex:
+    regfile: fpga # (*6) ff; fpga; file_latch;
+
+    #Performance Monitor
+    mhpm:
+      num: 0 # number of performance monitor event counters
+      width: 40 # bit width of performance monitor event counters
+    
+    icache_scramble: off
+
+    #Physical Memory Protection (PMP) Specifics
+    pmp:
+      granularity: 0
+      num_regions: 4
+
+  
+
+  # Result Logging Specifics
+  logging:
+
+    # Line timestamping in the injection log (events.py uses [+ t.s] relative times)
+    timestamps: on         # (optional) When on, each log line is prefixed with time since session start.
+
+    # High-level aliases for convenience (kept for back-compat with earlier configs)
+    injection_commands: on # (optional) Alias for enabling SEM TX/RX logging (maps to tags.sem_cmd).
+    updates: on            # (optional) Alias for enabling profile updates + console mode changes
+                           #            (maps to tags.prof_time and tags.cnsl_mode).
+
+    # Granular tag toggles — map 1:1 to EventLogger classes in events.py
+    tags:
+      sem_cmd: on          # "SEM CMD" — both TX (SEND, '*' suffix) and RX (RECV) lines.
+      info: on             # "INFO" — preflight notes, profile start/finish, pause/resume, etc.
+      prof_area: on        # "PROF AREA" — area-profile configuration and profile-driven updates.
+      prof_time: on        # "PROF TIME" — time-profile configuration and profile-driven updates.
+      cnsl_cmd: on         # "CNSL CMD" — user console commands issued.
+      cnsl_mode: on        # "CNSL MODE" — console transitions MAN ↔ DRI.
+      error: on            # "ERROR" — framework error lines (arming failures, parse errors, etc.).
+
+#######################################################################################################################################
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#-------------------------------------------------       INCOMPATIBILITY WARNINGS (*)       ------------------------------------------#
+#-------------------------------------------------------------------------------------------------------------------------------------#
+# Warnings tagged with "(*x)" are detailed here. Mostly it creates constraints on the enables - two parameters must not be enabled    #
+# together, or a feature is currently not working, or some other dependencies are taking place (in that case you should be pointed    #
+# to where further info must be fetched.                                                                                              #
+#-------------------------------------------------------------------------------------------------------------------------------------#
+#######################################################################################################################################
+
+# (*1)
+# Board Requesites
+# Make sure to have Py2HWSW board implementation done. And that the system is supported by that board.
+# Check: https://github.com/IObundle/py2hwsw
+# Currently Fatori-V full suported values:
+# 'aes_ku040_bd_g'
+
+# (*2)
+# Shadow CSRs
+# Lockstep already does this, but better.
+# Redundant if "lockstep" in "fault_tolerance_mechaninsms" is also 'on'
+
+# (*3)
+# ICache ECC/Scramble
+# Will only work if "icache" in "performance_mechanisms" is also 'on'
+
+# (*4)
+# Dummy Instructions / Multiplier Injection
+# This FTM requires a multiplier.
+# Will only work if "M" in "isa_extensions" is also 'on', and "multiplier" in "performance_mechanisms" is either 'fast', 'slow' or 'single_cycle'.
+# Incompatible with 'none' value of "multiplier".
+
+# (*5)
+# M Extension
+# This requires a multiplier.
+# Will only work if "multiplier" in "performance_mechanisms" is either 'fast', 'slow' or 'single_cycle'.
+# Incompatible with 'none' value of "multiplier".
+
+# (*6)
+# Register File Implementation
+# Ibex has multiple implementations for register file.
+# ff - Generic flip-flop-based register file 
+# fpga - Register file for FPGA targets 
+# file_latch - Latch-based register file for ASIC targets
+
+# (*7)
+# Injection in BP 
+# Will only work if "branch_pred" in "performance_mechanisms" is 'on'.
+
+# (*8)
+# Native FTM
+# It will disable SEM correction, so some FTM must be enabled
+
+
+
+
+

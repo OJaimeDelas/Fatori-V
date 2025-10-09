@@ -1,0 +1,68 @@
+# FATORI‑V — `scripts/`
+
+Helper tools used by the orchestrator to generate build‑time artifacts consumed by RTL and Vivado.
+
+## `fatori_defines.py` — headers & TCL orchestrator
+
+**Purpose**  
+- Generates `fatori_defines.svh` (master include for RTL).
+- Invokes feature generators (e.g., pblocks) and includes their headers by **basename** so the RTL can pick them directly from `DEFINES_FINAL_PATH`.
+- When the area profile is `modules`, also produces:
+  - `fatori_pblocks.svh` — per‑target macros:
+    - `` `FATORI_TARGET_<NAME> `` → `1|0`
+    - `` `FATORI_ATTR_<NAME> `` → synthesis attributes when enabled; empty when disabled
+  - `fatori_pblocks.tcl` — Vivado pblocks sized to board rectangles; optionally attaches module hierarchy paths.
+
+**Inputs** (provided by the top‑level runner)  
+- `--area-profile` — `address_list | device | modules`
+- `--board` — board key used for rectangle mapping
+- `--seed` — run seed
+- `--modules-targets` — comma‑separated enabled labels (for `modules` profile)
+- `--final-dir` — destination for generated files (defaults to `DEFINES_FINAL_PATH`)
+- `--copy-to-results` / `--no-copy-to-results` — mirror toggle
+- `--run-id` — run name for mirroring and headers
+- Legacy: `--yaml` for standalone usage
+
+**Outputs**
+- `fatori_defines.svh` — includes produced headers by file name (e.g., `` `include "fatori_pblocks.svh" ``).
+- Mirrors to `results/<run>/gen/` per settings.
+
+## `pblocks/`
+
+### `pblocks/fatori_pblocks.py`
+
+**Purpose**  
+Emit:
+- `fatori_pblocks.svh` — per‑target macros (see above).
+- `fatori_pblocks.tcl` — pblocks for enabled targets, sized per rectangles; if a target defines a `path`, the TCL attaches those cells to the pblock.
+
+**Inputs**  
+- Board rectangles: `pblocks/boards/<board>/modules.yaml` (labels, `rects`, and optional `path` to hierarchy root).
+- Enabled targets: passed down from the orchestrator (derived from YAML).
+
+**Outputs**  
+- Files written to `DEFINES_FINAL_PATH`, mirrored to `results/<run>/gen` when enabled.
+
+**Using the macros in RTL**
+- Include once in your top/common header: `` `include "fatori_defines.svh" ``.
+- At each instance you wish to gate:
+  ```verilog
+  `FATORI_ATTR_ALU
+  alu u_alu (...);
+  ```
+  When the target is enabled, the macro expands to `(* keep_hierarchy = "yes", dont_touch = "true" *)`; otherwise empty.
+
+## Adding a new generator
+
+A generator module must expose:
+
+```python
+from pathlib import Path
+from typing import List
+
+def generate(cfg: dict, run_id: str, final_dir: Path, copy_to_results: bool, verbose: bool=False) -> List[Path]:
+    # Create headers/scripts in final_dir, optionally mirror to results/<run_id>/gen
+    # Return a list of header Paths to be included by fatori_defines.svh
+```
+
+Place it under `scripts/<feature>/` and have `fatori_defines.py` import and call it. The top‑level runner is the only component that reads YAML; generators receive a config dict with only what they need.
