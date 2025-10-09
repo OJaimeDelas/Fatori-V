@@ -1,0 +1,3 @@
+[submodule "architecture"]
+	path = architecture
+	url = https://github.com/OJaimeDelas/iob-soc-ibex.git
