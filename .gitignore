@@ -2,3 +2,6 @@
 build/
 *.ebd
 *.ebc
+__pycache__/
+*.py[cod]
+*\.class
