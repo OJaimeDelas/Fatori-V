@@ -1,0 +1,48 @@
+# FATORI-V — `scripts/pblocks/`
+
+Generation of pblock-related headers and TCL for fault injection.
+
+This folder contains the scripts that turn pblock-related configuration from
+the run YAML into:
+
+- an RTL header (`fatori_pblocks.svh`) that preserves hierarchy around selected
+  modules, and
+- a TCL script (`fatori_pblocks.tcl`) that creates and sizes Vivado pblocks.
+
+## Files and subfolders
+
+- `pblocks_settings.py`
+  - Default pblock naming rules and placement strategies.
+  - Provides small helpers for turning module/hierarchy names into pblock
+    names and hierarchy-preservation attributes.
+
+- `fatori_pblocks.py`
+  - Main script for this area.
+  - Only runs when pblocks/FI are enabled in the YAML.
+  - Reads pblock requests from `specifics.fault_injection` (or a dedicated
+    `specifics.pblocks` section, depending on how the YAML is structured).
+  - Calls the generators to emit:
+    - `fatori_pblocks.svh`
+    - `fatori_pblocks.tcl`
+
+- `generators/pblocks_header.py`
+  - Writes `fatori_pblocks.svh`, containing the hierarchy-related pragmas and
+    any macro definitions that the RTL uses to mark blocks of interest.
+
+- `generators/pblocks_tcl.py`
+  - Writes `fatori_pblocks.tcl`, which creates Vivado pblocks and assigns the
+    corresponding cells, based on module names and hierarchy paths.
+
+- `helper/board_modules.py`
+  - Describes board/module relationships to help map YAML requests to RTL
+    hierarchy paths.
+
+- `helper/pblocks_yaml.py`
+  - Parses and normalises the pblock-related YAML for this run.
+
+## Relationship with FI
+
+The pblocks created by these scripts are later used by the FI console (ACME +
+SEM) to derive configuration addresses for logic fault injection. Keeping the
+pblock generation here makes it easier to maintain both the RTL attributes and
+the TCL script in a consistent way.

@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/features/helper/features_yaml.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • Features YAML Parser
+# File: features_yaml.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Extracts and normalises feature-related data from the run YAML.
 #=============================================================================

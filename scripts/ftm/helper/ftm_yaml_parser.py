@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/ftm/helper/ftm_yaml_parser.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • FTM YAML Parser
+# File: ftm_yaml_parser.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Parses FTM-related fields from the run YAML into a structured representation.
 #=============================================================================

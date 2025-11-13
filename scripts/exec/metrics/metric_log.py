@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/exec/metrics/metric_log.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • Metrics Log
+# File: metric_log.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Metric managing and logging.
 #=============================================================================

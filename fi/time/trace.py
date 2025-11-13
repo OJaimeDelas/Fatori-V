@@ -234,7 +234,7 @@ class Profile(ProfileBase):
                         self._log_profile_end(self.finished_reason)
                         return
 
-                    # Obtain next address; if area exhausts, the orchestrator handles it.
+                    # Obtain next address; if area exhausts, the controller handles it.
                     try:
                         addr = next(addr_it)
                     except StopIteration:

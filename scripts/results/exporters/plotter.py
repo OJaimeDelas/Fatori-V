@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/results/exporters/plotter.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • Results Plotter
+# File: plotter.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Placeholder for plotting helpers built on collected metrics.
 #=============================================================================

@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/results/results_settings.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • Results Settings
+# File: results_settings.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Defines default settings for run result collection.
 #=============================================================================

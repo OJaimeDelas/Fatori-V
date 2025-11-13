@@ -1,0 +1,24 @@
+
+---
+
+### `Fatori-V/hardware/Readme`
+
+```markdown
+# FATORI-V — `hardware/` (RTL overrides)
+
+This folder is intended for **user-supplied RTL** that overrides or augments
+the reference design from `architecture/`.
+
+General expectations:
+
+- Files are standard Verilog/SystemVerilog (`.v`, `.sv`).
+- Module names and interfaces must remain compatible with what the reference SoC expects; the build system will not try to “fix up” mismatches.
+- The build scripts (see `scripts/build/Readme`) are responsible for overlaying `hardware/` on top of `architecture/` when constructing the RTL tree.
+
+Execution behaviour:
+
+- These files will override the ones in subsequent `(...)/hardware/src/`, or even in other folder structures. In order to correctly do so, the intended final structure needs to be used here.
+If a file is meant to be placed (without corrupting anything) in `architecture/submodules/iob_ibex/hardware/src/`, so it should be placed here under `/submodules/iob_ibex/hardware/src/`.
+- The files being overwritten will be placed in `Fatori-V/hardware/temp/`, and returned at the end.
+
+> If no hardware overrides are needed, this folder can remain empty.

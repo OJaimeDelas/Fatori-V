@@ -1,83 +1,58 @@
-# FATORI‑V — Top‑Level Orchestrator
+# FATORI-V — Top-Level Controller
 
-FATORI‑V runs YAML‑defined campaigns, prepares RTL/Vivado artifacts, and launches the fault‑injection (FI) engine that talks to AMD/Xilinx SEM IP over UART. Each run produces deterministic artifacts and logs under `results/<run_name>/`.
+FATORI-V is a two-layer framework for fault-tolerant RISC-V experiments:
 
-## Folder map (purpose of each top‑level item)
+- **Hardware layer** (in `architecture/` + `hardware/`): Ibex-based SoC with
+  fault-tolerance mechanisms (FTMs), monitoring and fault-injection hooks.
+- **Software layer** (in `scripts/` + `fi/`): Python tools that read a YAML
+  description of a *run*, generate `.svh` / `.tcl` files, build the design,
+  run benchmarks, optionally inject faults, and collect results.
 
-- **fi/** — FI engine: console, serial protocol, area/time profiles, logging.
-- **runs/** — Input YAMLs. Each file describes one campaign (“run”).
-- **results/** — Mirrored artifacts and logs per run (human‑readable).
-- **scripts/** — Generators that emit headers/TCL (e.g., pblocks) for the RTL/Vivado flow.
-- **build/** — Helper scripts or temporary products used by tooling.
-- **settings.py** — Orchestrator configuration (paths, mirroring options).
-- **fatori-v.py** — Entry point that executes runs from `runs/`.
-- **(generated at runtime)** convenience copies written to `DEFINES_FINAL_PATH`:  
-  `fatori_defines.svh`, `fatori_pblocks.svh`, `fatori_pblocks.tcl`.
+Each YAML file under `runs/` describes **one run**. The top-level script
+`fatori-v.py` executes a run in four phases:
 
-## Execution order (per YAML in `runs/`)
+1. **Generation** – `scripts/ftm`, `scripts/features`, `scripts/pblocks` create
+   the FATORI-V headers for this run and store copies under `gen/<run_id>/`.
+2. **Build** – `scripts/build` stages generated headers into the RTL tree,
+   overlays `hardware/` over the reference `architecture/` (if present), and
+   calls the underlying build system (usually via `make`).
+3. **Execution** – `scripts/exec` runs one or more *sessions* (benchmarks),
+   optionally calling the FI console in `fi/` to inject faults during each
+   session.
+4. **Results** – `scripts/results` collects logs and artifacts into
+   `results/<run_id>/`, optionally including plots, Vivado reports and
+   metric summaries.
 
-1. **Discover & banner** — FATORI‑V lists runs and prints the banner.
-2. **NEW RUN header** — Shows run name, YAML file, selected **area**/**time** profiles, and the global seed.
-3. **Artifacts generation** — Calls `scripts/fatori_defines.py` to emit:
-   - `fatori_defines.svh` — master include for the RTL.
-   - `fatori_pblocks.svh` — per‑module attribute macros.
-   - `fatori_pblocks.tcl` — Vivado pblocks for enabled modules.  
-   These are written to `DEFINES_FINAL_PATH` and mirrored to `results/<run>/gen/`.
-4. **Vivado integration (user flow)** — Source `fatori_pblocks.tcl` **after synth, before place/route**. After route, export **EBD** to `fi/build/design.ebd`.
-5. **Launch FI** — Starts the FI engine with the chosen profiles and parameters.
-6. **Logging & close** — Per‑session logs under `results/<run>/<session>/injection_log.txt`. The run ends with a clear reason; the tool advances to the next YAML, if any.
+> **Note** — The FI console (`fi/`) is designed to be usable on its own, but
+> FATORI-V orchestrates it when FI is enabled in the run YAML.
 
-## What appears in the terminal
+## Folder map (top-level)
 
-- A multi‑run banner with the list of YAMLs.
-- For each run:
-  - The **NEW RUN** header.
-  - Two concise info lines (blue) pointing to the mirrored pblocks artifacts:
-    - `results/<run>/gen/fatori_pblocks.svh`
-    - `results/<run>/gen/fatori_pblocks.tcl`
-  - The FI engine’s “Currently Running” block and live console output.
-- A closing line indicating the end condition of the run.
+- **runs/** — Input YAMLs; one file per run. See `runs/Readme` and
+  `runs/example.yaml`.
+- **gen/** — Per-run copies of *generated* headers and TCL (`*.svh`, `*.tcl`).
+  See `gen/Readme`.
+- **build/** — User-provided inputs and overrides for the build. See
+  `build/Readme`.
+- **results/** — Per-run/per-session outputs (logs, metrics, plots, reports).
+  See `results/Readme`.
+- **scripts/** — control and generation scripts (non-FI). Each subfolder
+  has its own `Readme` explaining its phase.
+- **fi/** — Fault-injection console (ACME/SEM, area/time profiles, FI logging).
+  See `fi/Readme`.
+- **hardware/** — RTL (`.sv`/`.v`) that overrides or extends the reference
+  design from `architecture/`. See `hardware/Readme`.
+- **architecture/** *(optional)* — Git submodule pointing to the baseline SoC
+  design. This folder is not part of this ZIP but is expected in a full clone.
+- **fatori_settings.py** — Top-level defaults (paths, global flags) used when
+  YAML fields are missing or invalid.
+- **fatori-v.py** — Main entry point: reads a run YAML, then calls the phase
+  scripts under `scripts/` in sequence.
 
-## YAML overview (inputs to a run)
+## Extending the system
 
-```yaml
-run:
-  identification: { name, seed, session }      # identifiers and reproducibility
-  hardware:       { board: <key> }             # selects scripts/pblocks/boards/<board>/modules.yaml
-general:
-  fault_injection:
-    area_profile:  <address_list|device|modules>
-    time_profile:  <uniform|ramp|poisson|mmpp2>
-  results:                                      # mirroring/retention controls (per run)
-    gen: true                                   # mirror generated headers/scripts
-    run_yaml: true                              # copy the YAML under results/<run>/
-    reports: false                              # optional Vivado reports
-    injection_log: true                         # write the FI log
-specifics:
-  fault_injection:
-    area:   { ... }                             # parameters for the selected area profile
-    time:   { ... }                             # parameters for the selected time profile
-```
-
-**Notes**
-- Serial device/baud/SEM clock and console appearance live in `fi/settings.py` and `fi/console/console_settings.py`.
-- Paths and mirroring defaults live in the top‑level `settings.py`.
-
-## Settings (top‑level `settings.py`)
-
-- `RUNS_DIR_NAME` — folder name for input YAMLs (`runs`).
-- `RESULTS_DIR_NAME` — root for mirrored artifacts (`results`).
-- `DEFINES_FINAL_PATH` — directory where generated headers/TCL are written for RTL/Vivado (e.g., inside your Vivado project).
-- `DEFINES_RESULTS_SUBDIR` — subfolder under results for header/TCL mirrors (`gen`).
-- `DEFINES_COPY_TO_RESULTS` — enable mirroring of generated artifacts into `results/<run>/gen`.
-
-## RTL integration (quick reference)
-
-- Include once in your top/common header:  
-  `` `include "fatori_defines.svh" ``
-- At each instance you want to gate:  
-  ```verilog
-  `FATORI_ATTR_ALU
-  alu u_alu (...);
-  ```
-  When the target is enabled, the macro expands to `(* keep_hierarchy = "yes", dont_touch = "true" *)`; otherwise it expands to empty.
+- To add **new FTMs or monitoring headers**, see `scripts/ftm/Readme`.
+- To add **new user benchmarks**, see `scripts/exec/benchmarks/Readme`.
+- To add **new metrics**, see `scripts/exec/metrics/Readme`.
+- To add **new YAML validity checks**, see
+  `scripts/common/yaml_io/yaml_checks.py`.

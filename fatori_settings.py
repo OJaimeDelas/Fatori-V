@@ -1,33 +1,42 @@
 # =============================================================================
-# FATORI-V • Orchestrator Settings
+# FATORI-V • Controller Settings
 # File: settings.py
 # -----------------------------------------------------------------------------
 # Centralized paths and defaults for the top-level runner (fatori-v.py).
 #
 # Responsibilities
 #   • Define authoritative top-level defaults (device, baud, ACME/EBD paths,
-#     runs/results folders). The orchestrator passes these explicitly to the
+#     runs/results folders). The controller passes these explicitly to the
 #     lower layers to avoid ambiguity when similar defaults also exist under
 #     fi/settings.py.
 #   • Provide stable locations for the runs/ folder (YAML inputs) and results/
 #     folder (per-run outputs mirrored for quick inspection).
-#   • Enumerate finish-line hints so the orchestrator can chain runs without
+#   • Enumerate finish-line hints so the controller can chain runs without
 #     altering fi.fault_injection behavior.
 #   • Expose terminal controls for how the FI console should present itself
-#     when invoked by the orchestrator (simple header; hide help blocks).
+#     when invoked by the controller (simple header; hide help blocks).
 #
 # Notes
 #   • All paths are resolved relative to fatori-v.py at runtime.
 #   • The FI framework keeps writing its own detailed logs under
-#     results/<run>/<session>/ as before. The orchestrator does not replace
+#     results/<run>/<session>/ as before. The controller does not replace
 #     that log; it only mirrors key artifacts to the top-level results folder.
 # =============================================================================
 
 from __future__ import annotations
 
+# --- Notes
+
+MON_REG_FILE_LOC: str = "build/override/" # "fatori_reg_mon.svh" override. Must be enabled in yaml
+MON_LOGIC_FILE_LOC: str = "build/override/" # "fatori_logic_mon.svh" override. Must be enabled in yaml
+
+# --- End Notes
+
+
+
 # --- Top-level folders (relative to fatori-v.py location) --------------------
 RUNS_DIR_NAME: str = "runs"        # where YAML run files live
-RESULTS_DIR_NAME: str = "results"  # where the orchestrator mirrors artifacts
+RESULTS_DIR_NAME: str = "results"  # where the controller mirrors artifacts
 
 # --- Defines output control ---------------------------------------------------
 # Where generated define headers (e.g., fatori_defines.svh and feature headers)
@@ -65,7 +74,7 @@ ACME_DEFAULT_BOARD: str = "xcku040"
 
 # --- Sessions / seeds --------------------------------------------------------
 DEFAULT_SESSION_LABEL: str = "ctrl01"
-# If YAML lacks a seed, None here means the orchestrator will generate
+# If YAML lacks a seed, None here means the controller will generate
 # a random 64-bit seed per run; otherwise set a fixed integer to pin runs.
 DEFAULT_GLOBAL_SEED = None
 
@@ -85,8 +94,8 @@ TOP_SUBDIR_RUN_YAML: str = "run_yaml"
 TOP_SUBDIR_REPORTS: str = "reports"
 TOP_SUBDIR_PLOTS: str = "plots"
 
-# --- Terminal controls for FI when launched by the orchestrator --------------
-# The orchestrator requests the FI console to use a simpler header and hide
+# --- Terminal controls for FI when launched by the controller --------------
+# The controller requests the FI console to use a simpler header and hide
 # help-heavy sections. These flags are translated into CLI options passed
 # to "python -m fi.fault_injection".
 FI_HEADER_STYLE_FOR_RUNS: str = "simple"  # 'simple' or 'fancy'
@@ -95,7 +104,7 @@ FI_HIDE_SEM_CHEATSHEET: bool = True
 FI_HIDE_START_MODE: bool = True
 
 # --- Optional automatic application of generated pblocks.tcl -----------------
-# If True, the orchestrator will attempt to launch Vivado in batch mode and
+# If True, the controller will attempt to launch Vivado in batch mode and
 # source the generated fatori_pblocks.tcl after it is created. When False,
 # the script only prints clear instructions about how to source it manually.
 APPLY_PBLOCKS_TCL: bool = False
@@ -108,3 +117,7 @@ VIVADO_BIN: str = "vivado"
 # If left as None, the TCL is expected to be sourced inside an already-open
 # project context.
 VIVADO_XPR: str | None = None
+
+# --- Script Locations --------------------------------------------------------
+# All starting at . = FATORI-V/
+MoN_SCRIPT: str =  "./scripts/ftm/mon" # M of N .svh generator 

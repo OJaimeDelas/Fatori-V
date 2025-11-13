@@ -154,7 +154,7 @@ class Profile:
     def end_condition_prompt(self, reason: str) -> str:
         """
         Provide a human-readable end message for controller printing/logging.
-        'reason' is a symbolic code provided by the orchestrator; for area
+        'reason' is a symbolic code provided by the controller; for area
         profiles today, the natural termination is 'area_exhausted'.
         """
         if reason == "area_exhausted":

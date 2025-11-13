@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =============================================================================
-# FATORI-V • Top Runner (Orchestrator)
+# FATORI-V • Top Runner (Controller)
 # File: fatori-v.py
 # -----------------------------------------------------------------------------
 # Reads all YAML files under ./runs/ and, for each YAML "run":
@@ -28,7 +28,7 @@
 # Notes
 #   • All paths are resolved relative to this script.
 #   • The FI framework keeps writing its own detailed logs under
-#     results/<run_id>/<session>/ as before. The orchestrator does not replace
+#     results/<run_id>/<session>/ as before. The controller does not replace
 #     that log; it only mirrors key artifacts to the top-level results folder.
 # =============================================================================
 
@@ -557,7 +557,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "--show-sem-cheatsheet", "false",
             "--show-start-mode", "false",
         ]
-        # Pass fatori-v behavior knob to FI: when orchestration is used the default is 'exit'
+        # Pass fatori-v behavior knob to FI: when control is used the default is 'exit'
         fi_cmd.extend(["--on-end", "exit"])
 
         if area_csv:

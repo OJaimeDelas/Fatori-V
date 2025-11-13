@@ -1,35 +1,71 @@
 # FATORI‑V — `results/`
 
-Per‑run artifacts mirrored for traceability and analysis.
+Per‑run results for post‑analysis.
 
 ## Layout
 
-```
-results/<run_name>/
-  <session_label>/
-    injection_log.txt      # FI session log
+Each run defined in `runs/*.yaml` creates a subfolder here. The exact naming is controlled by `run.identification.name` (and possibly a run identifier), but the structure is always similar:
+
+```text
+results/<run_name>[/<run_id>]/
+  sessions/
+    <session_name>/
+      bench_*.log        # raw benchmark output (UART, host logs, …)
+      fi/                # FI‑specific logs for this session, if enabled
+        injection_log.txt
+        sem.log
+        acme.log
+      metrics.json       # per‑session metric samples / aggregates
   gen/
-    fatori_defines.svh     # Master include generated for this run
-    fatori_pblocks.svh     # Per‑target macros (attributes)
-    fatori_pblocks.tcl     # Vivado pblocks for enabled modules
-    addrsets/              # Per‑label address lists (if generated on demand)
-  <original_run>.yaml      # Copy of the run YAML (if enabled)
-  reports/                 # Optional Vivado reports (if enabled)
-  plots/                   # Optional figures (if enabled)
-  metrics.xls              # Optional workbook (if enabled)
+    fatori_ftm.svh
+    fatori_reg_mon.svh
+    fatori_logic_mon.svh
+    fatori_selftest.svh
+    fatori_features.svh
+    fatori_pblocks.svh   # if pblocks/FI are enabled
+    fatori_pblocks.tcl   # if pblocks/FI are enabled
+  reports/
+    ...                  # Vivado/implementation reports, if requested
+  metrics.xls            # optional consolidated workbook
+  <original_run>.yaml    # copy of the input YAML for this run
 ```
 
-### Meaning of key items
+The exact filenames and subfolders may evolve, but the intention is:
 
-- **`<session_label>/injection_log.txt`** — Canonical log of UART/SEM activity with timestamps and class tags.
-- **`gen/`** — Canonical mirror of headers/TCL used for the run.
-- **`addrsets/`** — When `modules` is selected and a per‑label file is missing, the system can derive it from `.EBD` + pblocks and store it here.
-- **`<original_run>.yaml`** — The exact run YAML for reproduction.
+- **`sessions/`** – everything that depends on a specific benchmark session.
+- **`gen/`** – a mirror of all generated interface files used to build this run.
+- **`reports/`** – build‑time reports (timing, utilisation, etc.).
+- **top‑level files** – inputs and summaries shared by all sessions of the run.
+
+## Meaning of key items
+
+- **`sessions/<session_name>/fi/injection_log.txt`**  
+  Canonical log of FI activity (SEM/UART traffic and high‑level FI events) with timestamps.
+
+- **`gen/*.svh` and `gen/*.tcl`**  
+  Exact interface headers and pblock scripts that were used when building this run. Keeping them here makes it easy to reconstruct or compare configurations later.
+
+- **`reports/`**  
+  Implementation reports exported from the underlying EDA flow when `reports` are enabled in the YAML. Useful for correlating FI behaviour with resource usage and timing.
+
+- **`metrics.json` and `metrics.xls`**  
+  Per‑session metric data in a machine‑friendly form (`metrics.json`) and an optional human‑friendly spreadsheet (`metrics.xls`).
+
+- **`<original_run>.yaml`**  
+  A verbatim copy of the YAML file from `runs/`, so the run remains reproducible even if the original file changes later.
 
 ## Controlling what is saved
 
-- **YAML → `general.results`**: per‑run retention controls (e.g., `gen`, `run_yaml`, `reports`, `injection_log`, `plots`, `metrics_xls`).  
-- **Top‑level `settings.py`**: global defaults for paths and mirroring:
-  - `RESULTS_DIR_NAME` — root folder name (`results`)
-  - `DEFINES_RESULTS_SUBDIR` — subfolder for headers/TCL mirrors (`gen`)
-  - `DEFINES_COPY_TO_RESULTS` — enable mirroring of generated artifacts
+The `results` block near the end of each run YAML decides which categories are kept:
+
+```yaml
+results:
+  run_yaml: on       # Save a copy of the YAML into the results folder.
+  reports: on        # Save Vivado and build reports.
+  injection_log: on  # Write FI logs for sessions where FI is enabled.
+  plots: on          # Enable plot generation (if implemented).
+  gen: on            # Copy all generated .svh/.tcl files under results/<run>/gen/.
+  metrics_xls: on    # Export a metrics workbook (error/performance).
+```
+
+If a key is missing or set to an invalid value, the system falls back to the default for that key defined in `scripts/results/results_settings.py`. Global defaults for the base `results/` directory name and mirroring behaviour are defined in `fatori_settings.py`.

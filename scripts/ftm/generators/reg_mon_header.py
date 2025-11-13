@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/ftm/generators/reg_mon_header.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • FTM Register Monitor Header Gen
+# File: reg_mon_header.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Generates the fatori_reg_mon.svh header.
 #=============================================================================

@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/pblocks/generators/pblocks_header.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • PBlocks Header Generator
+# File: pblocks_header.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Emits the fatori_pblocks.svh hierarchy and pragma header.
 #=============================================================================

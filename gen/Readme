@@ -1,0 +1,28 @@
+
+---
+
+### `Fatori-V/gen/Readme`
+
+```markdown
+# FATORI-V — `gen/` (generated files - headers and TCL)
+
+This folder stores **per-run copies of generated artifacts**:
+
+- Fault-tolerance mechanism headers (`fatori_ftm.svh`).
+- Monitoring headers (`fatori_reg_mon.svh`, `fatori_logic_mon.svh`).
+- Self-test header (`fatori_selftest.svh`).
+- Feature toggles header (`fatori_features.svh`).
+- Optional pblock headers/TCL (`fatori_pblocks.svh`, `fatori_pblocks.tcl`).
+
+The typical layout is:
+
+```text
+gen/
+  <run_id>/
+    fatori_ftm.svh
+    fatori_reg_mon.svh
+    fatori_logic_mon.svh
+    fatori_selftest.svh
+    fatori_features.svh
+    fatori_pblocks.svh    # only when FI/pblocks are enabled
+    fatori_pblocks.tcl    # only when FI/pblocks are enabled

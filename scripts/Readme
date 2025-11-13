@@ -1,68 +1,56 @@
-# FATORI‑V — `scripts/`
+# FATORI-V — `scripts/`
 
-Helper tools used by the orchestrator to generate build‑time artifacts consumed by RTL and Vivado.
+Python control layer for a single run.
 
-## `fatori_defines.py` — headers & TCL orchestrator
+This folder contains the high-level scripts that `fatori-v.py` calls to
+generate headers, build the hardware, execute benchmarks (with optional fault
+injection) and gather results. The idea is that each area has:
 
-**Purpose**  
-- Generates `fatori_defines.svh` (master include for RTL).
-- Invokes feature generators (e.g., pblocks) and includes their headers by **basename** so the RTL can pick them directly from `DEFINES_FINAL_PATH`.
-- When the area profile is `modules`, also produces:
-  - `fatori_pblocks.svh` — per‑target macros:
-    - `` `FATORI_TARGET_<NAME> `` → `1|0`
-    - `` `FATORI_ATTR_<NAME> `` → synthesis attributes when enabled; empty when disabled
-  - `fatori_pblocks.tcl` — Vivado pblocks sized to board rectangles; optionally attaches module hierarchy paths.
+- a small **settings** file with defaults for that area,
+- one **main** script that reads the YAML and calls a few helpers,
+- all heavier logic in subfolders (helpers, generators, etc.).
 
-**Inputs** (provided by the top‑level runner)  
-- `--area-profile` — `address_list | device | modules`
-- `--board` — board key used for rectangle mapping
-- `--seed` — run seed
-- `--modules-targets` — comma‑separated enabled labels (for `modules` profile)
-- `--final-dir` — destination for generated files (defaults to `DEFINES_FINAL_PATH`)
-- `--copy-to-results` / `--no-copy-to-results` — mirror toggle
-- `--run-id` — run name for mirroring and headers
-- Legacy: `--yaml` for standalone usage
+The FI console itself lives separately under `fi/` and is only invoked through
+a small bridge in `scripts/exec/fi_bridge/`.
 
-**Outputs**
-- `fatori_defines.svh` — includes produced headers by file name (e.g., `` `include "fatori_pblocks.svh" ``).
-- Mirrors to `results/<run>/gen/` per settings.
+## Layout
 
-## `pblocks/`
+- `build/`    — build phase (staging generated files and calling `make`).
+- `common/`   — shared helpers (YAML loading, logging, `.svh` / `.tcl` writers).
+- `exec/`     — run-time execution: benchmarks, metrics and FI bridge.
+- `features/` — generation of `fatori_features.svh` from the YAML.
+- `ftm/`      — generation of fault-tolerance mechanism headers (`fatori_ftm.svh`,
+                `fatori_reg_mon.svh`, `fatori_logic_mon.svh`, `fatori_selftest.svh`).
+- `pblocks/`  — generation of `fatori_pblocks.svh` and `fatori_pblocks.tcl`.
+- `results/`  — scripts that collect and mirror run artefacts under `results/`.
+- `run/`      — reserved for future helpers that operate on multiple runs.
 
-### `pblocks/fatori_pblocks.py`
+Each of these subfolders has its own `Readme`, a `<area>_settings.py` file and
+one "big" script (`fatori_<area>.py`) that tells the story for that phase.
 
-**Purpose**  
-Emit:
-- `fatori_pblocks.svh` — per‑target macros (see above).
-- `fatori_pblocks.tcl` — pblocks for enabled targets, sized per rectangles; if a target defines a `path`, the TCL attaches those cells to the pblock.
+## Relationship with the YAML
 
-**Inputs**  
-- Board rectangles: `pblocks/boards/<board>/modules.yaml` (labels, `rects`, and optional `path` to hierarchy root).
-- Enabled targets: passed down from the orchestrator (derived from YAML).
+The scripts in this tree do not define the user interface; they *consume* the
+run YAML from `runs/` and apply defaults from the various `*_settings.py`
+files. The top-level YAML has three main blocks:
 
-**Outputs**  
-- Files written to `DEFINES_FINAL_PATH`, mirrored to `results/<run>/gen` when enabled.
+- `run`       — identification and hardware selection.
+- `general`   — top-level enables for features, FTMs, benchmarks, results, FI.
+- `specifics` — detailed tuning of anything enabled in `general`.
 
-**Using the macros in RTL**
-- Include once in your top/common header: `` `include "fatori_defines.svh" ``.
-- At each instance you wish to gate:
-  ```verilog
-  `FATORI_ATTR_ALU
-  alu u_alu (...);
-  ```
-  When the target is enabled, the macro expands to `(* keep_hierarchy = "yes", dont_touch = "true" *)`; otherwise empty.
+Each area in `scripts/` is responsible for interpreting the part of the YAML
+that is relevant to it:
 
-## Adding a new generator
+- FTM scripts read the FTM-related keys from `general` and `specifics.ftm`.
+- Features scripts read `general.features`.
+- Build scripts use `run.hardware` and the FTM/feature choices to invoke the
+  correct underlying build targets.
+- Exec scripts read `specifics.benchmarks` and `specifics.fault_injection`.
+- Results scripts read `general.results` and/or `specifics.results` to decide
+  what to save.
 
-A generator module must expose:
+For details on how to extend specific subsystems, see the Readmes in the
+corresponding subfolders. For example:
 
-```python
-from pathlib import Path
-from typing import List
-
-def generate(cfg: dict, run_id: str, final_dir: Path, copy_to_results: bool, verbose: bool=False) -> List[Path]:
-    # Create headers/scripts in final_dir, optionally mirror to results/<run_id>/gen
-    # Return a list of header Paths to be included by fatori_defines.svh
-```
-
-Place it under `scripts/<feature>/` and have `fatori_defines.py` import and call it. The top‑level runner is the only component that reads YAML; generators receive a config dict with only what they need.
+- To add new benchmarks, see `exec/benchmarks/Readme`.
+- To add new metrics, see `exec/metrics/Readme`.

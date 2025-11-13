@@ -35,7 +35,7 @@
 #     • dedupe=true|false     Drop duplicate addresses (preserve first occurrence)
 #     • order=sequential|shuffle  Final ordering after merge (if mode not used)
 #     • seed=<int>            Seed for reproducible shuffle; if omitted or null,
-#                             the orchestrator is expected to supply the run seed.
+#                             the controller is expected to supply the run seed.
 #
 # Design notes
 #   • Uses shared helpers from fi.area.base for file loading and ordering.

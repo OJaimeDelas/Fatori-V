@@ -830,7 +830,7 @@ def main(argv=None):
 
     # ------- Fill device defaults that area profiles may require --------------
     # These are not printed (hidden by _kvpairs_filtered_area) but ensure that
-    # profiles like fi.area.device receive required keys even if the orchestrator
+    # profiles like fi.area.device receive required keys even if the controller
     # did not pass them explicitly.
     if args.area.strip().lower() == "device":
         area_kwargs.setdefault("board", getattr(settings, "ACME_DEFAULT_BOARD", "xcku040"))

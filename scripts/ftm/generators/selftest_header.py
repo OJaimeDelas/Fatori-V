@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/ftm/generators/selftest_header.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • FTM Self-Test Header Gen
+# File: selftest_header.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Generates the fatori_selftest.svh header for FTM blocks.
 #=============================================================================

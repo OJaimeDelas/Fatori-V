@@ -1,0 +1,34 @@
+# FATORI-V — `scripts/features/`
+
+Generation of the global features header `fatori_features.svh`.
+
+This folder turns the high-level feature toggles from the run YAML into a
+single header file that the RTL can include to enable or disable optional
+blocks.
+
+## Files and subfolders
+
+- `features_settings.py`
+  - Default feature values and mapping between YAML keys and macro names.
+  - Used when the YAML does not specify a value or provides an invalid one.
+
+- `fatori_features.py`
+  - Main script for this area.
+  - Reads feature-related configuration (`general.features` and any relevant
+    entries under `specifics`) from the run YAML.
+  - Applies defaults from `features_settings.py`.
+  - Calls the generator in `generators/features_header.py` to emit
+    `fatori_features.svh` into the run's `gen/` directory.
+
+- `generators/features_header.py`
+  - Contains the actual code that writes the `fatori_features.svh` file using
+    the helpers from `scripts/common/svh_writer/`.
+
+- `helper/features_yaml.py`
+  - Helper functions to extract and normalise the feature sections of the YAML.
+
+## Relationship with RTL
+
+The generated `fatori_features.svh` header is included by the RTL to enable or
+disable optional blocks (for example, different Ibex options or SoC features)
+based on the selected configuration for a run.

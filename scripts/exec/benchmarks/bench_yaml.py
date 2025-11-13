@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/exec/benchmarks/bench_yaml.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • Benchmarks YAML Parser
+# File: bench_yaml.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Parses benchmark-related configuration from the run YAML.
 #=============================================================================

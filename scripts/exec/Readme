@@ -1,0 +1,54 @@
+# FATORI-V — `scripts/exec/`
+
+Execution phase: running benchmarks and coordinating FI and metrics.
+
+This folder contains the scripts that, for each run, program the hardware,
+execute the configured benchmark sessions, coordinate fault injection (if
+enabled) and collect per-session metric data.
+
+## Files and subfolders
+
+- `exec_settings.py`
+  - Defaults for the execution phase, such as whether to reprogram hardware
+    between sessions, default timeouts and basic benchmark/FI policies.
+
+- `fatori_exec.py`
+  - Main entrypoint for the execution phase.
+  - Typical steps:
+    1. Read the run YAML and derive the list of sessions/benchmarks from
+       `specifics.benchmarks` (and the high-level toggles in `general`).
+    2. For each session:
+       - Program the hardware (if required).
+       - Reset metrics via `metrics/metric_log.py`.
+       - Start the requested benchmarks via `benchmarks/bench_controller.py`.
+       - If FI is enabled for this session, invoke the FI console through
+         `fi_bridge/call_fi.py`.
+       - Wait for benchmarks to finish and collect metric data.
+       - Write per-session artifacts under
+         `results/<run>/<run_id>/sessions/<session_name>/`.
+
+- `benchmarks/`
+  - Code to interpret the benchmark-related parts of the YAML and to start/stop
+    individual benchmarks.
+  - Supports both built-in and user-defined benchmarks.
+  - For details on how to add new benchmarks, see `benchmarks/Readme`.
+
+- `metrics/`
+  - Central metric log and plugin metrics.
+  - `metric_log.py` coordinates metric instances, per session and per benchmark.
+  - For details on how to add new metrics, see `metrics/Readme`.
+
+- `fi_bridge/`
+  - `call_fi.py` is a thin wrapper that invokes the FI console under `fi/` for
+    sessions where fault injection is enabled.
+
+## Relationship with the YAML
+
+The execution phase uses:
+
+- `run.hardware` to know which board/device is being targeted.
+- `general.benchmarks` to know which benchmark families are globally enabled.
+- `specifics.benchmarks` to configure individual benchmarks and their per-
+  benchmark metrics.
+- `specifics.fault_injection` to decide if and how FI is run during each
+  benchmark session.

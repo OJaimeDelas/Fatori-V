@@ -1,0 +1,44 @@
+# FATORI-V — `scripts/ftm/`
+
+Generation of FTM-related headers (`fatori_ftm.svh`, monitor headers, self-test).
+
+This folder contains the scripts that translate the fault-tolerance mechanism
+configuration from the YAML into the set of headers used by the RTL to enable
+and parameterise Fatori-V’s FTMs.
+
+## Files and subfolders
+
+- `ftm_settings.py`
+  - Default values for FTMs: which types are supported, default M-of-N
+    parameters, default coverage and self-test policies.
+  - Also provides small helpers to compute the output header paths from the
+    global settings.
+
+- `fatori_ftm.py`
+  - Main script for this area.
+  - Reads FTM-related configuration from the YAML (keys under `general` and
+    `specifics.ftm`).
+  - Uses helpers in `helper/` to interpret the YAML and register list.
+  - Calls generators to emit:
+    - `fatori_ftm.svh`
+    - `fatori_reg_mon.svh`
+    - `fatori_logic_mon.svh`
+    - `fatori_selftest.svh`
+
+- `generators/`
+  - `ftm_header.py`       — writes `fatori_ftm.svh` (global FTM definitions).
+  - `reg_mon_header.py`   — writes `fatori_reg_mon.svh` (per-register configs).
+  - `logic_mon_header.py` — writes `fatori_logic_mon.svh` (per-module configs).
+  - `selftest_header.py`  — writes `fatori_selftest.svh` (self-test policies).
+
+- `helper/`
+  - `ftm_yaml_parser.py`  — parses the FTM-related portion of the run YAML.
+  - `reg_list_access.py`  — reads `build/inputs/fatori_registers.yaml` and
+    provides access to the register database.
+
+## Relationship with other pieces
+
+- The generated headers are placed under `gen/<run>/<run_id>/` and later
+  copied into the architecture tree by `scripts/build/`.
+- `build/override/` may contain hand-written versions of some of these headers;
+  whether they are used or ignored is controlled by override flags in the YAML.

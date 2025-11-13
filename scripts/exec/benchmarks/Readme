@@ -1,0 +1,83 @@
+# FATORI-V — `scripts/exec/benchmarks/`
+
+Benchmark control and user-extendable benchmark implementations.
+
+This folder is responsible for turning the benchmark-related parts of the run
+YAML into actual work on the hardware: choosing which benchmarks to run in
+each session, preparing them and starting/stopping them.
+
+## Files and subfolders
+
+- `bench_yaml.py`
+  - Reads the benchmark configuration from the YAML (`general.benchmarks` and
+    `specifics.benchmarks`).
+  - Normalises it into an internal description (sessions, benchmark names and
+    per-benchmark parameters, including metrics selection).
+
+- `bench_controller.py`
+  - Main helper for `fatori_exec.py`.
+  - For each benchmark in a session it:
+    - resolves the implementation (built-in vs user-defined),
+    - optionally calls its `prepare` hook,
+    - starts it and waits for completion,
+    - informs the metric subsystem when each benchmark starts and ends.
+
+- `implementations/`
+  - A place for user-defined benchmark implementations.
+  - Each subfolder under `implementations/` corresponds to a benchmark family,
+    for example:
+    - `implementations/coremark/`
+    - `implementations/my_custom_bench/`
+
+## Built-in vs user-defined benchmarks
+
+Two kinds of benchmarks are supported:
+
+1. **Built-in benchmarks**
+   - These are hard-coded in `bench_controller.py` and typically live in the
+     `architecture/` repository (e.g. hello-world).
+   - They are selected in the YAML by name, and `bench_controller.py` knows
+     how to start/stop them without needing any extra code here.
+
+2. **User-defined benchmarks**
+   - These live under `implementations/` and are discovered dynamically.
+   - The YAML references them by a simple name (e.g. `my_custom_bench`); the
+     controller looks for a matching folder `implementations/my_custom_bench/`
+     and imports its Python adapter.
+   - Any parameters needed to passthrough, should also appear in the yaml file.
+
+### Expected structure for a user-defined benchmark
+
+A user-defined benchmark typically looks like this:
+
+```text
+scripts/exec/benchmarks/implementations/my_custom_bench/
+  bench.py
+  src/           # optional C or other sources that integrate with architecture/
+  manifest.yaml  # optional metadata (documented by the benchmark itself)
+```
+
+The `bench.py` module should provide a small set of functions, for example:
+
+- `prepare(run_yaml, bench_cfg)`
+  - Optional.
+  - Called before the first execution of this benchmark in a run.
+  - Can compile or copy sources into the appropriate place under `architecture/`
+    or perform any board-specific setup.
+
+- `start(run_yaml, bench_cfg)`
+  - Starts the benchmark on the target (e.g. by sending a UART command or
+    writing to a control register).
+
+- `wait_until_done(run_yaml, bench_cfg)`
+  - Blocks until the benchmark completes.
+  - May parse basic status information or return nothing; detailed metrics are
+    handled by the metric subsystem.
+
+The exact signature and helpers will be finalised in code and documented here
+as this interface stabilises, but the key idea is that adding a benchmark only
+requires:
+
+1. Creating a folder under `implementations/`.
+2. Implementing the expected `bench.py` functions.
+3. Referencing the benchmark by name in the YAML.

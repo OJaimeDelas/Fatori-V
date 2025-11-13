@@ -26,7 +26,7 @@ fi/
     # ramp.py / poisson.py / mmpp2.py ...  (if present)
   log/
     events.py                 # Deferred writer for per-session logs
-  fault_injection.py          # Orchestrator for driven campaigns
+  fault_injection.py          # Controller for driven campaigns
   settings.py                 # Engine defaults (serial, SEM freq, caps, logging)
 ```
 
@@ -58,7 +58,7 @@ Interactive console (manual or driven):
 python3 -m fi.console.sem_console --dev /dev/ttyUSB0 --baud 1250000
 ```
 
-The orchestrator prints a “Currently Running” block with selected profiles and parameters, performs a quick I/S preflight, then starts the campaign. On end, it reports a clear reason (duration reached, list exhausted, etc.).
+The controller prints a “Currently Running” block with selected profiles and parameters, performs a quick I/S preflight, then starts the campaign. On end, it reports a clear reason (duration reached, list exhausted, etc.).
 
 ---
 
@@ -134,7 +134,7 @@ results/<run>/<session>/injection_log.txt
 - **Session & results**: defaults for run/session labels and results root.
 - **Rate cap model**: `SEM_ICAP_FMAX_HZ`, `SEM_INJECT_LATENCY_US_AT_FMAX`,  
   `INJECTION_RATE_SAFETY_DERATE`, `INJECTION_RATE_UART_CAP_HZ`.  
-  The orchestrator reconciles requested cadence against these ceilings and will cap with a clear note.
+  The controller reconciles requested cadence against these ceilings and will cap with a clear note.
 - **ACME** (if used): `EBD_PATH`, `ACME_DEFAULT_BOARD`, `ACME_CACHE_DIR` (device/module profiles).
 - **Logging toggles**: per-class enable flags for the tags listed above.
 

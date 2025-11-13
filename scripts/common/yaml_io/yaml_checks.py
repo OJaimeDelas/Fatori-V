@@ -1,7 +1,8 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/common/yaml_io/yaml_checks.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • YAML Checks
+# File: yaml_checks.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Defines and runs small consistency checks over the run YAML.
+# It's USER-MODIFIABLE (check common/Readme)
 #=============================================================================

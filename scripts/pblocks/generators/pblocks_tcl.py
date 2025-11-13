@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/pblocks/generators/pblocks_tcl.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • PBlocks TCL Generator
+# File: pblocks_tcl.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Emits the fatori_pblocks.tcl Vivado pblock creation script.
 #=============================================================================

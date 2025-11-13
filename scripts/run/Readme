@@ -1,0 +1,11 @@
+# FATORI-V — `scripts/run/`
+
+Reserved for higher-level run helpers.
+
+This folder is currently a placeholder for future scripts that operate on
+multiple runs at once (for example, batch-running all YAMLs in `runs/`,
+comparing results across runs, or sweeping a parameter).
+
+At the moment, `fatori-v.py` is the main entrypoint for a single run and does
+not use anything from here. When multi-run tooling is added, its scripts and
+documentation will live in this folder.

@@ -1,0 +1,70 @@
+# FATORI-V — `scripts/exec/metrics/`
+
+Metric coordination and plugin-style metric implementations.
+
+This folder holds the central metric log used during execution, plus hooks for
+adding new metrics without changing the core scripts.
+
+## Files and subfolders
+
+- `metric_log.py`
+  - Single coordination point for metrics.
+  - Responsibilities:
+    - Create metric instances based on the run YAML and defaults from
+      `exec_settings.py`.
+    - Reset metrics at the start of each session.
+    - Notify metrics when each benchmark starts and ends.
+    - Collect per-session results into a structure that can be written to
+      `metrics.json` and passed to the results phase.
+
+- `implementations/`
+  - One subfolder per metric type.
+  - For example:
+    - `implementations/cycles/`
+    - `implementations/ipc/`
+    - `implementations/faults_injected/`
+
+Each metric implementation defines how to read and aggregate its data (from
+performance counters, logs, etc.) while the `metric_log` takes care of wiring
+it into the execution flow.
+
+## Metric selection in the YAML
+
+For each benchmark, the YAML can contain a `metrics:` subsection listing the
+metrics that should be recorded for that benchmark, for example:
+
+```yaml
+specifics:
+  benchmarks:
+    coremark:
+      enabled: on
+      metrics:
+        exec_time: on
+        n_clk_cycles: on
+        ipc: off
+```
+
+Missing entries fall back to sensible defaults (`exec_settings.py`). The exact mapping from metric
+names in YAML to metric implementations in `implementations/` is defined by
+`metric_log.py` (and possibly small helpers in this folder).
+
+## Adding a new metric
+
+To add a metric without touching the core scripts:
+
+1. Create a new subfolder under `implementations/`, e.g.
+   `implementations/my_metric/`.
+2. Add a `metric.py` file that implements the required interface, for example:
+   - a `METRIC_NAME` constant,
+   - a factory function like `from_yaml(run_yaml)` that returns a metric
+     object, and
+   - methods on that object such as:
+     - `reset_session(session_name)`
+     - `on_benchmark_start(session_name, bench_name)`
+     - `on_benchmark_end(session_name, bench_name)`
+     - `export_session_data(session_name)`
+3. Refer to that metric by name in the `metrics:` block of the benchmarks that
+   should use it.
+
+The detailed API will be finalised when `metric_log.py` is implemented, but the
+goal is to make metrics pluggable through this folder alone.

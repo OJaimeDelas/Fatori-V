@@ -1,0 +1,57 @@
+# FATORI‑V — `runs/`
+
+Top‑level user interface for defining runs.
+
+## What lives here
+
+Each `.yaml` file in this folder describes a single Fatori‑V run: the hardware target, which fault‑tolerance mechanisms and fault‑injection profiles to enable, which benchmarks to execute and which results to keep. The controller (`fatori-v.py`) never edits these files; they are meant for humans and version control.
+
+`example.yaml` is a commented template that documents most fields.
+
+## How the system uses these files
+
+When you launch `fatori-v.py` you either:
+
+- pass one YAML explicitly, or
+- let the script iterate over all `*.yaml` in `runs/`.
+
+For each file it:
+
+1. parses the YAML and runs basic consistency checks,
+2. creates per‑run directories under `gen/`, `build/` and `results/`,
+3. generates the `.svh` / `.tcl` interface files,
+4. builds the hardware,
+5. executes the requested benchmark sessions (with optional FI),
+6. collects the requested results.
+
+Each YAML therefore produces an independent “run” under `results/<run_name>/…` (often with an additional run identifier when you repeat the same configuration).
+
+## YAML structure (very short overview)
+
+The configuration is grouped in a few main blocks:
+
+- **`run.identification`**  
+  Names the run (`name`, `description`), the random `seed` and the execution mode (`run: sim` / `run: fpga`).
+
+- **`run.hardware`**  
+  Chooses the target board and device. This influences build scripts and FI support.
+
+- **`general.features`**  
+  Enables the fault manager and high‑level FTMs such as `register_m_of_n`, `logic_m_of_n`, `self_testing`, etc.
+
+- **`general.specifics.*`**  
+  Fine‑tunes each mechanism (for example M‑of‑N parameters, which Ibex/IOb‑SoC modules are protected, and whether pre‑built monitor headers should be used via the `override` switches).
+
+- **`general.fault_injection` (and subsections)**  
+  Describes FI profiles: which area profile to use, which time profile to use, thresholds that stop execution, and where ACME/SEM should inject.
+
+- **`benchmarks`**  
+  One subsection per benchmark (e.g. `hello_world`, `coremark`, …). For each you can:
+  - enable/disable the benchmark,
+  - choose timeouts and whether FI is active for that benchmark,
+  - select which metrics are recorded for that benchmark with a simple `metrics:` block (`exec_time`, `n_clk_cycles`, `ipc`, … set to `on` / `off`).
+
+- **`results`**  
+  Controls which artifacts are kept under `results/<run_name>/` (copy of the YAML, Vivado reports, FI logs, plots, mirrors of generated headers, metrics workbook, etc.).
+
+Any field that is omitted falls back to sensible defaults defined in the corresponding `*_settings.py` files under `scripts/`.

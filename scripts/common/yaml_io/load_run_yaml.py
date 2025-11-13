@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/common/yaml_io/load_run_yaml.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • YAML Loader
+# File: load_run_yaml.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Loads a run YAML, applies basic validation and triggers YAML checks.
 #=============================================================================

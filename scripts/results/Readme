@@ -1,0 +1,57 @@
+# FATORI-V — `scripts/results/`
+
+Aggregation and mirroring of run artefacts into `results/`.
+
+This folder contains the scripts that take the per-session outputs from the
+execution phase and the build artefacts, and arrange them into the structured
+layout under `results/<run>/[<run_id>/]`.
+
+## Files and subfolders
+
+- `results_settings.py`
+  - Default values for the `results` block in the run YAML, such as whether
+    to keep build reports, copies of generated headers, FI logs, plots and
+    metrics workbooks.
+  - Provides helpers to compute paths under `results/` from the global
+    settings in `fatori_settings.py`.
+
+- `fatori_results.py`
+  - Main script for this area.
+  - Typical steps:
+    1. Read the run YAML and decide which result categories are enabled,
+       falling back to defaults from `results_settings.py`.
+    2. Use the collectors to gather:
+       - per-session logs and metrics from `results/<run>/<id>/sessions/`,
+       - build reports from `build/<run>/<id>/`,
+       - generated headers and TCL scripts from `gen/<run>/<id>/`.
+    3. Write summary files (for example, `summary.txt`, `manifest.json`).
+    4. Optionally call `exporters/plotter.py` if plot generation is enabled.
+
+- `collectors/`
+  - `session_collector.py` — pulls together session-level data (logs, FI
+    injection logs, JSON metrics) into a structured view.
+  - `build_collector.py` — collects relevant build artefacts and reports for
+    the run.
+
+- `exporters/`
+  - `plotter.py` — optional plotting helpers. As plotting is added, this is
+    where scripts should create derived visualisations from the collected data.
+
+## Relationship with the YAML and `results/` folder
+
+The `results` block in the run YAML specifies which categories are kept. For
+example:
+
+```yaml
+results:
+  run_yaml: on
+  reports: on
+  injection_log: on
+  plots: off
+  gen: on
+  metrics_xls: on
+```
+
+The top-level `results/Readme` describes the on-disk layout. This folder
+contains the scripts that populate that layout according to the requested
+options.

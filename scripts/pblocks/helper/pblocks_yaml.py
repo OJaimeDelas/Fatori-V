@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/pblocks/helper/pblocks_yaml.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • PBlocks YAML Parser
+# File: pblocks_yaml.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Parses pblock-related configuration from the run YAML.
 #=============================================================================

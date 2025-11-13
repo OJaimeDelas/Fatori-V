@@ -1,0 +1,40 @@
+# FATORI-V — `scripts/common/`
+
+Shared helpers used by all phases.
+
+This folder contains small, side-effect-free utilities that keep the main
+scripts simple. It should not contain any run-specific control logic.
+
+## Files and subfolders
+
+- `common_settings.py`
+  - Shared defaults for the scripts layer (e.g. logging format, verbosity).
+  - May provide small helpers that are truly cross-cutting.
+
+- `yaml_io/`
+  - `load_run_yaml.py` — loads a run YAML from `runs/`, applies basic type
+    validation and calls the checks in `yaml_checks.py`.
+  - `yaml_checks.py` — registry of small consistency checks. Each check
+    inspects the full YAML and can enforce rules such as:
+      - “If `run.identification.run == "sim"` then `specifics.ibex.regfile`
+        must be `"ff"`.”
+    New checks can be added here without modifying the rest of the system.
+
+- `logging/`
+  - `setup_logging.py` — sets up a consistent logging format and log file per
+    run and per phase.
+
+- `svh_writer/`
+  - `svh_writer.py` — helpers for generating readable `.svh` files with
+    standard headers and indentation.
+
+- `tcl_writer/`
+  - `tcl_writer.py` — helpers for generating `.tcl` scripts in a consistent
+    style.
+
+## Conventions
+
+- Main scripts should import functions from here rather than re-implementing
+  YAML loading, logging setup or file writing logic.
+- The modules in this folder should be small and easy to read; any complex
+  behaviour belongs in the area-specific folders (`ftm/`, `pblocks/`, etc.).

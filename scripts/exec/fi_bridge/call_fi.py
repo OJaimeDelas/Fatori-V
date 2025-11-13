@@ -1,7 +1,7 @@
-### scripts/pblocks/fatori_pblocks.py
+### scripts/exec/fi_bridge/call_fi.py
 # =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
+# FATORI-V • Execution FI Bridge
+# File: call_fi.py 
 # -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
+# Thin bridge that calls the FI console for FI-enabled sessions.
 #=============================================================================

@@ -230,7 +230,7 @@ class Profile(ProfileBase):
                 if interval_s > 0.0:
                     self._sleep_until(deadline)
 
-            # Time profile does not signal area exhaustion; orchestrator handles it.
+            # Time profile does not signal area exhaustion; controller handles it.
 
             # Exit note for deferred logger.
             try:
