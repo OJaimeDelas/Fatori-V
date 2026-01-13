@@ -1,0 +1,53 @@
+Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+------------------------------------------------------------------------------------------------------------
+| Tool Version      : Vivado v.2020.2 (lin64) Build 3064766 Wed Nov 18 09:12:47 MST 2020
+| Date              : Sat Nov 22 17:12:15 2025
+| Host              : pudim-flan running 64-bit Ubuntu 22.04.5 LTS
+| Command           : report_clocks -file reports/iob_soc_iob_aes_ku040_db_g_xcku040-fbva676-1-c_clocks.rpt
+| Design            : iob_soc_iob_aes_ku040_db_g
+| Device            : xcku040-fbva676
+| Speed File        : -1  PRODUCTION 1.25 12-04-2018
+| Temperature Grade : C
+------------------------------------------------------------------------------------------------------------
+
+Clock Report
+
+
+Attributes
+  P: Propagated
+  G: Generated
+  A: Auto-derived
+  R: Renamed
+  V: Virtual
+  I: Inverted
+  S: Pin phase-shifted with Latency mode
+
+Clock                  Period(ns)  Waveform(ns)   Attributes  Sources
+clk                    4.000       {0.000 2.000}  P           {c0_sys_clk_clk_p_i}
+clk_out1_clock_wizard  17.000      {0.000 8.500}  P,G,A       {clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0}
+
+
+====================================================
+Generated Clocks
+====================================================
+
+Generated Clock     : clk_out1_clock_wizard
+Master Source       : clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKIN
+Master Clock        : clk
+Edges               : {1 2 3}
+Edge Shifts(ns)     : {0.000 6.500 13.000}
+Generated Sources   : {clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0}
+
+
+
+====================================================
+User Uncertainty
+====================================================
+
+
+
+====================================================
+User Jitter
+====================================================
+
+

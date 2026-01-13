@@ -97,12 +97,14 @@ general:
       branch_pred: off
       branch_target_alu: off
       wstage: off
-      multiplier: none # (*5) none; fast; slow; single_cycle
 
     # Enables/Disables RISC-V ISA Extensions
     # I extension is mandatory
     isa_extensions:
-      M: off # (*5)
+      RV32E: off # (Reduced version of RV32I)
+      RV32M: off # (Multiplication/Division extension)(*5)
+      RV32B: off # (Bit Manipulation extension)
+      RV32C: on # (Compressed Instr hardware is always ON in ibex)
 
   # Software for the run
   # These are all benchmarks currently implemented, turn on the ones you want
@@ -112,57 +114,77 @@ general:
     # Just the Hello World, the original from IOb-SoC
     hello_world:
       enable: on
-      timeout_s: 120 # Set -1 for infinite/until break
-      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
-      metrics:
-        exec_time: on
-        n_clk_cycles: on
-        ipc: on
-        min_faults: on
-        maj_faults: on
-        # ADD MORE METRICS HERE
+      timeout_s: -1 # Set -1 for infinite/until break
 
-    # Usual benchmark for space aplications
-    startrek:
-      enable: off
-      timeout_s: 120 # Set -1 for infinite/until break
       injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
-      metrics:
-        exec_time: on
-        n_clk_cycles: on
-        ipc: on
-        min_faults: on
-        maj_faults: on
-        # ADD MORE METRICS HERE
 
+
+    
+    # Benchmark developed specifically to stress specific components of this architecture. Mostly modules that are targeted by the FI system
+    fatori_stress:
+      enable: on
+      timeout_s: -1 # Set -1 for infinite/until break
+
+      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+
+      config:
+        iterations: 10000 # Set -1 for infinite
+        targets:
+          alu: on
+          multiplier: on
+          decoder: on
+          controller: on
+          lsu: on
+          branch_pred: on
+          compressed: on
+
+
+
+    # Embench-IoT groups 20 benchmarks and provides a score compared against a ARM Cortex-M4 baseline
+    embench-iot:
+      enable: on
+      timeout_s: -1 # Set -1 for infinite/until break
+
+      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      
+      config:
+        # Which benchmarks to run
+        embench-benchmarks:
+          aha_mont64: on
+          crc32: on
+          cubic: on
+          edn: on
+          huffbench: on
+          matmult_int: on
+          md5sum: on
+          minver: on
+          nbody: on
+          nettle_aes: on
+          nettle_sha256: on
+          nsichneu: on
+          picojpeg: on
+          primecount: on
+          qrduino: on
+          sglib_combined: on
+          slre: on
+          st: on
+          statemate: on
+          ud: on
+          wikisort: on
+
+    
+    # Renowned benchmark. Provides a grade based off of iterations/MHz
     coremark:
-      enable: off
-      timeout_s: 120 # Set -1 for infinite/until break
-      iterations: 20000
-      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
-      metrics:
-        exec_time: on
-        n_clk_cycles: on
-        ipc: on
-        min_faults: on
-        maj_faults: on
-        # ADD MORE METRICS HERE
+      enable: on
+      timeout_s: -1 # Set -1 for infinite/until break
 
-    dhrystone:
-      enable: off
-      timeout_s: 120 # Set -1 for infinite/until break
-      loops: 500000
       injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
-      metrics:
-        exec_time: on
-        n_clk_cycles: on
-        ipc: on
-        min_faults: on
-        maj_faults: on
-        # ADD MORE METRICS HERE
+
+      config:
+        iterations: 1000 # Minimum to get a score is 300
+        
 
     # ADD MORE BENCHMARKS HERE
-
 
   # Where and how often will faults be injected
   fault_injection:
@@ -173,25 +195,33 @@ general:
     # 'sem_critical' - only if native FTMs fail to solve, call upon SEM
     corrector: sem_critical 
 
-    # Where should the faults land.
+    # AREA - Where should the faults land.
     # 'device' - Full device. Equal probability anywhere 
     # 'modules' - Select specific targets from the available list (in the next section)
-    # 'address_list' - Specify (in the next section) a file of LFA/WORD/BIT addresses
+    # 'target_list' - Specify (in the next section) a file of TargetSpecs - injection targets
+    # 'input' - Provide a path to alocally implemented Area Profile (must follow the correct format)
     area_profile: modules
 
-    # How often should we inject faults.
+    # TIME - How often should we inject faults.
     # 'uniform'   - Injects at a constant rate
     # 'ramp'      - Linearly go from a starting frequency to an ending frequency
     # 'poisson'   - Realistic random arrivals with a fixed mean rate
     # 'mmpp2'     - Poisson arrivals that switch between 'slow' and 'fast' bursty states
     # 'trace'     - Follow a schedule from a file (absolute times or inter-arrival gaps)
     # 'microburst'- k-shot bursts separated by quiet gaps
-    # 'manual'    - Let the user drive the SEM console with SEM IP commands
+    # 'input' - Provide a path to alocally implemented Time Profile (must follow the correct format)
     time_profile: uniform
 
-
-    # Enables thresholds that interrupt the execution (configurable in the next section)
-    ceiling: off
+  # Metrics Collection Configuration
+  # Controls hardware performance counters and fault tracking CSRs
+  # (Overridable in specifics)
+  # 0: Minimal (mcycle, minstret only)
+  # 1: Basic Ibex HPMCs (all ibex native performance counters)
+  # 2: Error monitoring (Layer 1: +min_err_cnt, +maj_err_cnt) [32 bits]
+  # 3: Fault mitigation (Layer 2: +corrected_err_cnt) [48 bits]
+  # 4: Full FI campaign (Layer 3: +timing counters) [128 bits]
+  # 5: Detailed latency (Layer 4: +latency stats) [176 bits]
+  metrics_level: 5 
 
   # Configure what it's meant to be stored in the output
   # The system will generate multiple files under the "results/<run_name>-<timestamp>/" folder:
@@ -203,11 +233,13 @@ general:
   # metrics.xls - All metric's results (error metrics, performance metrics)
   results:
     run_yaml: on           # Save a copy of the input YAML for traceability.
+    verified_yaml: on      # If the original yaml needs correction, store a version of the corrected version
     reports: on            # Save Vivado reports under results/<run>/reports/.
     injection_log: on      # Write the injection log file (recommended).
     plots: on              # Generate plots under results/<run>/<session>/plots/.
     gen: on                # Copy all generated files to results/<run>/gen/
     metrics_xls: on        # Export metrics workbook (error/performance) as metrics.xls.
+    fi_log_level: verbose     # Controls printing: minimal | normal | verbose - knob the levels in "log_levels.py"
 
 
 ######################################################################################################################################
@@ -221,299 +253,252 @@ general:
 ######################################################################################################################################
 specifics:
 
-  # Fault-Injection Specifics
-  fault_injection:
-  
-    # Parameters related to time_profile
-    time:
-
-      uniform:
-        # REQUIRED: set either rate_hz OR period_s.
-        # If both are set, period_s takes precedence and rate_hz is ignored.
-        rate_hz: 5.0              # (optional if period_s is set) mean injections per second
-        period_s: null            # (optional) seconds between shots; overrides rate_hz when > 0
-
-        duration_s: 20          # (optional) stop after this many seconds; otherwise run until external stop
-
-        ack: off                  # (optional) enable ACK gating (wait for SC 00 before scheduling the next interval)
-        ack_timeout_s: 1.5        # (optional; only used when ack is on) max wait, in seconds, for ACK per shot
-
-        max_shots: null           # (optional) stop after this many injections (profile-complete reason)
-        startup_delay_ms: null    # (optional) one-time delay before the first injection is sent
-
-
-      ramp:
-        # REQUIRED edges: for each edge provide EITHER *_hz OR *_period_s.
-        # For each edge, *_period_s takes precedence over *_hz when both are set.
-        start_hz: 1.0             # (optional if start_period_s is set) starting rate in Hz
-        start_period_s: null      # (optional) starting period in seconds; overrides start_hz when > 0
-
-        end_hz: 5.0               # (optional if end_period_s is set) final rate in Hz
-        end_period_s: null        # (optional) final period in seconds; overrides end_hz when > 0
-
-        # Choose ONE interpolation mode:
-        duration_s: 20          # (optional) time-based ramp: linearly vary from start to end over this many seconds;
-                                  #           stops by duration once elapsed ≥ duration_s.
-        steps: null               # (optional; used only if duration_s is null) number of shots across which the rate is interpolated
-
-        # End-of-ramp behaviour (only applies when 'steps' is used and duration_s is null):
-        hold_end_rate: on         # (optional) when 'on' the profile keeps injecting at the end rate indefinitely
-                                  #           (until external stop or area exhaustion). When 'off' the profile stops at ramp completion.
-
-        ack: off                  # (optional) enable ACK gating (wait for SC 00 before scheduling the next interval)
-        ack_timeout_s: 1.5        # (optional; only used when ack is on) max wait, in seconds, for ACK per shot
-
-        max_shots: null           # (optional) stop after this many injections (applies across ramp and hold)
-        startup_delay_ms: null    # (optional) one-time delay before the first injection is sent
-
-
-      poisson:
-        # REQUIRED: set either rate_hz (aka lambda_hz/hz) OR period_s.
-        # If both are set, period_s takes precedence and the rate fields are ignored.
-        rate_hz: 2.0              # (optional if period_s is set) mean rate λ in Hz; synonyms accepted by CLI: lambda_hz, hz
-        period_s: null            # (optional) mean period in seconds; overrides rate_hz when > 0
-
-        duration_s: 20          # (optional) stop after this many seconds; otherwise run until external stop
-
-        seed: null                # (optional) RNG seed for reproducible inter-arrival times.
-                                  #           If null, the controller may pass the global run seed when available; otherwise a random seed is used.
-
-        ack: off                  # (optional) enable ACK gating (wait for SC 00 before scheduling the next interval)
-        ack_timeout_s: 1.5        # (optional; only used when ack is on) max wait, in seconds, for ACK per shot
-
-        max_shots: null           # (optional) stop after this many injections (profile-complete reason)
-        startup_delay_ms: null    # (optional) one-time delay before the first injection is sent
-
-
-      mmpp2:
-        # Two-State Markov–Modulated Poisson Process (MMPP-2).
-        # The rate switches between LOW and HIGH after each shot with the given probabilities.
-
-        low_hz: 1.0                 # Poisson rate (Hz) in LOW state. Required unless you set a different default upstream.
-        high_hz: 10.0               # Poisson rate (Hz) in HIGH state. Required unless you set a different default upstream.
-
-        p_low_to_high: 0.05         # Probability in [0,1] to switch LOW→HIGH after a shot.
-        p_high_to_low: 0.05         # Probability in [0,1] to switch HIGH→LOW after a shot.
-
-        start_state: low            # Initial state for the Markov chain: "low" or "high".
-
-        duration_s: 20            # (optional) Stop after this many seconds (profile-owned end: "Duration limit reached.")
-        seed: null                  # (optional) RNG seed for reproducibility (affects state switches and inter-arrivals).
-        ack: off                    # (optional) ACK gating (waits for SC 00 before scheduling the next interval).
-        ack_timeout_s: 1.5          # (optional; used only when ack is on) Max seconds to wait for ACK.
-        max_shots: null             # (optional) Stop after this many shots (end: "Profile shot limit reached.")
-        startup_delay_ms: null      # (optional) One-time delay before the first shot is sent.
-
-
-      trace:
-        # Trace-driven schedule read from file: one float per non-comment line.
-        # mode='relative': values are absolute times since t0 (seconds).
-        # mode='intervals': values are non-negative inter-arrival gaps Δt (seconds).
-
-        file: fi/time/schedules/example_trace.txt   # Path to the schedule file. You may also use 'path:'.
-        mode: relative               # "relative" | "intervals"
-        repeat: 1                    # (optional) Integer ≥1; number of times to replay the whole sequence.
-
-        duration_s: 20            # (optional) Stop after this many seconds even if the schedule has entries left.
-        ack: off                    # (optional) ACK gating (waits for SC 00 before advancing).
-        ack_timeout_s: 1.5          # (optional; used only when ack is on) Max seconds to wait for ACK.
-        max_shots: null             # (optional) Global shot cap across repeats (end: "Profile shot limit reached.")
-        startup_delay_ms: null      # (optional) One-time delay before the first shot is sent.
-
-        # Notes:
-        # - Lines beginning with '#' or blank lines are ignored.
-        # - In 'relative' mode, times are treated as offsets from t0; if they’re not in order,
-        #   they are sorted ascending for robustness.
-        # - In 'intervals' mode, each value is a non-negative Δt before the next shot.
-
-
-      microburst:
-        # Bursts of k shots separated by a longer off period.
-        # Inside each burst, shots are spaced by 'intra_burst_period_s' (or ASAP if <= 0).
-
-        shots_per_burst: 5          # Integer ≥1; number of shots per burst.
-        intra_burst_period_s: 0.0   # (optional) Seconds between shots inside a burst. <= 0 => ASAP.
-        inter_burst_s: 2.0          # (optional) Seconds between bursts (off period). 0 => bursts back-to-back.
-
-        bursts: null                # (optional) Total number of bursts to emit (end: "Requested number of bursts completed.")
-        duration_s: 20            # (optional) Overall time limit; whichever occurs first (bursts vs duration) ends the profile.
-        ack: off                    # (optional) ACK gating (waits for SC 00 inside and between bursts when active).
-        ack_timeout_s: 1.5          # (optional; used only when ack is on) Max seconds to wait for ACK.
-        max_shots: null             # (optional) Global shot cap across all bursts (end: "Maximum shots limit reached.")
-        startup_delay_ms: null      # (optional) One-time delay before the first shot is sent.
-
-        # Interactions / precedence:
-        # - If both 'bursts' and 'duration_s' are set, the first to trigger ends the profile.
-        # - 'max_shots' is checked at every shot and ends the profile immediately when reached.
-
-    # Parameters related to area_profile
-    area:     
-      
-      # Parameters for when injecting on the full device
-      device:
-        # Even with a narrowed down target, multiple possible addresses for injection will exist
-        # These two parameters determine the address selection:
-        # - sequential - Injects in the order of the addresses in the injection file
-        # - random - Injects randomly with a seed
-        mode: random
-        # Determines a seed for random. Defaults to the run's seed using 'null'
-        seed: null # If NULL, it'll use the run seed
-
-      # Where to inject the errors for "area_profile" 'modules'
-      # WARNING: Directioning the errors to certain blocks requires extra overhead (pblocks are used)
-      modules:
-        # Even with a narrowed down target, multiple possible addresses for injection will exist
-        # These two parameters determine the address selection:
-        # - sequential - Injects in the order of the addresses in the injection file
-        # - random - Injects randomly with a seed
-        # - round_robin - Alternates through the modules. One address per module
-        mode: sequential
-        # Determines a seed for random/round_robin. Defaults to the run's seed using 'null'
-        seed: null # If NULL, it'll use the run seed
-        targets:                  
-          alu: on
-          branch_predictor: on # (*7)
-          multiplier: off # (*4)
-          # TODO - implement more places
-      
-      # File with configuration addresses to hit (in file appearence order)
-      # FORMAT: LFA_HEX,WORD,BIT (10 digits)
-      address_list:
-        file: address_list.txt
-        # Even with a narrowed down target, multiple possible addresses for injection will exist
-        # These two parameters determine the address selection:
-        # - sequential - Injects in the order of the addresses in the injection file
-        # - random - Injects randomly with a seed
-        mode: sequential
-        # Determines a seed for random. Defaults to the run's seed using 'null'
-        seed: null # If NULL, it'll use the run seed 
-
-    ceiling:
-      max_SEM_uncorrectable: 1 # How many SEM criticals before reconfiguring
-      max_NATIVE_uncorrectables: 5 # How many NATIVE FTMs uncorrectables before reconfiguring
-
-  # Fault Manager Specifics
-  fault_manager:
-    rst_on_major: off # Should the system reset when a major error is detected
-    wait_sleep_before_rst: on # Upon a reset, should the system wait for the pipeline to complete and flush itself
-  
-  #Register M-of-N Specifics
-  reg_m_of_n:
-    m_of_n_N: 3 # Choose how many instancies of redundancy will be created
-    m_of_n_M: null # How many need to be equal to not generate a major error (max is 'm_of_n_N'). 'null' equals majority.
-    
-    m_of_n_seed: null # Leave as 'null' to use the default run seed
-    m_of_n_percentage: 0 # Enables M-of-N on a certain random percentage of registers. If override is 'on', this is ignored
-
-    # When a major error occours (there is no quorum among the N instancies)
-    # the registers hold the last correct value
-    hold_on_major: off
-
-    # Apply M-of-N in certain registers
-    # If override is 'on', this is ignored
-    target:
-      fault_mgr: off
-      dummy_instr: off
-      lockstep: off
-      ibex_top: off # Top module from ibex
-      ibex_core: off # Second Ibex module
-      load_store_unit: off
-      prefetch_buffer: off
-      controller: off
-      cs_registers: off
-      csr: off
-      decoder: off
-      fetch_fifo: off
-      id_stage: off # Only the top ID module, it does not check submodules. ALU result goes here
-      if_stage: off # Only the top IF module, it does not check submodules
-      wb_stage: off # Only the top WB module, it does not check submodules
-    
-    # Provide a "fatori_reg_mon.svh" file that overrides the previous settings
-    # In Fatori-V/settings.py specify the location in 'MON_REG_FILE_LOC'
-    override: off
-
-  #Register M-of-N Specifics
-  logic_m_of_n:
-    m_of_n_N: 3 # Choose how many instancies of redundancy will be created
-    m_of_n_M: null # How many need to be equal to not generate a major error (max is 'm_of_n_N'). 'null' equals majority.
-
-    # When a major error occours (there is no quorum among the N instancies)
-    # the registers hold the last correct value
-    hold_on_major: off
-    
-    # When there are MoN targets, inside MoN targets, only apply MoN to the upper one
-    # blocking MoN cascades.
-    block_recursive: off
-
-    # Logic blocks to apply M-of-N
-    target:
-      load_store_unit: off
-      controller: off
-      decoder: off
-      if_stage: off
-      alu: off
-      multiplier: off # Will only work if multiplication is enabled
-    
-    # Provide a "fatori_logic_mon.svh" file that overrides the previous settings
-    # In Fatori-V/settings.py specify the location in 'MON_LOGIC_FILE_LOC'
-    override: off
-    
-  #Self-Testing Specifics
-  self-testing:
-
-    # - avoid - Makes the target look busy, so that the decoder does not use it
-    # - abort - If a real instruction arrives, abort the test
-    # - hold - Once a test is running, hold the pipeline until it finnishes
-    policy: abort
-
-    spacing: 10 # minimum spacing between tests. It will try to launch a test once in every 'spacing' clock cycles
-
-    # Logic blocks to apply M-of-N
-    target:
-      load_store_unit: off
-      pc_logic: off
-      alu: off
-      multiplier: off # Will only work if multiplication is enabled  
-
   # Ibex Architecture Specifics
   ibex:
     regfile: fpga # (*6) ff; fpga; file_latch;
+    multiplier: none # (*5) none; fast; slow; single_cycle
+    bit_manipulation: none # none; balanced; ot_earlgrey; full
 
-    #Performance Monitor
-    mhpm:
-      num: 0 # number of performance monitor event counters
-      width: 40 # bit width of performance monitor event counters
+  fault_tolerance:
+
+    # Fault-Injection Specifics
+    fault_injection:
     
-    icache_scramble: off
+      # Parameters related to time_profile
+      time:
 
-    #Physical Memory Protection (PMP) Specifics
-    pmp:
-      granularity: 0
-      num_regions: 4
+        # If null, the controller may pass the global run seed when available; otherwise a random seed is used.
+        seed: null
 
-  # Benchmarks Specifics
-  benchmarks:
+        # A Uniform injection at a specific rate
+        uniform:
+          # REQUIRED: set either rate_hz OR period_s.
+          # If both are set, period_s takes precedence and rate_hz is ignored.
+          rate_hz: 5.0              # (optional if period_s is set) mean injections per second
+          period_s: null            # (optional) seconds between shots; overrides rate_hz when > 0
 
-  # Result Logging Specifics
-  logging:
+          duration_s: 20          # (optional) stop after this many seconds; otherwise run until external stop
 
-    # Line timestamping in the injection log (events.py uses [+ t.s] relative times)
-    timestamps: on         # (optional) When on, each log line is prefixed with time since session start.
+        # An injection that forms a linear pattern from the start rate to the end rate
+        ramp:
 
-    # High-level aliases for convenience (kept for back-compat with earlier configs)
-    injection_commands: on # (optional) Alias for enabling SEM TX/RX logging (maps to tags.sem_cmd).
-    updates: on            # (optional) Alias for enabling profile updates + console mode changes
-                           #            (maps to tags.prof_time and tags.cnsl_mode).
+          start_rate_hz: 1.0             # starting rate in Hz
+          end_rate_hz: 5.0               # final rate in Hz
 
-    # Granular tag toggles — map 1:1 to EventLogger classes in events.py
-    tags:
-      sem_cmd: on          # "SEM CMD" — both TX (SEND, '*' suffix) and RX (RECV) lines.
-      info: on             # "INFO" — preflight notes, profile start/finish, pause/resume, etc.
-      prof_area: on        # "PROF AREA" — area-profile configuration and profile-driven updates.
-      prof_time: on        # "PROF TIME" — time-profile configuration and profile-driven updates.
-      cnsl_cmd: on         # "CNSL CMD" — user console commands issued.
-      cnsl_mode: on        # "CNSL MODE" — console transitions MAN ↔ DRI.
-      error: on            # "ERROR" — framework error lines (arming failures, parse errors, etc.).
+          duration_s: 20          #  time-based ramp: linearly vary from start to end over this many seconds;
+
+        # The injection rate is random, but averages around rate_hz
+        poisson:
+          rate_hz: 2.0        # mean rate λ in Hz; synonyms accepted by CLI: lambda_hz, hz                              
+          
+          duration_s: 20       # (optional) stop after this many seconds; otherwise run until external stop
+
+        # Jumps between two "Poisson" rates - averages around one, then jumps with a certain probability to the other
+        mmpp2:
+
+          low_hz: 1.0          # Poisson rate (Hz) in LOW state. Required unless you set a different default upstream.
+          high_hz: 10.0        # Poisson rate (Hz) in HIGH state. Required unless you set a different default upstream.
+
+          p_low_to_high: 0.05  # Probability in [0,1] to switch LOW→HIGH after a shot.
+          p_high_to_low: 0.05  # Probability in [0,1] to switch HIGH→LOW after a shot.
+
+          start_state: low     # Initial state for the Markov chain: "low" or "high".
+
+          duration_s: 20       # (optional) Stop after this many seconds (profile-owned end: "Duration limit reached.")
+
+        # Injects at a pattern stated by a provided file
+        trace:
+          # mode='relative': values are absolute times since t0 (seconds).
+          # mode='intervals': values are non-negative inter-arrival gaps Δt (seconds).
+
+          file: fi/time/schedules/example_trace.txt   # Path to the schedule file. You may also use 'path:'.
+          mode: relative               # "relative" | "intervals"
+          repeat: 1                    # (optional) Integer ≥1; number of times to replay the whole sequence.
+
+          duration_s: 20              # (optional) Stop after this many seconds even if the schedule has entries left.
+
+          # Notes:
+          # - Lines beginning with '#' or blank lines are ignored.
+          # - In 'relative' mode, times are treated as offsets from t0; if they’re not in order,
+          #   they are sorted ascending for robustness.
+          # - In 'intervals' mode, each value is a non-negative Δt before the next shot.
+
+        # Bursts k shots separated by an off period
+        microburst:
+
+          burst_rate_hz: 5      # Injection rate in burst time
+          idle_rate_hz: 0       # Injection rate in idle time
+          burst_duration_s: 1   # Seconds between idle times.
+          idle_duration_s: 2    # Seconds between shots inside a burst.
+
+          bursts: null          # (optional) Total number of bursts to emit (end: "Requested number of bursts completed.")
+          duration_s: 20        # (optional) Overall time limit; whichever occurs first (bursts vs duration) ends the profile.
+
+          # Interactions / precedence:
+          # - If both 'bursts' and 'duration_s' are set, the first to trigger ends the profile.
+
+        # Manually provide the path to an external Time Profile
+        input:
+          profile_path: fi/profiles/time/uniform.py
+
+
+      # Parameters related to area_profile
+      area:
+        
+        # Determines if the same target should be hit more than once
+        repeat: on
+        target_pool_size: 500 # How many injections can be accepted
+
+        # Determines the overall percentage of REG hits, compared to CONFIG hits
+        ratio: 0.5
+        strict: off # For corner cases, can FI disregard the ratio momentanly, to keep injecting
+
+        seed: null # If NULL, it'll use the run seed
+        
+        # Parameters for when injecting on the full device
+        device:
+          # Even with a narrowed down target, multiple possible addresses for injection will exist
+          # These two parameters determine the address selection:
+          # - sequential - Injects in the order of the addresses in the injection file
+          # - random - Injects randomly with a seed
+          mode: random
+
+        # Where to inject the errors for "area_profile" 'modules'
+        # WARNING: Directioning the errors to certain blocks requires extra overhead (pblocks are used)
+        modules:
+          # Even with a narrowed down target, multiple possible addresses for injection will exist
+          # These two parameters determine the address selection:
+          # - weighted - Injects in respecting the priority weights
+          # - random - Injects randomly with a seed
+          # - round_robin - Alternates through the modules. One address per module
+          module_mode: round_robin
+
+          # Within the module, which target (config or reg) should be hit
+          # - sequential - Injects in order 
+          # - random - Injects randomly with a seed
+          target_mode: sequential
+
+          # Weights for each target
+          # Example: lsu+controller+alu with 2-3-1
+          # For each 1 injection in the alu, there'll be 3 in the controller and 2 in the lsu
+          weights: 1-1-1
+
+          # Determines a seed for random/round_robin. Defaults to the run's seed using 'null'
+
+          targets:                  
+            alu: on
+            branch_predictor: on # (*7)
+            multiplier: off # (*4)
+            controller: off
+            decoder: off
+            lsu: off
+            if_stage: off
+            id_stage: off
+            wb_stage: off
+            prefetch_buffer: off
+            fault_manager: off
+            # TODO - implement more places
+        
+        # Provides a TargetPool file in injection order
+        target_list:
+          pool_file: fi/profiles/area/examples/sample_pool.yaml
+
+        # Manually provide the path to an external Area Profile
+        input:
+          profile_path: fi/profiles/area/device.py
+
+    # Fault Manager Specifics
+    fault_manager:
+      rst_on_major: off # Should the system reset when a major error is detected
+      wait_sleep_before_rst: on # Upon a reset, should the system wait for the pipeline to complete and flush itself
+    
+    #Register M-of-N Specifics
+    reg_m_of_n:
+      m_of_n_N: 3 # Choose how many instancies of redundancy will be created
+      m_of_n_M: null # How many need to be equal to not generate a major error (max is 'm_of_n_N'). 'null' equals majority.
+      
+      m_of_n_seed: null # Leave as 'null' to use the default run seed
+      m_of_n_percentage: 0 # Enables M-of-N on a certain random percentage of registers. If override is 'on', this is ignored
+
+      # When a major error occours (there is no quorum among the N instancies)
+      # the registers hold the last correct value
+      hold_on_major: off
+
+      # Apply M-of-N in certain registers
+      # If override is 'on', this is ignored
+      target:
+        fault_mgr: off
+        dummy_instr: off
+        lockstep: off
+        ibex_top: off # Top module from ibex
+        ibex_core: off # Second Ibex module
+        load_store_unit: off
+        prefetch_buffer: off
+        controller: off
+        cs_registers: off
+        csr: off
+        decoder: off
+        fetch_fifo: off
+        id_stage: off # Only the top ID module, it does not check submodules. ALU result goes here
+        if_stage: off # Only the top IF module, it does not check submodules
+        wb_stage: off # Only the top WB module, it does not check submodules
+      
+      # Provide a "fatori_reg_mon.svh" file that overrides the previous settings
+      # In Fatori-V/settings.py specify the location in 'MON_REG_FILE_LOC'
+      override: off
+
+    #Register M-of-N Specifics
+    logic_m_of_n:
+      m_of_n_N: 3 # Choose how many instancies of redundancy will be created
+      m_of_n_M: null # How many need to be equal to not generate a major error (max is 'm_of_n_N'). 'null' equals majority.
+
+      # When a major error occours (there is no quorum among the N instancies)
+      # the registers hold the last correct value
+      hold_on_major: off
+      
+      # When there are MoN targets, inside MoN targets, only apply MoN to the upper one
+      # blocking MoN cascades.
+      block_recursive: off
+
+      # Logic blocks to apply M-of-N
+      target:
+        load_store_unit: off
+        controller: off
+        decoder: off
+        if_stage: off
+        alu: off
+        multiplier: off # Will only work if multiplication is enabled
+      
+      # Provide a "fatori_logic_mon.svh" file that overrides the previous settings
+      # In Fatori-V/settings.py specify the location in 'MON_LOGIC_FILE_LOC'
+      override: off
+      
+    #Self-Testing Specifics
+    self-testing:
+
+      # - avoid - Makes the target look busy, so that the decoder does not use it
+      # - abort - If a real instruction arrives, abort the test
+      # - hold - Once a test is running, hold the pipeline until it finnishes
+      policy: abort
+
+      spacing: 10 # minimum spacing between tests. It will try to launch a test once in every 'spacing' clock cycles
+
+      # Logic blocks to apply M-of-N
+      target:
+        load_store_unit: off
+        pc_logic: off
+        alu: off
+        multiplier: off # Will only work if multiplication is enabled  
+
+  # Metrics Collection Specifics
+  metrics:
+    ibex_hpmc_num: null  # null = auto, or specify 0-10
+    ibex_hpmc_width: null  # null = auto, or specify 1-64
+    
+    # Custom FI layer override - defines the amount of FT counters created
+    # Normally auto-set from level: 0→no layer, 2→1, 3→2, 4→3, 5→4
+    custom_fi_layer_override: null  # null = auto, or specify 0-4
+
 
 #######################################################################################################################################
 #-------------------------------------------------------------------------------------------------------------------------------------#

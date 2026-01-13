@@ -1,0 +1,13 @@
+#ifndef H_IOB_BSP_CONF_H
+#define H_IOB_BSP_CONF_H
+
+#define IOB_BSP_AXI_ID_W 4
+#define IOB_BSP_AXI_LEN_W 8
+#define IOB_BSP_AXI_ADDR_W 30
+#define IOB_BSP_AXI_DATA_W 32
+#define IOB_BSP_BAUD 115200
+#define IOB_BSP_FREQ 60000000
+#define IOB_BSP_XILINX 1
+#define IOB_BSP_VERSION 0x0081
+
+#endif // H_IOB_BSP_CONF_H

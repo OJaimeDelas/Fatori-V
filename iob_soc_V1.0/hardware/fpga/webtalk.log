@@ -1,0 +1,13 @@
+#-----------------------------------------------------------
+# Webtalk v2020.2 (64-bit)
+# SW Build 3064766 on Wed Nov 18 09:12:47 MST 2020
+# IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
+# Start of session at: Sat Nov 22 17:13:30 2025
+# Process ID: 1174127
+# Current directory: /home/jaguiar/jaguiar/iob_soc_V1.0/hardware/fpga
+# Command line: wbtcv -mode batch -source /home/jaguiar/jaguiar/iob_soc_V1.0/hardware/fpga/.Xil/Vivado-1173928-sericaia/webtalk/labtool_webtalk.tcl -notrace
+# Log file: /home/jaguiar/jaguiar/iob_soc_V1.0/hardware/fpga/webtalk.log
+# Journal file: /home/jaguiar/jaguiar/iob_soc_V1.0/hardware/fpga/webtalk.jou
+#-----------------------------------------------------------
+source /home/jaguiar/jaguiar/iob_soc_V1.0/hardware/fpga/.Xil/Vivado-1173928-sericaia/webtalk/labtool_webtalk.tcl -notrace
+INFO: [Common 17-206] Exiting Webtalk at Sat Nov 22 17:13:32 2025...

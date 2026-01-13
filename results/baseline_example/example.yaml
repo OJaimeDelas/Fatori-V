@@ -50,6 +50,7 @@ run:
     name: "baseline_example" # Name of the run, used for file name generation and identification
     description: "Simple Ibex, no FTM, Hello World, no FI"
     seed: 123456 # Used for reproducibility. Will be used by any feature that requires a seed. It's possible to override in SPECIFIC CONFIGURATION
+    run: sim # 'sim'/'fpga' changes the RegFile and the execution
 
   hardware:
     # Will influence the fault injection system. PY2HWSW board requesites must be met. (*1)
@@ -74,7 +75,8 @@ general:
     # Enable/Disable Fault Tolerance Mechanisms
     # Must also enable 'fault_manager' first
     fault_tolerance_mechanisms:
-      tmr: off
+      register_m_of_n: off
+      logic_m_of_n: off
       self_testing: off
       lockstep: off
       shadow_csrs: off # (*2)
@@ -112,24 +114,52 @@ general:
       enable: on
       timeout_s: 120 # Set -1 for infinite/until break
       injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      metrics:
+        exec_time: on
+        n_clk_cycles: on
+        ipc: on
+        min_faults: on
+        maj_faults: on
+        # ADD MORE METRICS HERE
 
     # Usual benchmark for space aplications
     startrek:
       enable: off
       timeout_s: 120 # Set -1 for infinite/until break
       injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      metrics:
+        exec_time: on
+        n_clk_cycles: on
+        ipc: on
+        min_faults: on
+        maj_faults: on
+        # ADD MORE METRICS HERE
 
     coremark:
       enable: off
       timeout_s: 120 # Set -1 for infinite/until break
       iterations: 20000
       injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      metrics:
+        exec_time: on
+        n_clk_cycles: on
+        ipc: on
+        min_faults: on
+        maj_faults: on
+        # ADD MORE METRICS HERE
 
     dhrystone:
       enable: off
       timeout_s: 120 # Set -1 for infinite/until break
       loops: 500000
       injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      metrics:
+        exec_time: on
+        n_clk_cycles: on
+        ipc: on
+        min_faults: on
+        maj_faults: on
+        # ADD MORE METRICS HERE
 
     # ADD MORE BENCHMARKS HERE
 
@@ -367,26 +397,29 @@ specifics:
     rst_on_major: off # Should the system reset when a major error is detected
     wait_sleep_before_rst: on # Upon a reset, should the system wait for the pipeline to complete and flush itself
   
-  #TMR Specifics
-  tmr:
-    tmr_seed: null # Leave as 'null' to use the default run seed
-    tmr_percentage: 0 # Enables TMR on a certain random percentage of registers. If override is 'on', this is ignored
+  #Register M-of-N Specifics
+  reg_m_of_n:
+    m_of_n_N: 3 # Choose how many instancies of redundancy will be created
+    m_of_n_M: null # How many need to be equal to not generate a major error (max is 'm_of_n_N'). 'null' equals majority.
+    
+    m_of_n_seed: null # Leave as 'null' to use the default run seed
+    m_of_n_percentage: 0 # Enables M-of-N on a certain random percentage of registers. If override is 'on', this is ignored
 
-    # If 'on' you should manually provide a "forced_enabled_files.json" with the registers you want TMR applied
-    # Go to "tmr_config.py" to check a .json example to understand the format
-    override: off
+    # When a major error occours (there is no quorum among the N instancies)
+    # the registers hold the last correct value
+    hold_on_major: off
 
-    # Apply TMR in certain registers
+    # Apply M-of-N in certain registers
     # If override is 'on', this is ignored
     target:
-      fault_mgr.sv: off
+      fault_mgr: off
       dummy_instr: off
       lockstep: off
       ibex_top: off # Top module from ibex
       ibex_core: off # Second Ibex module
       load_store_unit: off
       prefetch_buffer: off
-      controller.sv: off
+      controller: off
       cs_registers: off
       csr: off
       decoder: off
@@ -395,6 +428,53 @@ specifics:
       if_stage: off # Only the top IF module, it does not check submodules
       wb_stage: off # Only the top WB module, it does not check submodules
     
+    # Provide a "fatori_reg_mon.svh" file that overrides the previous settings
+    # In Fatori-V/settings.py specify the location in 'MON_REG_FILE_LOC'
+    override: off
+
+  #Register M-of-N Specifics
+  logic_m_of_n:
+    m_of_n_N: 3 # Choose how many instancies of redundancy will be created
+    m_of_n_M: null # How many need to be equal to not generate a major error (max is 'm_of_n_N'). 'null' equals majority.
+
+    # When a major error occours (there is no quorum among the N instancies)
+    # the registers hold the last correct value
+    hold_on_major: off
+    
+    # When there are MoN targets, inside MoN targets, only apply MoN to the upper one
+    # blocking MoN cascades.
+    block_recursive: off
+
+    # Logic blocks to apply M-of-N
+    target:
+      load_store_unit: off
+      controller: off
+      decoder: off
+      if_stage: off
+      alu: off
+      multiplier: off # Will only work if multiplication is enabled
+    
+    # Provide a "fatori_logic_mon.svh" file that overrides the previous settings
+    # In Fatori-V/settings.py specify the location in 'MON_LOGIC_FILE_LOC'
+    override: off
+    
+  #Self-Testing Specifics
+  self-testing:
+
+    # - avoid - Makes the target look busy, so that the decoder does not use it
+    # - abort - If a real instruction arrives, abort the test
+    # - hold - Once a test is running, hold the pipeline until it finnishes
+    policy: abort
+
+    spacing: 10 # minimum spacing between tests. It will try to launch a test once in every 'spacing' clock cycles
+
+    # Logic blocks to apply M-of-N
+    target:
+      load_store_unit: off
+      pc_logic: off
+      alu: off
+      multiplier: off # Will only work if multiplication is enabled  
+
   # Ibex Architecture Specifics
   ibex:
     regfile: fpga # (*6) ff; fpga; file_latch;
@@ -411,7 +491,8 @@ specifics:
       granularity: 0
       num_regions: 4
 
-  
+  # Benchmarks Specifics
+  benchmarks:
 
   # Result Logging Specifics
   logging:

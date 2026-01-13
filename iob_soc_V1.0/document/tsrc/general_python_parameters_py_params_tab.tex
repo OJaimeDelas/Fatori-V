@@ -1,0 +1,25 @@
+name & iob\_system & Name of the generated System \\ \hline
+\rowcolor{iob-blue}
+init\_mem & True & If should initialize memories from data in .hex files \\ \hline
+use\_intmem & True & If should include an internal memory \\ \hline
+\rowcolor{iob-blue}
+use\_extmem & False & If should use external memory (usually DDR) \\ \hline
+use\_bootrom & True & If should include a bootrom \\ \hline
+\rowcolor{iob-blue}
+use\_peripherals & True & If should include peripherals \\ \hline
+use\_ethernet & False & If should setup ethernet ports and testbenches \\ \hline
+\rowcolor{iob-blue}
+addr\_w & 32 & CPU address width \\ \hline
+data\_w & 32 & CPU data width \\ \hline
+\rowcolor{iob-blue}
+mem\_addr\_w & 18 & Memory address width \\ \hline
+bootrom\_addr\_w & 12 & Bootrom address width \\ \hline
+\rowcolor{iob-blue}
+fw\_baseaddr & 0 & Firmware base address \\ \hline
+fw\_addr\_w & 18 & Firmware address width \\ \hline
+\rowcolor{iob-blue}
+include\_tester & True & If should include a tester system \\ \hline
+cpu & iob\_vexriscv & CPU selection.
+        If set to "none", the iob\_system will export an `iob\_s` port for an external
+        CPU. This port will give direct access to the system's peripherals. The internal
+        memories and crossbar will be removed. \\ \hline

@@ -1,0 +1,7 @@
+#ifndef H_IOB_CLOCK_CONF_H
+#define H_IOB_CLOCK_CONF_H
+
+#define IOB_CLOCK_CLK_PERIOD 10
+#define IOB_CLOCK_VERSION 0x0081
+
+#endif // H_IOB_CLOCK_CONF_H

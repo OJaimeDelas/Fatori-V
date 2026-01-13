@@ -1,0 +1,13 @@
+#ifndef H_IOB_IBEX_CONF_H
+#define H_IOB_IBEX_CONF_H
+
+#define IOB_IBEX_AXI_ID_W 0
+#define IOB_IBEX_AXI_ADDR_W 0
+#define IOB_IBEX_AXI_DATA_W 0
+#define IOB_IBEX_AXI_LEN_W 0
+#define IOB_IBEX_IBEX_ADDR_W 0
+#define IOB_IBEX_IBEX_DATA_W 0
+#define IOB_IBEX_IBEX_INTG_DATA_W 0
+#define IOB_IBEX_VERSION 0x0001
+
+#endif // H_IOB_IBEX_CONF_H

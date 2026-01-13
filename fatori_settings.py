@@ -1,123 +1,69 @@
 # =============================================================================
-# FATORI-V • Controller Settings
-# File: settings.py
+# FATORI-V • Global Settings
+# File: fatori_settings.py
 # -----------------------------------------------------------------------------
-# Centralized paths and defaults for the top-level runner (fatori-v.py).
-#
-# Responsibilities
-#   • Define authoritative top-level defaults (device, baud, ACME/EBD paths,
-#     runs/results folders). The controller passes these explicitly to the
-#     lower layers to avoid ambiguity when similar defaults also exist under
-#     fi/settings.py.
-#   • Provide stable locations for the runs/ folder (YAML inputs) and results/
-#     folder (per-run outputs mirrored for quick inspection).
-#   • Enumerate finish-line hints so the controller can chain runs without
-#     altering fi.fault_injection behavior.
-#   • Expose terminal controls for how the FI console should present itself
-#     when invoked by the controller (simple header; hide help blocks).
-#
-# Notes
-#   • All paths are resolved relative to fatori-v.py at runtime.
-#   • The FI framework keeps writing its own detailed logs under
-#     results/<run>/<session>/ as before. The controller does not replace
-#     that log; it only mirrors key artifacts to the top-level results folder.
-# =============================================================================
+# Defines global paths and global-level defaults for FATORI-V runs.
+#=============================================================================
+# All paths relative to the repository root '. = Fatori-v/'
 
-from __future__ import annotations
+# -----------------------------------------------------------------------------
+# Base project directories (relative to the repository root)
+# -----------------------------------------------------------------------------
+RUNS_DIR_NAME: str         = "runs"         # where run YAML files live
+RESULTS_DIR_NAME: str      = "results"      # where per-run results are stored
+GEN_DIR_NAME: str          = "gen"          # where generated headers are kept
+BUILD_DIR_NAME: str        = "build"        # build artefacts and user inputs
+HARDWARE_DIR_NAME: str     = "hardware"     # RTL overrides on top of architecture
+ARCHITECTURE_DIR_NAME: str = "architecture" # reference architecture submodule
+FI_DIR_NAME: str           = "fi"           # FI console and its build artefacts
 
-# --- Notes
+# -----------------------------------------------------------------------------
+# Run defaults (identification, seeds, sessions)
+# -----------------------------------------------------------------------------
+DEFAULT_GLOBAL_SEED = None          # if None, a new random seed is generated
 
-MON_REG_FILE_LOC: str = "build/override/" # "fatori_reg_mon.svh" override. Must be enabled in yaml
-MON_LOGIC_FILE_LOC: str = "build/override/" # "fatori_logic_mon.svh" override. Must be enabled in yaml
+# -----------------------------------------------------------------------------
+# Header / defines 
+# -----------------------------------------------------------------------------
+GEN_CPY_TO_RESULTS: bool  = True  # Copies generated files to results/<run>/gen
 
-# --- End Notes
+# -----------------------------------------------------------------------------
+# Vivado
+# -----------------------------------------------------------------------------
+VIVADO_BIN: str         = "vivado" # Vivado executable name or path
+
+# -----------------------------------------------------------------------------
+# Board Conections 
+# -----------------------------------------------------------------------------
+DEFAULT_DEVICE: str = "/dev/ttyUSB0"    # default UART for Fatori-V
+DEFAULT_FPGA_TX_PIN: str = "D20"         # default UART tx pin for Fatori-V
+DEFAULT_FPGA_RX_PIN: str = "C19"         # default UART tx pin for Fatori-V
+DEFAULT_BAUDRATE: int   = 115_200       # default baudrate for Fatori-V
 
 
-
-# --- Top-level folders (relative to fatori-v.py location) --------------------
-RUNS_DIR_NAME: str = "runs"        # where YAML run files live
-RESULTS_DIR_NAME: str = "results"  # where the controller mirrors artifacts
-
-# --- Defines output control ---------------------------------------------------
-# Where generated define headers (e.g., fatori_defines.svh and feature headers)
-# are written by default. This is also where downstream RTL expects them.
-# May be an absolute or relative path; relative is resolved from fatori-v/.
-DEFINES_FINAL_PATH: str = "."
-# If True, a second copy of all generated headers is mirrored to
-# results/<run_id>/gen for archival alongside run artifacts.
-DEFINES_COPY_TO_RESULTS: bool = True
-# Subdirectory name under results/<run_id> to store the mirrored headers.
-DEFINES_RESULTS_SUBDIR: str = "gen"
-
-# --- Serial defaults (authoritative at the top layer) ------------------------
-DEFAULT_SEM_DEVICE: str = "/dev/ttyUSB0"
-DEFAULT_BAUDRATE: int = 1_250_000
-
-# Path to the board module rectangles map (YAML). Used by fatori-v.py to
-# generate pblock TCL and by area 'module' profile to resolve rectangles.
-BOARD_MODULE_MAP_PATH: str = "fatori-v/scripts/pblocks/boards/xcku040/modules.yaml"
-
-# Generate a per-run Vivado TCL with the enabled pblocks. The TCL will be
-# written under results/<run_id>/pblocks_<run_id>.tcl. Running Vivado is
-# not automated at this layer; the TCL can be sourced manually or by CI.
-GENERATE_PBLOCK_TCL: bool = True
-
-# --- FI / ACME integration defaults -----------------------------------------
-# Essential Bits default path for ACME-backed area profiles (confirmed path).
-EBD_DEFAULT_PATH: str = "fi/build/design.ebd"
-
-# ACME cache directory (device/module address lists).
-ACME_CACHE_DIR: str = "fi/build/acme"
-
-# Default board key for ACME device maps (UltraScale KU040).
-ACME_DEFAULT_BOARD: str = "xcku040"
-
-# --- Sessions / seeds --------------------------------------------------------
-DEFAULT_SESSION_LABEL: str = "ctrl01"
-# If YAML lacks a seed, None here means the controller will generate
-# a random 64-bit seed per run; otherwise set a fixed integer to pin runs.
-DEFAULT_GLOBAL_SEED = None
-
-# --- Console finish detection ------------------------------------------------
-# FINISH_LINE_HINTS lists substrings that indicate a campaign finished.
-# fatori-v.py streams FI stdout and, on seeing any of these, sends "exit"
-# so fi.fault_injection can close cleanly and flush its log. This avoids
-# switching to manual mode between YAML runs.
-FINISH_LINE_HINTS = (
-    "] finished.",  # canonical suffix printed by fi/fault_injection watcher
-)
-
-# --- Artifact names mirrored into results/<run_id>/ --------------------------
+# -----------------------------------------------------------------------------
+# Result layout (within results/<run>/)
+# -----------------------------------------------------------------------------
 TOP_COPY_INJECTION_LOG: str = "injection_log.txt"
-TOP_COPY_ACME_LIST: str = "acme_injection_addresses.txt"
-TOP_SUBDIR_RUN_YAML: str = "run_yaml"
-TOP_SUBDIR_REPORTS: str = "reports"
-TOP_SUBDIR_PLOTS: str = "plots"
+TOP_COPY_ACME_LIST: str     = "acme_injection_addresses.txt"
 
-# --- Terminal controls for FI when launched by the controller --------------
-# The controller requests the FI console to use a simpler header and hide
-# help-heavy sections. These flags are translated into CLI options passed
-# to "python -m fi.fault_injection".
-FI_HEADER_STYLE_FOR_RUNS: str = "simple"  # 'simple' or 'fancy'
-FI_HIDE_CONSOLE_COMMANDS: bool = True
-FI_HIDE_SEM_CHEATSHEET: bool = True
-FI_HIDE_START_MODE: bool = True
+TOP_SUBDIR_RUN_YAML: str = "."  # optional place to mirror the YAML
+TOP_SUBDIR_REPORTS: str  = "reports"   # build-time reports
+TOP_SUBDIR_PLOTS: str    = "plots"     # plots derived from metrics
 
-# --- Optional automatic application of generated pblocks.tcl -----------------
-# If True, the controller will attempt to launch Vivado in batch mode and
-# source the generated fatori_pblocks.tcl after it is created. When False,
-# the script only prints clear instructions about how to source it manually.
-APPLY_PBLOCKS_TCL: bool = False
+# -----------------------------------------------------------------------------
+# FI console and SEM
+# -----------------------------------------------------------------------------
+DEFAULT_SEM_DEVICE: str = "/dev/ttyUSB0"   # default UART for SEM
+DEFAULT_SEM_FPGA_TX_PIN: str = "F18" # default UART tx pin for SEM console
+DEFAULT_SEM_FPGA_RX_PIN: str = "G19" # default UART rx pin for SEM console
+DEFAULT_SEM_BAUDRATE: int   = 1_250_000    # default baudrate for SEM UART
 
-# Vivado executable to use when APPLY_PBLOCKS_TCL is True.
-VIVADO_BIN: str = "vivado"
+EBD_DEFAULT_PATH: str   = "fi/build/design.ebd"     # default EBD file for ACME
+ACME_CACHE_DIR: str     = "fi/build/acme"           # where ACME caches results
+ACME_DEFAULT_BOARD: str = "xcku040"                 # default board ID for ACME
 
-# Optional absolute/relative path to an .xpr project. If provided, the path is
-# exported as environment variable FATORI_XPR for TCLs that wish to open it.
-# If left as None, the TCL is expected to be sourced inside an already-open
-# project context.
-VIVADO_XPR: str | None = None
-
-# --- Script Locations --------------------------------------------------------
-# All starting at . = FATORI-V/
-MoN_SCRIPT: str =  "./scripts/ftm/mon" # M of N .svh generator 
+FI_HEADER_STYLE_FOR_RUNS: str      = "simple"
+FI_HIDE_CONSOLE_COMMANDS: bool     = True
+FI_HIDE_SEM_CHEATSHEET: bool       = True
+FI_HIDE_START_MODE: bool           = True

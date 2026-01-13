@@ -1,0 +1,3 @@
+`define IOB_UART_DATA_W 32
+`define IOB_UART_RST_POL 1
+`define IOB_UART_VERSION 16'h0081

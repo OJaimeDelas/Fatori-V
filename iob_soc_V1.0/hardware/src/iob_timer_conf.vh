@@ -1,0 +1,3 @@
+`define IOB_TIMER_DATA_W 32
+`define IOB_TIMER_WDATA_W 1
+`define IOB_TIMER_VERSION 16'h0081

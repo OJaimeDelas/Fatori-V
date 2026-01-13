@@ -1,0 +1,29 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+
+.memory         0x0000000000000000       0x50
+                0x0000000000000000                . = 0x0
+ *(.init)
+ .init          0x0000000000000000       0x34 /tmp/ccUaEnZV.o
+                0x0000000000000000                _start
+ *(.text)
+ .text          0x0000000000000034        0x0 /tmp/ccUaEnZV.o
+ *(*)
+ .data          0x0000000000000034        0x0 /tmp/ccUaEnZV.o
+ .bss           0x0000000000000034        0x0 /tmp/ccUaEnZV.o
+ .riscv.attributes
+                0x0000000000000034       0x1a /tmp/ccUaEnZV.o
+                0x0000000000000050                . = ALIGN (0x4)
+ *fill*         0x000000000000004e        0x2 
+                0x0000000000000050                _heap_start = .
+LOAD /tmp/ccUaEnZV.o
+LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/rv32i/ilp32/libgcc.a
+LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libc_nano.a
+LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libnosys.a
+OUTPUT(iob_soc_preboot.elf elf32-littleriscv)

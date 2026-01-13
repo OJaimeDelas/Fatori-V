@@ -1,0 +1,1 @@
+`define IOB_UART_CORE_VERSION 16'h0081

@@ -1,0 +1,19 @@
+ADDR\_W & M & 1 & 32 & 32 & Testbench address bus width. \\ \hline
+\rowcolor{iob-blue}
+DATA\_W & M & 1 & 32 & 39 & Testbench data bus width. \\ \hline
+INIT\_MEM & M & 0 & 1 & 1 & Select if memory is pre-initialized with firmware. Otherwise bootloader will request a firmware transfer and load it into memory. \\ \hline
+\rowcolor{iob-blue}
+USE\_INTMEM & M & 0 & 1 & 1 & Enable internal memory support. \\ \hline
+USE\_EXTMEM & M & 0 & 1 & 1 & Enable external memory support. \\ \hline
+\rowcolor{iob-blue}
+USE\_ETHERNET & M & 0 & 1 & 1 & Updates system wrappers, testbenches, scripts, and makefiles to support ethernet. \\ \hline
+MEM\_ADDR\_W & M & 0 & 15 & 32 & External memory bus address width. \\ \hline
+\rowcolor{iob-blue}
+FW\_BASEADDR & M & 0 & 0 & 0x7FFFFFFF & Firmware address \\ \hline
+FW\_ADDR\_W & M & 0 & 18 & 32 & Width of address space reserved for Firmware. \\ \hline
+\rowcolor{iob-blue}
+RST\_POL & M & 0 & 1 & 1 & Reset signal polarity. \\ \hline
+BOOTROM\_ADDR\_W & M & 1 & 12 & 32 & Bootloader ROM address width (byte addressable). Includes a pre-bootloader that uses the first 128 bytes. Bootloader starts at address 0x80 of this ROM. \\ \hline
+\rowcolor{iob-blue}
+BOARD & M & NA & iob\_aes\_ku040\_db\_g & NA & Default FPGA board \\ \hline
+VERSION & M & NA & 16'h0100 & NA & Product version. This 16-bit macro uses nibbles to represent decimal numbers using their binary values. The two most significant nibbles represent the integral part of the version, and the two least significant nibbles represent the decimal part. For example V12.34 is represented by 0x1234. \\ \hline

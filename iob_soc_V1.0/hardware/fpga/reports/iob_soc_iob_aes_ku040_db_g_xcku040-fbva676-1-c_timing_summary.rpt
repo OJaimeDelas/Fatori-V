@@ -1,0 +1,627 @@
+Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
+----------------------------------------------------------------------------------------------------------------------------
+| Tool Version      : Vivado v.2020.2 (lin64) Build 3064766 Wed Nov 18 09:12:47 MST 2020
+| Date              : Sat Nov 22 17:12:18 2025
+| Host              : pudim-flan running 64-bit Ubuntu 22.04.5 LTS
+| Command           : report_timing_summary -file reports/iob_soc_iob_aes_ku040_db_g_xcku040-fbva676-1-c_timing_summary.rpt
+| Design            : iob_soc_iob_aes_ku040_db_g
+| Device            : xcku040-fbva676
+| Speed File        : -1  PRODUCTION 1.25 12-04-2018
+| Temperature Grade : C
+----------------------------------------------------------------------------------------------------------------------------
+
+Timing Summary Report
+
+------------------------------------------------------------------------------------------------
+| Timer Settings
+| --------------
+------------------------------------------------------------------------------------------------
+
+  Enable Multi Corner Analysis               :  Yes
+  Enable Pessimism Removal                   :  Yes
+  Pessimism Removal Resolution               :  Nearest Common Node
+  Enable Input Delay Default Clock           :  No
+  Enable Preset / Clear Arcs                 :  No
+  Disable Flight Delays                      :  No
+  Ignore I/O Paths                           :  No
+  Timing Early Launch at Borrowing Latches   :  No
+  Borrow Time for Max Delay Exceptions       :  Yes
+  Merge Timing Exceptions                    :  Yes
+
+  Corner  Analyze    Analyze    
+  Name    Max Paths  Min Paths  
+  ------  ---------  ---------  
+  Slow    Yes        Yes        
+  Fast    Yes        Yes        
+
+
+
+check_timing report
+
+Table of Contents
+-----------------
+1. checking no_clock (0)
+2. checking constant_clock (0)
+3. checking pulse_width_clock (0)
+4. checking unconstrained_internal_endpoints (0)
+5. checking no_input_delay (1)
+6. checking no_output_delay (1)
+7. checking multiple_clock (0)
+8. checking generated_clocks (0)
+9. checking loops (0)
+10. checking partial_input_delay (0)
+11. checking partial_output_delay (0)
+12. checking latch_loops (0)
+
+1. checking no_clock (0)
+------------------------
+ There are 0 register/latch pins with no clock.
+
+
+2. checking constant_clock (0)
+------------------------------
+ There are 0 register/latch pins with constant_clock.
+
+
+3. checking pulse_width_clock (0)
+---------------------------------
+ There are 0 register/latch pins which need pulse_width check
+
+
+4. checking unconstrained_internal_endpoints (0)
+------------------------------------------------
+ There are 0 pins that are not constrained for maximum delay.
+
+ There are 0 pins that are not constrained for maximum delay due to constant clock.
+
+
+5. checking no_input_delay (1)
+------------------------------
+ There is 1 input port with no input delay specified. (HIGH)
+
+ There are 0 input ports with no input delay but user has a false path constraint.
+
+
+6. checking no_output_delay (1)
+-------------------------------
+ There is 1 port with no output delay specified. (HIGH)
+
+ There are 0 ports with no output delay but user has a false path constraint
+
+ There are 0 ports with no output delay but with a timing clock defined on it or propagating through it
+
+
+7. checking multiple_clock (0)
+------------------------------
+ There are 0 register/latch pins with multiple clocks.
+
+
+8. checking generated_clocks (0)
+--------------------------------
+ There are 0 generated clocks that are not connected to a clock source.
+
+
+9. checking loops (0)
+---------------------
+ There are 0 combinational loops in the design.
+
+
+10. checking partial_input_delay (0)
+------------------------------------
+ There are 0 input ports with partial input delay specified.
+
+
+11. checking partial_output_delay (0)
+-------------------------------------
+ There are 0 ports with partial output delay specified.
+
+
+12. checking latch_loops (0)
+----------------------------
+ There are 0 combinational latch loops in the design through latch input
+
+
+
+------------------------------------------------------------------------------------------------
+| Design Timing Summary
+| ---------------------
+------------------------------------------------------------------------------------------------
+
+    WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
+    -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
+      1.743        0.000                      0                24163        0.030        0.000                      0                24163        0.600        0.000                       0                  9791  
+
+
+All user specified timing constraints are met.
+
+
+------------------------------------------------------------------------------------------------
+| Clock Summary
+| -------------
+------------------------------------------------------------------------------------------------
+
+Clock                    Waveform(ns)         Period(ns)      Frequency(MHz)
+-----                    ------------         ----------      --------------
+clk                      {0.000 2.000}        4.000           250.000         
+  clk_out1_clock_wizard  {0.000 8.500}        17.000          58.824          
+
+
+------------------------------------------------------------------------------------------------
+| Intra Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+Clock                        WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints     WPWS(ns)     TPWS(ns)  TPWS Failing Endpoints  TPWS Total Endpoints  
+-----                        -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------     --------     --------  ----------------------  --------------------  
+clk                                                                                                                                                                        0.600        0.000                       0                     1  
+  clk_out1_clock_wizard        1.743        0.000                      0                21510        0.030        0.000                      0                21510        7.414        0.000                       0                  9790  
+
+
+------------------------------------------------------------------------------------------------
+| Inter Clock Table
+| -----------------
+------------------------------------------------------------------------------------------------
+
+From Clock    To Clock          WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints  
+----------    --------          -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------  
+
+
+------------------------------------------------------------------------------------------------
+| Other Path Groups Table
+| -----------------------
+------------------------------------------------------------------------------------------------
+
+Path Group             From Clock             To Clock                   WNS(ns)      TNS(ns)  TNS Failing Endpoints  TNS Total Endpoints      WHS(ns)      THS(ns)  THS Failing Endpoints  THS Total Endpoints  
+----------             ----------             --------                   -------      -------  ---------------------  -------------------      -------      -------  ---------------------  -------------------  
+**async_default**      clk_out1_clock_wizard  clk_out1_clock_wizard       12.028        0.000                      0                 2653        1.039        0.000                      0                 2653  
+
+
+------------------------------------------------------------------------------------------------
+| Timing Details
+| --------------
+------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk
+  To Clock:  clk
+
+Setup :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+Hold  :           NA  Failing Endpoints,  Worst Slack           NA  ,  Total Violation           NA
+PW    :            0  Failing Endpoints,  Worst Slack        0.600ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         clk
+Waveform(ns):       { 0.000 2.000 }
+Period(ns):         4.000
+Sources:            { c0_sys_clk_clk_p_i }
+
+Check Type        Corner  Lib Pin          Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location        Pin
+Min Period        n/a     PLLE3_ADV/CLKIN  n/a            1.250         4.000       2.750      PLLE3_ADV_X0Y3  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKIN
+Low Pulse Width   Fast    PLLE3_ADV/CLKIN  n/a            1.400         2.000       0.600      PLLE3_ADV_X0Y3  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKIN
+High Pulse Width  Slow    PLLE3_ADV/CLKIN  n/a            1.400         2.000       0.600      PLLE3_ADV_X0Y3  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKIN
+
+
+
+---------------------------------------------------------------------------------------------------
+From Clock:  clk_out1_clock_wizard
+  To Clock:  clk_out1_clock_wizard
+
+Setup :            0  Failing Endpoints,  Worst Slack        1.743ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        0.030ns,  Total Violation        0.000ns
+PW    :            0  Failing Endpoints,  Worst Slack        7.414ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             1.743ns  (required time - arrival time)
+  Source:                 iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o_reg[22]/C
+                            (rising edge-triggered cell FDRE clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Destination:            iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1/WEA[0]
+                            (rising edge-triggered cell RAMB36E2 clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Path Group:             clk_out1_clock_wizard
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            17.000ns  (clk_out1_clock_wizard rise@17.000ns - clk_out1_clock_wizard rise@0.000ns)
+  Data Path Delay:        14.297ns  (logic 3.612ns (25.264%)  route 10.685ns (74.736%))
+  Logic Levels:           21  (CARRY8=4 LUT3=3 LUT4=3 LUT5=4 LUT6=7)
+  Clock Path Skew:        -0.198ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    4.150ns = ( 21.150 - 17.000 ) 
+    Source Clock Delay      (SCD):    4.731ns
+    Clock Pessimism Removal (CPR):    0.383ns
+  Clock Uncertainty:      0.069ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.119ns
+    Phase Error              (PE):    0.000ns
+  Clock Net Delay (Source):      2.291ns (routing 0.396ns, distribution 1.895ns)
+  Clock Net Delay (Destination): 1.948ns (routing 0.365ns, distribution 1.583ns)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_out1_clock_wizard rise edge)
+                                                      0.000     0.000 r  
+    H22                                               0.000     0.000 r  c0_sys_clk_clk_p_i (IN)
+                         net (fo=0)                   0.000     0.000    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/I
+    HPIOBDIFFINBUF_X0Y36 DIFFINBUF (Prop_DIFFINBUF_HPIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.556     0.556 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/DIFFINBUF_INST/O
+                         net (fo=1, routed)           0.104     0.660    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/OUT
+    H22                  IBUFCTRL (Prop_IBUFCTRL_HPIOB_I_O)
+                                                      0.000     0.660 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/IBUFCTRL_INST/O
+                         net (fo=1, routed)           1.082     1.742    clk_250_to_100_MHz/clock_wizard_inst/clk_in1_clock_wizard
+    PLLE3_ADV_X0Y3       PLLE3_ADV (Prop_PLLE3_ADV_CLKIN_CLKOUT0)
+                                                      0.068     1.810 r  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0
+                         net (fo=1, routed)           0.529     2.339    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
+    BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.101     2.440 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
+    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        2.291     4.731    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/clk
+    SLICE_X15Y80         FDRE                                         r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o_reg[22]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X15Y80         FDRE (Prop_CFF_SLICEM_C_Q)
+                                                      0.138     4.869 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o_reg[22]/Q
+                         net (fo=46, routed)          0.545     5.414    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/gen_rdata_mux_check.u_prim_onehot_enc_raddr_b/rf_raddr_b[2]
+    SLICE_X14Y71         LUT5 (Prop_D5LUT_SLICEL_I1_O)
+                                                      0.260     5.674 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/gen_rdata_mux_check.u_prim_onehot_enc_raddr_b/data_o[63]_i_39/O
+                         net (fo=39, routed)          0.791     6.465    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/gen_rdata_mux_check.raddr_onehot_b[15]
+    SLICE_X12Y58         LUT4 (Prop_G6LUT_SLICEL_I2_O)
+                                                      0.089     6.554 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_13/O
+                         net (fo=1, routed)           0.241     6.795    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_13_n_0
+    SLICE_X12Y58         LUT6 (Prop_H6LUT_SLICEL_I0_O)
+                                                      0.218     7.013 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_8/O
+                         net (fo=1, routed)           0.398     7.411    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_8_n_0
+    SLICE_X18Y59         LUT6 (Prop_H6LUT_SLICEM_I5_O)
+                                                      0.173     7.584 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_3/O
+                         net (fo=1, routed)           0.266     7.850    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_3_n_0
+    SLICE_X19Y61         LUT5 (Prop_C6LUT_SLICEL_I1_O)
+                                                      0.219     8.069 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_1/O
+                         net (fo=10, routed)          0.746     8.815    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/mem_reg[1][9]
+    SLICE_X15Y92         LUT6 (Prop_D6LUT_SLICEM_I4_O)
+                                                      0.092     8.907 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/i___5_i_12__0/O
+                         net (fo=3, routed)           0.569     9.476    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_operand_b_ex[8]
+    SLICE_X14Y103        LUT3 (Prop_B6LUT_SLICEL_I1_O)
+                                                      0.053     9.529 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/adder_result_ext_o_carry__0_i_15/O
+                         net (fo=1, routed)           0.000     9.529    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/data_o_reg[15][1]
+    SLICE_X14Y103        CARRY8 (Prop_CARRY8_SLICEL_S[1]_CO[7])
+                                                      0.408     9.937 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__0/CO[7]
+                         net (fo=1, routed)           0.030     9.967    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__0_n_0
+    SLICE_X14Y104        CARRY8 (Prop_CARRY8_SLICEL_CI_CO[7])
+                                                      0.025     9.992 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__1/CO[7]
+                         net (fo=1, routed)           0.030    10.022    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__1_n_0
+    SLICE_X14Y105        CARRY8 (Prop_CARRY8_SLICEL_CI_O[0])
+                                                      0.132    10.154 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__2/O[0]
+                         net (fo=88, routed)          1.394    11.548    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[8].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/alu_adder_result_ex_o[22]
+    SLICE_X2Y139         LUT6 (Prop_G6LUT_SLICEL_I0_O)
+                                                      0.166    11.714 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[8].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_141/O
+                         net (fo=1, routed)           0.475    12.189    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/g_pmp.pmp_i/core_outputs_q_reg[1][data_req]_srl2_i_13[3]
+    SLICE_X3Y139         CARRY8 (Prop_CARRY8_SLICEL_DI[3]_CO[7])
+                                                      0.432    12.621 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/g_pmp.pmp_i/core_outputs_q_reg[1][data_req]_srl2_i_42/CO[7]
+                         net (fo=1, routed)           0.498    13.119    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[8].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_55_1[0]
+    SLICE_X5Y135         LUT5 (Prop_D5LUT_SLICEM_I4_O)
+                                                      0.171    13.290 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[8].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_13/O
+                         net (fo=5, routed)           0.712    14.002    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[10].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/g_access_check[2].g_regions[8].region_match_all_reg[2]_70
+    SLICE_X15Y136        LUT6 (Prop_G6LUT_SLICEM_I1_O)
+                                                      0.168    14.170 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[10].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_55/O
+                         net (fo=4, routed)           0.095    14.265    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_7
+    SLICE_X15Y136        LUT4 (Prop_D5LUT_SLICEM_I2_O)
+                                                      0.193    14.458 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_24/O
+                         net (fo=2, routed)           0.235    14.693    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[14].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_3
+    SLICE_X16Y136        LUT3 (Prop_B6LUT_SLICEL_I1_O)
+                                                      0.053    14.746 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[14].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_7/O
+                         net (fo=2, routed)           0.258    15.004    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/data_o[0]_i_5__5
+    SLICE_X15Y135        LUT5 (Prop_E6LUT_SLICEM_I1_O)
+                                                      0.225    15.229 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_3/O
+                         net (fo=4, routed)           0.582    15.811    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_10
+    SLICE_X11Y118        LUT6 (Prop_H6LUT_SLICEM_I3_O)
+                                                      0.055    15.866 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_1/O
+                         net (fo=17, routed)          0.916    16.782    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o_reg[0]_38
+    SLICE_X3Y99          LUT3 (Prop_D6LUT_SLICEL_I2_O)
+                                                      0.090    16.872 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[0]_i_2__34/O
+                         net (fo=6, routed)           0.558    17.430    iob_soc_memwrapper/iob_core_inst/iob_axi_full_xbar/iob_axi_merge_0/busy_write_reg_re/reg0/data_o_reg[0]_7
+    SLICE_X3Y79          LUT4 (Prop_B5LUT_SLICEL_I1_O)
+                                                      0.201    17.631 f  iob_soc_memwrapper/iob_core_inst/iob_axi_full_xbar/iob_axi_merge_0/busy_write_reg_re/reg0/write_count_reg[7]_i_3/O
+                         net (fo=11, routed)          0.728    18.359    iob_soc_memwrapper/iob_core_inst/internal_memory/not_MEM_NO_READ_ON_WRITE.mem_reg_3_bram_1
+    SLICE_X9Y82          LUT6 (Prop_F6LUT_SLICEL_I2_O)
+                                                      0.051    18.410 r  iob_soc_memwrapper/iob_core_inst/internal_memory/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1_i_3/O
+                         net (fo=4, routed)           0.618    19.028    iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1_1[0]
+    RAMB36_X1Y18         RAMB36E2                                     r  iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1/WEA[0]
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_out1_clock_wizard rise edge)
+                                                     17.000    17.000 r  
+    H22                                               0.000    17.000 r  c0_sys_clk_clk_p_i (IN)
+                         net (fo=0)                   0.000    17.000    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/I
+    HPIOBDIFFINBUF_X0Y36 DIFFINBUF (Prop_DIFFINBUF_HPIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.374    17.374 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/DIFFINBUF_INST/O
+                         net (fo=1, routed)           0.055    17.429    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/OUT
+    H22                  IBUFCTRL (Prop_IBUFCTRL_HPIOB_I_O)
+                                                      0.000    17.429 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/IBUFCTRL_INST/O
+                         net (fo=1, routed)           0.981    18.410    clk_250_to_100_MHz/clock_wizard_inst/clk_in1_clock_wizard
+    PLLE3_ADV_X0Y3       PLLE3_ADV (Prop_PLLE3_ADV_CLKIN_CLKOUT0)
+                                                      0.250    18.660 r  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0
+                         net (fo=1, routed)           0.451    19.111    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
+    BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.091    19.202 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
+    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        1.948    21.150    iob_soc_memwrapper/ext_mem_mem/clk
+    RAMB36_X1Y18         RAMB36E2                                     r  iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1/CLKARDCLK
+                         clock pessimism              0.383    21.533    
+                         clock uncertainty           -0.069    21.464    
+    RAMB36_X1Y18         RAMB36E2 (Setup_RAMB36E2_RAMB36_CLKARDCLK_WEA[0])
+                                                     -0.693    20.771    iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1
+  -------------------------------------------------------------------
+                         required time                         20.771    
+                         arrival time                         -19.028    
+  -------------------------------------------------------------------
+                         slack                                  1.743    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             0.030ns  (arrival time - required time)
+  Source:                 iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/FSM_sequential_r_state_reg_reg/C
+                            (rising edge-triggered cell FDCE clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Destination:            iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/s_axi_arready_reg_reg/D
+                            (rising edge-triggered cell FDCE clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Path Group:             clk_out1_clock_wizard
+  Path Type:              Hold (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_out1_clock_wizard rise@0.000ns - clk_out1_clock_wizard rise@0.000ns)
+  Data Path Delay:        0.256ns  (logic 0.125ns (48.828%)  route 0.131ns (51.172%))
+  Logic Levels:           2  (LUT4=1 LUT5=1)
+  Clock Path Skew:        0.170ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    1.938ns
+    Source Clock Delay      (SCD):    1.676ns
+    Clock Pessimism Removal (CPR):    0.092ns
+  Clock Net Delay (Source):      0.770ns (routing 0.127ns, distribution 0.643ns)
+  Clock Net Delay (Destination): 0.955ns (routing 0.142ns, distribution 0.813ns)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_out1_clock_wizard rise edge)
+                                                      0.000     0.000 r  
+    H22                                               0.000     0.000 r  c0_sys_clk_clk_p_i (IN)
+                         net (fo=0)                   0.000     0.000    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/I
+    HPIOBDIFFINBUF_X0Y36 DIFFINBUF (Prop_DIFFINBUF_HPIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.203     0.203 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/DIFFINBUF_INST/O
+                         net (fo=1, routed)           0.028     0.231    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/OUT
+    H22                  IBUFCTRL (Prop_IBUFCTRL_HPIOB_I_O)
+                                                      0.000     0.231 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/IBUFCTRL_INST/O
+                         net (fo=1, routed)           0.414     0.645    clk_250_to_100_MHz/clock_wizard_inst/clk_in1_clock_wizard
+    PLLE3_ADV_X0Y3       PLLE3_ADV (Prop_PLLE3_ADV_CLKIN_CLKOUT0)
+                                                      0.040     0.685 r  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0
+                         net (fo=1, routed)           0.194     0.879    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
+    BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.027     0.906 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
+    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        0.770     1.676    iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/clk
+    SLICE_X0Y118         FDCE                                         r  iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/FSM_sequential_r_state_reg_reg/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X0Y118         FDCE (Prop_DFF_SLICEL_C_Q)
+                                                      0.049     1.725 r  iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/FSM_sequential_r_state_reg_reg/Q
+                         net (fo=71, routed)          0.040     1.765    iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/iob_reg_rvalid/reg0/FSM_sequential_r_state_reg_reg_0
+    SLICE_X0Y118         LUT4 (Prop_F6LUT_SLICEL_I0_O)
+                                                      0.045     1.810 r  iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/iob_reg_rvalid/reg0/s_axi_rdata_reg[31]_i_1__0/O
+                         net (fo=38, routed)          0.075     1.885    iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/iob_reg_rvalid/reg0/FSM_sequential_r_state_reg_reg[0]
+    SLICE_X0Y120         LUT5 (Prop_H6LUT_SLICEL_I3_O)
+                                                      0.031     1.916 r  iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/iob_reg_rvalid/reg0/s_axi_arready_reg_i_1__0/O
+                         net (fo=1, routed)           0.016     1.932    iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/s_axi_arready_next
+    SLICE_X0Y120         FDCE                                         r  iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/s_axi_arready_reg_reg/D
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_out1_clock_wizard rise edge)
+                                                      0.000     0.000 r  
+    H22                                               0.000     0.000 r  c0_sys_clk_clk_p_i (IN)
+                         net (fo=0)                   0.000     0.000    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/I
+    HPIOBDIFFINBUF_X0Y36 DIFFINBUF (Prop_DIFFINBUF_HPIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.386     0.386 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/DIFFINBUF_INST/O
+                         net (fo=1, routed)           0.048     0.434    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/OUT
+    H22                  IBUFCTRL (Prop_IBUFCTRL_HPIOB_I_O)
+                                                      0.000     0.434 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/IBUFCTRL_INST/O
+                         net (fo=1, routed)           0.466     0.900    clk_250_to_100_MHz/clock_wizard_inst/clk_in1_clock_wizard
+    PLLE3_ADV_X0Y3       PLLE3_ADV (Prop_PLLE3_ADV_CLKIN_CLKOUT0)
+                                                     -0.207     0.693 r  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0
+                         net (fo=1, routed)           0.259     0.952    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
+    BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.031     0.983 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
+    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        0.955     1.938    iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/clk
+    SLICE_X0Y120         FDCE                                         r  iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/s_axi_arready_reg_reg/C
+                         clock pessimism             -0.092     1.846    
+    SLICE_X0Y120         FDCE (Hold_HFF_SLICEL_C_D)
+                                                      0.056     1.902    iob_soc_memwrapper/iob_core_inst/periphs_axi2iob/s_axi_arready_reg_reg
+  -------------------------------------------------------------------
+                         required time                         -1.902    
+                         arrival time                           1.932    
+  -------------------------------------------------------------------
+                         slack                                  0.030    
+
+
+
+
+
+Pulse Width Checks
+--------------------------------------------------------------------------------------
+Clock Name:         clk_out1_clock_wizard
+Waveform(ns):       { 0.000 8.500 }
+Period(ns):         17.000
+Sources:            { clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0 }
+
+Check Type        Corner  Lib Pin             Reference Pin  Required(ns)  Actual(ns)  Slack(ns)  Location      Pin
+Min Period        n/a     RAMB36E2/CLKARDCLK  n/a            2.174         17.000      14.826     RAMB36_X1Y17  iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_0/CLKARDCLK
+Low Pulse Width   Slow    RAMB36E2/CLKARDCLK  n/a            1.086         8.500       7.414      RAMB36_X1Y17  iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_0/CLKARDCLK
+High Pulse Width  Slow    RAMB18E2/CLKBWRCLK  n/a            1.086         8.500       7.414      RAMB18_X0Y61  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_rams.gen_rams_inner[1].gen_noscramble_rams.tag_bank/gen_generic.u_impl_generic/mem_reg/CLKBWRCLK
+
+
+
+---------------------------------------------------------------------------------------------------
+Path Group:  **async_default**
+From Clock:  clk_out1_clock_wizard
+  To Clock:  clk_out1_clock_wizard
+
+Setup :            0  Failing Endpoints,  Worst Slack       12.028ns,  Total Violation        0.000ns
+Hold  :            0  Failing Endpoints,  Worst Slack        1.039ns,  Total Violation        0.000ns
+---------------------------------------------------------------------------------------------------
+
+
+Max Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             12.028ns  (required time - arrival time)
+  Source:                 iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_prim_rst_shadow_set_flop/gen_generic.u_impl_generic/q_o_reg[0]/C
+                            (rising edge-triggered cell FDCE clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Destination:            iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_shadow_core/cs_registers_i/mcycle_counter_i/counter_q_reg[12]/CLR
+                            (recovery check against rising-edge clock clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Path Group:             **async_default**
+  Path Type:              Recovery (Max at Slow Process Corner)
+  Requirement:            17.000ns  (clk_out1_clock_wizard rise@17.000ns - clk_out1_clock_wizard rise@0.000ns)
+  Data Path Delay:        4.473ns  (logic 0.240ns (5.366%)  route 4.233ns (94.634%))
+  Logic Levels:           1  (BUFGCE=1)
+  Clock Path Skew:        -0.337ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    4.243ns = ( 21.243 - 17.000 ) 
+    Source Clock Delay      (SCD):    4.849ns
+    Clock Pessimism Removal (CPR):    0.269ns
+  Clock Uncertainty:      0.069ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Discrete Jitter          (DJ):    0.119ns
+    Phase Error              (PE):    0.000ns
+  Clock Net Delay (Source):      2.409ns (routing 0.396ns, distribution 2.013ns)
+  Clock Net Delay (Destination): 2.041ns (routing 0.365ns, distribution 1.676ns)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_out1_clock_wizard rise edge)
+                                                      0.000     0.000 r  
+    H22                                               0.000     0.000 r  c0_sys_clk_clk_p_i (IN)
+                         net (fo=0)                   0.000     0.000    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/I
+    HPIOBDIFFINBUF_X0Y36 DIFFINBUF (Prop_DIFFINBUF_HPIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.556     0.556 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/DIFFINBUF_INST/O
+                         net (fo=1, routed)           0.104     0.660    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/OUT
+    H22                  IBUFCTRL (Prop_IBUFCTRL_HPIOB_I_O)
+                                                      0.000     0.660 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/IBUFCTRL_INST/O
+                         net (fo=1, routed)           1.082     1.742    clk_250_to_100_MHz/clock_wizard_inst/clk_in1_clock_wizard
+    PLLE3_ADV_X0Y3       PLLE3_ADV (Prop_PLLE3_ADV_CLKIN_CLKOUT0)
+                                                      0.068     1.810 r  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0
+                         net (fo=1, routed)           0.529     2.339    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
+    BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.101     2.440 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
+    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        2.409     4.849    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_prim_rst_shadow_set_flop/gen_generic.u_impl_generic/clk
+    SLICE_X27Y128        FDCE                                         r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_prim_rst_shadow_set_flop/gen_generic.u_impl_generic/q_o_reg[0]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X27Y128        FDCE (Prop_EFF_SLICEL_C_Q)
+                                                      0.139     4.988 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_prim_rst_shadow_set_flop/gen_generic.u_impl_generic/q_o_reg[0]/Q
+                         net (fo=1, routed)           1.849     6.837    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_prim_rst_shadow_set_flop/gen_generic.u_impl_generic/Q[0]_bufg_place
+    BUFGCE_X0Y50         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.101     6.938 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_prim_rst_shadow_set_flop/gen_generic.u_impl_generic/q_o_reg[0]_bufg_place/O
+                         net (fo=2716, routed)        2.384     9.322    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_shadow_core/cs_registers_i/mcycle_counter_i/counter_q_reg[0]_0
+    SLICE_X25Y86         FDCE                                         f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_shadow_core/cs_registers_i/mcycle_counter_i/counter_q_reg[12]/CLR  (IS_INVERTED)
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_out1_clock_wizard rise edge)
+                                                     17.000    17.000 r  
+    H22                                               0.000    17.000 r  c0_sys_clk_clk_p_i (IN)
+                         net (fo=0)                   0.000    17.000    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/I
+    HPIOBDIFFINBUF_X0Y36 DIFFINBUF (Prop_DIFFINBUF_HPIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.374    17.374 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/DIFFINBUF_INST/O
+                         net (fo=1, routed)           0.055    17.429    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/OUT
+    H22                  IBUFCTRL (Prop_IBUFCTRL_HPIOB_I_O)
+                                                      0.000    17.429 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/IBUFCTRL_INST/O
+                         net (fo=1, routed)           0.981    18.410    clk_250_to_100_MHz/clock_wizard_inst/clk_in1_clock_wizard
+    PLLE3_ADV_X0Y3       PLLE3_ADV (Prop_PLLE3_ADV_CLKIN_CLKOUT0)
+                                                      0.250    18.660 r  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0
+                         net (fo=1, routed)           0.451    19.111    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
+    BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.091    19.202 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
+    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        2.041    21.243    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_shadow_core/cs_registers_i/mcycle_counter_i/clk
+    SLICE_X25Y86         FDCE                                         r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_shadow_core/cs_registers_i/mcycle_counter_i/counter_q_reg[12]/C
+                         clock pessimism              0.269    21.512    
+                         clock uncertainty           -0.069    21.443    
+    SLICE_X25Y86         FDCE (Recov_CFF_SLICEL_C_CLR)
+                                                     -0.093    21.350    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_lockstep.u_ibex_lockstep/u_shadow_core/cs_registers_i/mcycle_counter_i/counter_q_reg[12]
+  -------------------------------------------------------------------
+                         required time                         21.350    
+                         arrival time                          -9.322    
+  -------------------------------------------------------------------
+                         slack                                 12.028    
+
+
+
+
+
+Min Delay Paths
+--------------------------------------------------------------------------------------
+Slack (MET) :             1.039ns  (arrival time - required time)
+  Source:                 clk_250_to_100_MHz/rst_sync/reg1/iob_r_data_o_reg[1]/C
+                            (rising edge-triggered cell FDPE clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Destination:            iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/gen_cntrs[9].gen_imp.mcounters_variable_i/counter_q_reg[23]/CLR
+                            (removal check against rising-edge clock clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Path Group:             **async_default**
+  Path Type:              Removal (Min at Fast Process Corner)
+  Requirement:            0.000ns  (clk_out1_clock_wizard rise@0.000ns - clk_out1_clock_wizard rise@0.000ns)
+  Data Path Delay:        1.315ns  (logic 0.075ns (5.703%)  route 1.240ns (94.297%))
+  Logic Levels:           1  (BUFGCE=1)
+  Clock Path Skew:        0.271ns (DCD - SCD - CPR)
+    Destination Clock Delay (DCD):    2.043ns
+    Source Clock Delay      (SCD):    1.680ns
+    Clock Pessimism Removal (CPR):    0.092ns
+  Clock Net Delay (Source):      0.774ns (routing 0.127ns, distribution 0.647ns)
+  Clock Net Delay (Destination): 1.060ns (routing 0.142ns, distribution 0.918ns)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk_out1_clock_wizard rise edge)
+                                                      0.000     0.000 r  
+    H22                                               0.000     0.000 r  c0_sys_clk_clk_p_i (IN)
+                         net (fo=0)                   0.000     0.000    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/I
+    HPIOBDIFFINBUF_X0Y36 DIFFINBUF (Prop_DIFFINBUF_HPIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.203     0.203 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/DIFFINBUF_INST/O
+                         net (fo=1, routed)           0.028     0.231    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/OUT
+    H22                  IBUFCTRL (Prop_IBUFCTRL_HPIOB_I_O)
+                                                      0.000     0.231 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/IBUFCTRL_INST/O
+                         net (fo=1, routed)           0.414     0.645    clk_250_to_100_MHz/clock_wizard_inst/clk_in1_clock_wizard
+    PLLE3_ADV_X0Y3       PLLE3_ADV (Prop_PLLE3_ADV_CLKIN_CLKOUT0)
+                                                      0.040     0.685 r  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0
+                         net (fo=1, routed)           0.194     0.879    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
+    BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.027     0.906 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
+    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        0.774     1.680    clk_250_to_100_MHz/rst_sync/reg1/clk
+    SLICE_X2Y66          FDPE                                         r  clk_250_to_100_MHz/rst_sync/reg1/iob_r_data_o_reg[1]/C
+  -------------------------------------------------------------------    -------------------
+    SLICE_X2Y66          FDPE (Prop_EFF2_SLICEL_C_Q)
+                                                      0.048     1.728 f  clk_250_to_100_MHz/rst_sync/reg1/iob_r_data_o_reg[1]/Q
+                         net (fo=1, routed)           0.446     2.174    clk_250_to_100_MHz/rst_sync/reg1/Q[0]_bufg_place
+    BUFGCE_X0Y44         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.027     2.201 f  clk_250_to_100_MHz/rst_sync/reg1/iob_r_data_o_reg[1]_bufg_place/O
+                         net (fo=4011, routed)        0.794     2.995    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/gen_cntrs[9].gen_imp.mcounters_variable_i/counter_q_reg[0]_0[0]
+    SLICE_X26Y120        FDCE                                         f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/gen_cntrs[9].gen_imp.mcounters_variable_i/counter_q_reg[23]/CLR
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk_out1_clock_wizard rise edge)
+                                                      0.000     0.000 r  
+    H22                                               0.000     0.000 r  c0_sys_clk_clk_p_i (IN)
+                         net (fo=0)                   0.000     0.000    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/I
+    HPIOBDIFFINBUF_X0Y36 DIFFINBUF (Prop_DIFFINBUF_HPIOBDIFFINBUF_DIFF_IN_P_O)
+                                                      0.386     0.386 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/DIFFINBUF_INST/O
+                         net (fo=1, routed)           0.048     0.434    clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/OUT
+    H22                  IBUFCTRL (Prop_IBUFCTRL_HPIOB_I_O)
+                                                      0.000     0.434 r  clk_250_to_100_MHz/clock_wizard_inst/clkin1_ibufds/IBUFCTRL_INST/O
+                         net (fo=1, routed)           0.466     0.900    clk_250_to_100_MHz/clock_wizard_inst/clk_in1_clock_wizard
+    PLLE3_ADV_X0Y3       PLLE3_ADV (Prop_PLLE3_ADV_CLKIN_CLKOUT0)
+                                                     -0.207     0.693 r  clk_250_to_100_MHz/clock_wizard_inst/plle3_adv_inst/CLKOUT0
+                         net (fo=1, routed)           0.259     0.952    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
+    BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
+                                                      0.031     0.983 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
+    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        1.060     2.043    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/gen_cntrs[9].gen_imp.mcounters_variable_i/clk
+    SLICE_X26Y120        FDCE                                         r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/gen_cntrs[9].gen_imp.mcounters_variable_i/counter_q_reg[23]/C
+                         clock pessimism             -0.092     1.951    
+    SLICE_X26Y120        FDCE (Remov_EFF_SLICEM_C_CLR)
+                                                      0.005     1.956    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/gen_cntrs[9].gen_imp.mcounters_variable_i/counter_q_reg[23]
+  -------------------------------------------------------------------
+                         required time                         -1.956    
+                         arrival time                           2.995    
+  -------------------------------------------------------------------
+                         slack                                  1.039    
+
+
+
+
+
