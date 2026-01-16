@@ -20,7 +20,6 @@ endif
 #########################################
 #           Embedded settings           #
 #########################################
-
 TEMPLATE_LDS ?=template.lds
 
 MFLAGS=$(MFLAGS_BASE)$(MFLAG_M)$(MFLAG_C)
@@ -36,7 +35,8 @@ endif
 TOOLCHAIN_PREFIX ?=riscv64-unknown-elf-
 CFLAGS ?=-Os -nostdlib -march=$(MFLAGS) -mabi=ilp32 --specs=nano.specs -Wcast-align=strict $(USER_CFLAGS)
 LFLAGS ?= -Wl,-L,src,-Bstatic,-T,$(TEMPLATE_LDS),--strip-debug
-LLIBS ?=-lgcc -lc -lnosys
+LLIBS ?=-lc -lgcc -lnosys
+# LLIBS ?=-lc -lm -lgcc -lc -lgcc -lnosys
 INCLUDES ?=-I. -Isrc
 
 #########################################

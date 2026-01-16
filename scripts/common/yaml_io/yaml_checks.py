@@ -1,30 +1,34 @@
 # =============================================================================
 # FATORI-V • YAML Checks
-# File: yaml_checks.py 
+# File: yaml_checks.py
 # -----------------------------------------------------------------------------
-# Defines and runs small consistency checks over the run YAML.
-# It's USER-MODIFIABLE (check common/Readme)
-#=============================================================================
-
-from __future__ import annotations
+# Basic YAML sanity checks called during loading.
+# =============================================================================
 
 from pathlib import Path
-from typing import Any, Dict, List, Callable
 
 
-YamlCheck = Callable[[Dict[str, Any], Path], None]
-
-
-# Global list of check functions. Users can append to this list.
-REGISTERED_CHECKS: List[YamlCheck] = []
-
-
-def run_yaml_checks(cfg: Dict[str, Any], yaml_path: Path) -> None:
+def run_yaml_checks(data, path: Path):
     """
-    Run all registered YAML checks for a given configuration.
-
-    By default this does nothing, until the user appends checks to
-    REGISTERED_CHECKS in this file.
+    Perform basic sanity checks on loaded YAML data.
+    
+    This is called immediately after YAML loading to catch obvious issues.
+    Full validation is performed by the validation system.
+    
+    Args:
+        data: The loaded YAML dictionary
+        path: Path to the YAML file for error messages
+    
+    Raises:
+        ValueError: If basic structural issues are found
     """
-    for check in REGISTERED_CHECKS:
-        check(cfg, yaml_path)
+    # Check that data is a dictionary
+    if not isinstance(data, dict):
+        raise ValueError(f"YAML file {path} must contain a dictionary at top level")
+    
+    # Check for completely empty YAML
+    if not data:
+        raise ValueError(f"YAML file {path} is empty or contains no keys")
+    
+    # Additional basic checks can be added here
+    # Full validation is done by scripts.validation modules

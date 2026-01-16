@@ -6,6 +6,10 @@
 /**
  * Package with constants used by Ibex
  */
+
+// Include FATORI FTM definitions for FT_LAYER macro
+`include "fatori_features.svh"
+
 package ibex_pkg;
 
   ////////////////
@@ -587,7 +591,23 @@ package ibex_pkg;
     CSR_MHPMCOUNTER30H = 12'hB9E,
     CSR_MHPMCOUNTER31H = 12'hB9F,
     CSR_CPUCTRLSTS     = 12'h7C0,
-    CSR_SECURESEED     = 12'h7C1
+    CSR_SECURESEED     = 12'h7C1,
+    
+    // FATORI Fault Tolerance Metrics CSRs (Layer-Gated, Read-Only)
+    // All addresses defined unconditionally (layer gating in read logic)
+    // Layer 1: Error counting
+    CSR_FATORI_ERR_CNT        = 12'hBC0,  // Total errors (minor+major, computed in SW)
+    CSR_FATORI_MINOR_CNT      = 12'hBC1,  // Minor error count [15:0]
+    CSR_FATORI_MAJOR_CNT      = 12'hBC2,  // Major error count [15:0]
+    // Layer 2: Correction tracking
+    CSR_FATORI_CORRECTED_CNT  = 12'hBC3,  // Corrected error count [15:0]
+    // Layer 3: Detection latency
+    CSR_FATORI_CYCLES_MIN     = 12'hBC4,  // Cycles to first minor error [31:0]
+    CSR_FATORI_CYCLES_MAJ     = 12'hBC5,  // Cycles to first major error [31:0]
+    CSR_FATORI_DETECT_LATENCY = 12'hBC6,  // Last detection latency [15:0]
+    // Layer 4: Latency statistics
+    CSR_FATORI_LATENCY_SUM    = 12'hBC7,  // Latency sum [31:0]
+    CSR_FATORI_LATENCY_CNT    = 12'hBC8   // Latency count [15:0]
   } csr_num_e;
 
   // CSR pmp-related offsets

@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Optional
 import logging
 
-from .target_pool import TargetPool
-from .target_types import TargetSpec, TargetKind
+from fi.targets.pool import TargetPool
+from fi.targets.types import TargetSpec, TargetKind
 
 logger = logging.getLogger(__name__)
 

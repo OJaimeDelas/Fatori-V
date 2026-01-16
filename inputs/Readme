@@ -1,0 +1,17 @@
+# inputs/
+
+Static input files for FATORI-V system.
+
+## Subdirectories
+
+hardware/   - SystemVerilog files, constraints
+software/   - C headers, linker scripts
+others/     - YAML configs (fatori_registers.yaml, system_dict.yaml)
+tcl/        - TCL input scripts (sem_gen.tcl, report_gen.tcl)
+
+## Files
+
+hardware/locations.yaml - Maps hardware files to architecture
+software/locations.yaml - Maps software files to architecture
+others/fatori_registers.yaml - Register monitoring definitions
+others/system_dict.yaml - Static FI target definitions

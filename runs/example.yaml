@@ -116,7 +116,7 @@ general:
       enable: on
       timeout_s: -1 # Set -1 for infinite/until break
 
-      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      injection: on # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
 
 
     
@@ -125,7 +125,7 @@ general:
       enable: on
       timeout_s: -1 # Set -1 for infinite/until break
 
-      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      injection: on # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
 
       config:
         iterations: 10000 # Set -1 for infinite
@@ -145,7 +145,7 @@ general:
       enable: on
       timeout_s: -1 # Set -1 for infinite/until break
 
-      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      injection: on # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
       
       config:
         # Which benchmarks to run
@@ -178,7 +178,7 @@ general:
       enable: on
       timeout_s: -1 # Set -1 for infinite/until break
 
-      injection: off # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
+      injection: on # Enables Fault-Injection for this benchmark. FI Profile must be configured bellow
 
       config:
         iterations: 1000 # Minimum to get a score is 300

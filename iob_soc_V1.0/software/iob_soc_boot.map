@@ -8,85 +8,85 @@ Linker script and memory map
 
                 0x000000000003f000                . = 0x3f000
 
-.init           0x000000000003f000       0x14
+.init           0x000000000003f000       0x12
  *(.init)
- .init          0x000000000003f000       0x14 /tmp/ccgFtBzX.o
+ .init          0x000000000003f000       0x12 /run/user/1015/ccn6MCSa.o
 
-.text           0x000000000003f014      0x374
+.text           0x000000000003f012      0x230
  *(.text)
- .text          0x000000000003f014        0x0 /tmp/ccgFtBzX.o
- .text          0x000000000003f014        0x0 /tmp/cc5XAaz6.o
- .text          0x000000000003f014      0x2d8 /tmp/ccpCuOWJ.o
-                0x000000000003f014                uart_txwait
-                0x000000000003f030                uart_putc
-                0x000000000003f05c                uart_rxwait
-                0x000000000003f078                uart_getc
-                0x000000000003f094                uart_init
-                0x000000000003f0dc                uart_finish
-                0x000000000003f0f8                uart_puts
-                0x000000000003f12c                uart_sendstr
-                0x000000000003f160                uart_recvfile
-                0x000000000003f230                uart_sendfile
- .text          0x000000000003f2ec       0x9c /tmp/ccfSUlwe.o
-                0x000000000003f2ec                IOB_UART_INIT_BASEADDR
-                0x000000000003f2f8                IOB_UART_SET_SOFTRESET
-                0x000000000003f308                IOB_UART_SET_DIV
-                0x000000000003f318                IOB_UART_SET_TXDATA
-                0x000000000003f328                IOB_UART_SET_TXEN
-                0x000000000003f338                IOB_UART_SET_RXEN
-                0x000000000003f348                IOB_UART_GET_TXREADY
-                0x000000000003f358                IOB_UART_GET_RXREADY
-                0x000000000003f368                IOB_UART_GET_RXDATA
-                0x000000000003f378                IOB_UART_GET_VERSION
+ .text          0x000000000003f012        0x0 /run/user/1015/ccn6MCSa.o
+ .text          0x000000000003f012        0x0 /run/user/1015/cceQ8paQ.o
+ .text          0x000000000003f012      0x1a8 /run/user/1015/cc66lCUS.o
+                0x000000000003f012                uart_txwait
+                0x000000000003f020                uart_putc
+                0x000000000003f036                uart_rxwait
+                0x000000000003f044                uart_getc
+                0x000000000003f052                uart_init
+                0x000000000003f076                uart_finish
+                0x000000000003f084                uart_puts
+                0x000000000003f0a0                uart_sendstr
+                0x000000000003f0be                uart_recvfile
+                0x000000000003f13c                uart_sendfile
+ .text          0x000000000003f1ba       0x88 /run/user/1015/ccoIqqiD.o
+                0x000000000003f1ba                IOB_UART_INIT_BASEADDR
+                0x000000000003f1c4                IOB_UART_SET_SOFTRESET
+                0x000000000003f1d2                IOB_UART_SET_DIV
+                0x000000000003f1e0                IOB_UART_SET_TXDATA
+                0x000000000003f1ee                IOB_UART_SET_TXEN
+                0x000000000003f1fc                IOB_UART_SET_RXEN
+                0x000000000003f20a                IOB_UART_GET_TXREADY
+                0x000000000003f218                IOB_UART_GET_RXREADY
+                0x000000000003f226                IOB_UART_GET_RXDATA
+                0x000000000003f234                IOB_UART_GET_VERSION
 
-.memory         0x000000000003f388      0x1fc
+.memory         0x000000000003f244      0x1d5
  *(.rodata)
  *(.data)
- .data          0x000000000003f388        0x0 /tmp/ccgFtBzX.o
- .data          0x000000000003f388        0x0 /tmp/cc5XAaz6.o
- .data          0x000000000003f388        0x0 /tmp/ccpCuOWJ.o
- .data          0x000000000003f388        0x0 /tmp/ccfSUlwe.o
+ .data          0x000000000003f244        0x0 /run/user/1015/ccn6MCSa.o
+ .data          0x000000000003f244        0x0 /run/user/1015/cceQ8paQ.o
+ .data          0x000000000003f244        0x0 /run/user/1015/cc66lCUS.o
+ .data          0x000000000003f244        0x0 /run/user/1015/ccoIqqiD.o
  *(.bss)
- .bss           0x000000000003f388        0x0 /tmp/ccgFtBzX.o
- .bss           0x000000000003f388        0x0 /tmp/cc5XAaz6.o
- .bss           0x000000000003f388        0x0 /tmp/ccpCuOWJ.o
- .bss           0x000000000003f388        0x0 /tmp/ccfSUlwe.o
+ .bss           0x000000000003f244        0x0 /run/user/1015/ccn6MCSa.o
+ .bss           0x000000000003f244        0x0 /run/user/1015/cceQ8paQ.o
+ .bss           0x000000000003f244        0x0 /run/user/1015/cc66lCUS.o
+ .bss           0x000000000003f244        0x0 /run/user/1015/ccoIqqiD.o
  *(*)
  .riscv.attributes
-                0x000000000003f388       0x1a /tmp/ccgFtBzX.o
- *fill*         0x000000000003f3a2        0x2 
+                0x000000000003f244       0x1f /run/user/1015/ccn6MCSa.o
+ *fill*         0x000000000003f263        0x1 
  .rodata.str1.4
-                0x000000000003f3a4       0x62 /tmp/cc5XAaz6.o
- *fill*         0x000000000003f406        0x2 
- .text.startup  0x000000000003f408       0xa8 /tmp/cc5XAaz6.o
-                0x000000000003f408                main
- .comment       0x000000000003f4b0       0x10 /tmp/cc5XAaz6.o
+                0x000000000003f264       0x62 /run/user/1015/cceQ8paQ.o
+ .text.startup  0x000000000003f2c6       0x6e /run/user/1015/cceQ8paQ.o
+                0x000000000003f2c6                main
+ .comment       0x000000000003f334       0x10 /run/user/1015/cceQ8paQ.o
                                          0x11 (size before relaxing)
  .riscv.attributes
-                0x000000000003f4c0       0x1c /tmp/cc5XAaz6.o
+                0x000000000003f344       0x21 /run/user/1015/cceQ8paQ.o
+ *fill*         0x000000000003f365        0x3 
  .rodata.str1.4
-                0x000000000003f4dc       0x69 /tmp/ccpCuOWJ.o
- .comment       0x000000000003f545       0x11 /tmp/ccpCuOWJ.o
+                0x000000000003f368       0x69 /run/user/1015/cc66lCUS.o
+ .comment       0x000000000003f3d1       0x11 /run/user/1015/cc66lCUS.o
  .riscv.attributes
-                0x000000000003f545       0x1c /tmp/ccpCuOWJ.o
- *fill*         0x000000000003f561        0x3 
- .sbss          0x000000000003f564        0x4 /tmp/ccfSUlwe.o
- .comment       0x000000000003f568       0x11 /tmp/ccfSUlwe.o
+                0x000000000003f3d1       0x21 /run/user/1015/cc66lCUS.o
+ *fill*         0x000000000003f3f2        0x2 
+ .sbss          0x000000000003f3f4        0x4 /run/user/1015/ccoIqqiD.o
+ .comment       0x000000000003f3f8       0x11 /run/user/1015/ccoIqqiD.o
  .riscv.attributes
-                0x000000000003f568       0x1c /tmp/ccfSUlwe.o
-                0x000000000003f584                stack_start = .
+                0x000000000003f3f8       0x21 /run/user/1015/ccoIqqiD.o
+                0x000000000003f419                stack_start = .
 
 .stack
  *(.stack)
-                0x000000000003f584                stack_end = .
-                0x000000000003f584                . = ALIGN (0x4)
-                0x000000000003f584                _heap_start = .
-                0x000000000003f584                end = .
-LOAD /tmp/ccgFtBzX.o
-LOAD /tmp/cc5XAaz6.o
-LOAD /tmp/ccpCuOWJ.o
-LOAD /tmp/ccfSUlwe.o
-LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/rv32i/ilp32/libgcc.a
-LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libc_nano.a
-LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libnosys.a
+                0x000000000003f419                stack_end = .
+                0x000000000003f41c                . = ALIGN (0x4)
+                0x000000000003f41c                _heap_start = .
+                0x000000000003f41c                end = .
+LOAD /run/user/1015/ccn6MCSa.o
+LOAD /run/user/1015/cceQ8paQ.o
+LOAD /run/user/1015/cc66lCUS.o
+LOAD /run/user/1015/ccoIqqiD.o
+LOAD /nix/store/vcz79nh29xywisg3qrwqphz9qjm8c5zp-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libc_nano.a
+LOAD /nix/store/vcz79nh29xywisg3qrwqphz9qjm8c5zp-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/rv32i/ilp32/libgcc.a
+LOAD /nix/store/vcz79nh29xywisg3qrwqphz9qjm8c5zp-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libnosys.a
 OUTPUT(iob_soc_boot.elf elf32-littleriscv)

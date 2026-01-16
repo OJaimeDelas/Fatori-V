@@ -1,0 +1,430 @@
+# Vivado Report Parser System
+
+Automated extraction of FPGA architectural metrics from Vivado reports for fault-tolerant system analysis.
+
+## Overview
+
+This tool parses 12 types of Vivado reports and exports all metrics to a formatted Excel file. It's specifically designed for FATORI-V fault injection research and RISC-V reliability analysis.
+
+---
+
+## Features
+
+### Reports Parsed (12 types)
+
+1. **Utilization** - Overall resource usage (LUTs, FFs, BRAM, DSP, I/O)
+2. **Hierarchical Utilization** ⭐ - Per-module resource breakdown
+3. **Timing Summary** - WNS, WHS, constraint status
+4. **Timing Paths** - Critical path details
+5. **Power** - Consumption breakdown (dynamic/static)
+6. **Clocks** - Clock domain information
+7. **Clock Interaction** - Inter-domain timing
+8. **CDC** - Clock domain crossing safety
+9. **Synchronizer MTBF** ⭐ - Reliability metrics
+10. **Bus Skew** - Bus timing analysis
+11. **Methodology** - Design quality warnings
+12. **DRC** - Design rule checks
+
+⭐ = Critical for fault-tolerant system analysis
+
+### Key Capabilities
+
+- **TMR/NMR Overhead Analysis**: Compare 1x vs 3x implementations
+- **Pblock Generation**: Extract module sizes for fault injection targeting
+- **Reliability Quantification**: MTBF calculations, CDC safety
+- **Performance Bottlenecks**: Critical path identification
+- **Power Profiling**: Component-level breakdown
+
+---
+
+## File Structure
+```
+fi/
+├── vivado_report_system.py          # Main entry point
+├── parsers/
+│   ├── common.py                    # Shared utilities
+│   ├── parse_utilization.py
+│   ├── parse_hierarchical_utilization.py
+│   ├── parse_timing.py
+│   ├── parse_timing_paths.py
+│   ├── parse_power.py
+│   ├── parse_clocks.py
+│   ├── parse_clock_interaction.py
+│   ├── parse_cdc.py
+│   ├── parse_synchronizer_mtbf.py
+│   ├── parse_bus_skew.py
+│   ├── parse_methodology.py
+│   └── parse_drc.py
+└── README_vivado_parser.md          # This file
+```
+
+**Note**: No `__init__.py` required - path manipulation handles imports.
+
+---
+
+## Usage
+
+### Command Line Interface
+```bash
+python vivado_report_system.py <input_dir> <prefix> <output_dir>
+```
+
+**Arguments**:
+- `<input_dir>` - Directory containing Vivado report files
+- `<prefix>` - Common prefix of report files (before `_utilization.rpt`, etc.)
+- `<output_dir>` - Directory where Excel output will be saved
+
+### Example
+```bash
+python vivado_report_system.py \
+  /path/to/reports \
+  iob_soc_iob_aes_ku040_db_g_xcku040-fbva676-1-c \
+  /path/to/output
+```
+
+This expects files like:
+```
+iob_soc_iob_aes_ku040_db_g_xcku040-fbva676-1-c_utilization.rpt
+iob_soc_iob_aes_ku040_db_g_xcku040-fbva676-1-c_hierarchical_utilization.rpt
+iob_soc_iob_aes_ku040_db_g_xcku040-fbva676-1-c_timing_summary.rpt
+...
+```
+
+### Expected Report Files
+
+All files should have format: `<prefix>_<report_type>.rpt`
+
+- `_utilization.rpt`
+- `_hierarchical_utilization.rpt`
+- `_timing_summary.rpt`
+- `_timing_paths.rpt`
+- `_power.rpt`
+- `_clocks.rpt`
+- `_clock_interaction.rpt`
+- `_cdc.rpt`
+- `_synchronizer_mtbf.rpt`
+- `_bus_skew.rpt`
+- `_methodology.rpt`
+- `_drc.rpt`
+
+**Missing reports are skipped automatically** - no errors.
+
+---
+
+## Output Format
+
+### Excel Structure
+
+Generated file: `<prefix>_metrics.xlsx`
+
+**Layout**:
+```
+Row 1: | Common Info || Report 1    || Report 2    || Report 3    | ...
+Row 2: | Parameter   | Value | Metric ID | Value | Metric ID | Value | ...
+Row 3: | Design      | iob_  | LUTs Used | 9492  | WNS       | 2.120 | ...
+```
+
+**Columns**:
+- First 2 columns: Common metadata (design, device, date, version, state)
+- Remaining columns: 2 per report (Metric ID + Value)
+
+**Styling**:
+- Vivado blue (#366092) for report headers
+- Light gray (#E7E6E6) for common info
+- Bold headers, aligned content
+- Auto-sized columns (25-40 chars)
+
+---
+
+## Code Architecture
+
+### Main Script Flow
+```python
+# vivado_report_system.py
+main()
+  ├─ parse_report() × 12  # One per report type
+  └─ generate_excel()     # Create formatted output
+```
+
+### Parser Module Pattern
+
+All parsers follow this structure:
+```python
+def parse(filepath):
+    """
+    Parse <report_type> report
+    
+    Returns:
+        (data_list, common_info)
+        - data_list: [(metric_id, value), ...]
+        - common_info: {param: value, ...}
+    """
+    lines = common.read_file(filepath)
+    data = []
+    common_info = common.extract_common_info(lines)
+    
+    # Parse sections using common utilities:
+    # - find_line_with_text()
+    # - parse_table_row()
+    # - extract_value_from_line()
+    
+    return data, common_info
+```
+
+### Common Utilities
+
+**`parsers/common.py`** provides:
+
+- `read_file(filepath)` - Load entire file as lines
+- `find_line_with_text(lines, search, start=0)` - Locate section
+- `parse_table_row(line)` - Extract cells from `| A | B | C |`
+- `extract_value_from_line(line, regex)` - Regex extraction
+- `extract_number(text)` - Pull first number
+- `extract_common_info(lines)` - Get design/device metadata
+
+---
+
+## Key Metrics by Report
+
+### Hierarchical Utilization (Critical for FT)
+
+**Why important**: Per-module resources for TMR analysis and pblock generation
+
+**Metrics**:
+- Top 10 modules by LUT count (instance, type, LUTs, FFs, BRAM, DSPs)
+- Auto-detected key modules (CPU, memory, SEM, voter, AES, debug, clock)
+- Total hierarchy resources
+- Top module percentage
+
+**Use cases**:
+- Measure TMR overhead: `3×CPU_LUTs + voter_LUTs` vs `1×CPU_LUTs`
+- Generate pblocks: `create_pblock pblock_cpu -add {TOP/cpu/*}`
+- Identify SEM cost: `SEM_LUTs / Total_LUTs`
+
+### Synchronizer MTBF (Reliability)
+
+**Why important**: Quantifies metastability-induced failure risk
+
+**Metrics**:
+- Worst-case MTBF (Mean Time Between Failures)
+- Top 5 synchronizers with lowest MTBF
+- Total synchronizers, typical stages
+- Violations/warnings
+
+**Use cases**:
+- Calculate failure rate: `1 / MTBF`
+- Identify high-risk CDC: synchronizers with MTBF < threshold
+- Verify synchronizer quality: all MTBF > 1e12 years
+
+### Timing Paths (Performance)
+
+**Why important**: Identifies performance bottlenecks
+
+**Metrics**:
+- Top 3 critical paths (slack, start/end points, delays, logic levels)
+- Logic vs routing delay breakdown
+- Top 5 modules in critical paths
+
+**Use cases**:
+- Find bottlenecks: which module limits frequency
+- Voter impact: does voter appear in critical paths?
+- Optimization targets: modules with highest occurrence
+
+---
+
+## Use Cases for FATORI-V
+
+### 1. TMR Overhead Measurement
+```bash
+# Compare two designs
+python vivado_report_system.py ./reports baseline_design ./output
+python vivado_report_system.py ./reports tmr_design ./output
+
+# In Excel, compare:
+# - Hierarchical Util → Top Module (CPU) LUTs
+# - Hierarchical Util → Key Module [voter] LUTs
+# - Utilization → Total LUTs
+```
+
+**Calculate**: `Overhead = (TMR_LUTs - Baseline_LUTs) / Baseline_LUTs × 100%`
+
+### 2. Pblock Generation for Fault Injection
+
+From Hierarchical Utilization report:
+```
+Top 1 Module - Instance: iob_soc_memwrapper/cpu
+Top 1 Module - LUTs: 8543
+Top 1 Module - FFs: 5124
+```
+
+Generate pblock:
+```tcl
+create_pblock pblock_cpu
+add_cells_to_pblock pblock_cpu [get_cells {iob_soc_memwrapper/cpu}]
+resize_pblock pblock_cpu -add {SLICE_X50Y100:SLICE_X80Y150}
+```
+
+### 3. Reliability Analysis
+
+From Synchronizer MTBF report:
+```
+Worst Case MTBF: 1.2e+13 years
+Sync 1 (Worst MTBF) - MTBF: 1.2e+13
+Total Synchronizers: 8
+```
+
+**System MTBF**: `1 / (Σ(1/MTBF_i))` for all synchronizers
+
+### 4. Performance Optimization
+
+From Timing Paths report:
+```
+Path 1 - Slack: 0.234 ns
+Path 1 - Start Point: cpu/id_stage/alu_ff
+Path 1 - End Point: cpu/ex_stage/result_ff
+Path 1 - Logic Delay: 3.45 ns
+Path 1 - Route Delay: 2.11 ns
+Frequent in Paths 1 - Module: alu_operator
+```
+
+**Action**: Optimize `alu_operator` logic (pipeline, reduce levels)
+
+---
+
+## Dependencies
+
+**Python Requirements**:
+- Python 3.6+
+- openpyxl library
+
+**Installation**:
+```bash
+pip install openpyxl
+```
+
+**Vivado Version**:
+- Tested with Vivado 2020.2 reports
+- Compatible with UltraScale/UltraScale+ report formats
+- May require minor adjustments for older Vivado versions
+
+---
+
+## Troubleshooting
+
+### Problem: "No reports found"
+
+**Check**:
+1. File prefix matches exactly (case-sensitive)
+2. Files have correct suffix (e.g., `_utilization.rpt` not `_util.rpt`)
+3. Input directory path is correct
+
+### Problem: Parser warnings
+
+**Example**: `WARNING: Parse failed: list index out of range`
+
+**Cause**: Report format differs from expected (wrong Vivado version?)
+
+**Action**: 
+1. Check Vivado version matches tested version
+2. Open report, verify section headers exist
+3. Adjust parser's `find_line_with_text()` search terms if needed
+
+### Problem: Empty Excel columns
+
+**Cause**: Parser found report but extracted no data
+
+**Action**:
+1. Verify report is complete (not truncated)
+2. Check report has expected sections
+3. Enable debug by adding `print(lines[i])` in parser
+
+---
+
+## Extending the Parser
+
+### Adding a New Report Type
+
+**Step 1**: Create parser module `fi/parsers/parse_newreport.py`
+```python
+# =============================================================================
+# FATORI-V • FI Report Parsing - NewReport
+# File: parsers/parse_newreport.py
+# -----------------------------------------------------------------------------
+# Description of what this parser extracts
+# =============================================================================
+
+import common
+
+def parse(filepath):
+    lines = common.read_file(filepath)
+    data = []
+    common_info = common.extract_common_info(lines)
+    
+    # Your parsing logic here
+    section_line = common.find_line_with_text(lines, "Section Name")
+    if section_line >= 0:
+        # Extract metrics
+        data.append(("Metric Name", "Value"))
+    
+    return data, common_info
+```
+
+**Step 2**: Update main script `vivado_report_system.py`
+
+Add import:
+```python
+import parse_newreport
+```
+
+Add parsing call:
+```python
+# 13. New Report - description
+parse_report(
+    input_dir, prefix, "_newreport.rpt",
+    parse_newreport.parse,
+    "NewReport", all_reports_data, common_data
+)
+```
+
+**Done!** - The Excel generator automatically handles new reports.
+
+---
+
+## Limitations
+
+1. **Report Format**: Assumes Vivado 2020.2 format (may need adjustments for other versions)
+2. **File Size**: Loads entire report into memory (works fine for <1GB files)
+3. **Parsing Robustness**: Text-based parsing can break with format changes
+4. **No Validation**: Doesn't verify metric correctness, only extraction
+
+---
+
+## Version History
+
+**v1.0** - Initial release
+- 6 basic reports (Utilization, Timing, Power, Clocks, Methodology, DRC)
+
+**v2.0** - Current
+- Added 6 advanced reports for FT analysis
+- Hierarchical utilization (per-module resources)
+- Timing paths (critical path analysis)
+- Synchronizer MTBF (reliability)
+- CDC safety metrics
+- Clock interaction
+- Bus skew
+
+---
+
+## Support
+
+For issues or questions:
+1. Check report file exists and is complete
+2. Verify Vivado version compatibility
+3. Enable parser debug output
+4. Consult FATORI-V documentation
+
+---
+
+## License
+
+Part of the FATORI-V fault injection framework.

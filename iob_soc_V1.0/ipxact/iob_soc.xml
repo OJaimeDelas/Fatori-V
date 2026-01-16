@@ -184,7 +184,7 @@
 					<ipxact:direction>out</ipxact:direction>
 					<ipxact:vectors>
 						<ipxact:vector>
-							<ipxact:left>12</ipxact:left>
+							<ipxact:left>15</ipxact:left>
 							<ipxact:right>0</ipxact:right>
 						</ipxact:vector>
 					</ipxact:vectors>
@@ -223,7 +223,7 @@
 					<ipxact:direction>out</ipxact:direction>
 					<ipxact:vectors>
 						<ipxact:vector>
-							<ipxact:left>12</ipxact:left>
+							<ipxact:left>15</ipxact:left>
 							<ipxact:right>0</ipxact:right>
 						</ipxact:vector>
 					</ipxact:vectors>
@@ -300,7 +300,7 @@
 		<ipxact:parameter kactus2:usageCount="1" maximum="32" minimum="1" parameterId="AXI_ADDR_W_ID" type="int">
 			<ipxact:name>AXI_ADDR_W</ipxact:name>
 			<ipxact:description>AXI address bus width</ipxact:description>
-			<ipxact:value>15</ipxact:value>
+			<ipxact:value>18</ipxact:value>
 		</ipxact:parameter>
 		<ipxact:parameter kactus2:usageCount="1" maximum="32" minimum="1" parameterId="AXI_DATA_W_ID" type="int">
 			<ipxact:name>AXI_DATA_W</ipxact:name>

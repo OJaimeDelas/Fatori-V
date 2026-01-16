@@ -1,0 +1,15 @@
+# inputs/tcl/
+
+TCL input scripts sourced by generated Vivado hook files.
+
+## Files
+
+sem_gen.tcl     - SEM IP generation (sourced by pre_synthesis.tcl if FI enabled)
+report_gen.tcl  - Vivado report commands (sourced by pre_bitstream.tcl)
+
+## Usage
+
+These input scripts are:
+1. Copied to tmp/tcl/ during file movement phase
+2. Sourced by generated hook scripts (pre_synthesis.tcl, pre_bitstream.tcl)
+3. Executed by Vivado during build process

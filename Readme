@@ -1,0 +1,57 @@
+# FATORI-V: Fault Injection Framework for RISC-V
+
+Automated fault injection system for Ibex RISC-V cores on Xilinx FPGAs.
+
+## System Overview
+
+FATORI-V provides end-to-end automation from YAML configuration through
+hardware generation, FPGA builds, benchmark execution with fault injection,
+to results analysis.
+
+Target: Ibex RISC-V core on Xilinx XCKU040 FPGAs
+Integration: py2hwsw framework, Vivado 2020.2
+
+## Directory Structure
+
+benchmarks/     - Benchmark implementations (CoreMark, Embench, etc.)
+config/         - Logging and system configuration
+inputs/         - Static input files (YAML, TCL, hardware/software)
+results/        - Per-run output and analysis
+runs/           - Run configuration YAML files
+scripts/        - Python control layer
+tmp/            - Generated files and build intermediates
+
+## Quick Start
+
+1. Create run configuration: runs/my_run.yaml
+2. Execute: python fatori-v.py my_run
+3. Results in: results/my_run/
+
+## Configuration
+
+Run YAML files define:
+- Target hardware (board, FPGA part)
+- ISA extensions (RV32M, RV32C, etc.)
+- Fault tolerance mechanisms
+- Benchmarks to execute
+- Fault injection parameters
+
+See runs/example.yaml for complete template.
+
+## Architecture Documentation
+
+Each subsystem has a Readme in its directory:
+- scripts/Readme - Python control layer overview
+- inputs/Readme - Static input file specifications
+- benchmarks/Readme - Benchmark integration
+
+## Build Requirements
+
+- Python 3.8+
+- Xilinx Vivado 2020.2 or later
+- RISC-V GNU toolchain
+- py2hwsw framework
+
+## License
+
+MIT License. See LICENSE file for details.

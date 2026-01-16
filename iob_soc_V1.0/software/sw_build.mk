@@ -1,4 +1,3 @@
-
 # SPDX-FileCopyrightText: 2024 IObundle
 #
 # SPDX-License-Identifier: MIT
@@ -40,23 +39,60 @@ IOB_SOC_INCLUDES=-Isrc
 
 IOB_SOC_LFLAGS=-Wl,-L,src,-Bstatic,-T,$(TEMPLATE_LDS),--strip-debug
 
-# FIRMWARE SOURCES
+
+# Assembly startup 
 IOB_SOC_FW_SRC=src/iob_soc_firmware.S
+
+# Universal wrapper
 IOB_SOC_FW_SRC+=src/iob_soc_firmware.c
+
+# Infrastructure 
 IOB_SOC_FW_SRC+=src/iob_printf.c
-# PERIPHERAL SOURCES
+
+
+#========================================
+# Benchmark Configuration
+#========================================
+ifdef BENCHMARK_DIR
+    # External benchmark mode
+    BENCHMARK_SRC_DIR = $(BENCHMARK_DIR)
+    $(info Building with external benchmark: $(BENCHMARK_DIR))
+else
+    # Default mode - use hello_world
+    BENCHMARK_SRC_DIR = src/hello_world
+    $(info Building with default benchmark: Hello World)
+endif
+
+#========================================
+# BENCHMARK SOURCES 
+#========================================
+# Include benchmark directory in search path (for benchmark.h, port headers)
+IOB_SOC_INCLUDES += -I$(BENCHMARK_SRC_DIR)
+
+# Source .c files from benchmark top level (manual files)
+IOB_SOC_FW_SRC += $(wildcard $(BENCHMARK_SRC_DIR)/*.c)
+
+# If benchmark has a code/ subdirectory, include it and source from it
+ifneq ($(wildcard $(BENCHMARK_SRC_DIR)/code/.),)
+    BENCHMARK_CODE_DIR = $(BENCHMARK_SRC_DIR)/code
+    IOB_SOC_INCLUDES += -I$(BENCHMARK_CODE_DIR)
+    IOB_SOC_FW_SRC += $(wildcard $(BENCHMARK_CODE_DIR)/*.c)
+    $(info   Including prepared code from: $(BENCHMARK_CODE_DIR))
+endif
+
+
 DRIVERS=$(addprefix src/,$(addsuffix .c,$(PERIPHERALS)))
 # Only add driver files if they exist
 IOB_SOC_FW_SRC+=$(foreach file,$(DRIVERS),$(wildcard $(file)*))
 IOB_SOC_FW_SRC+=$(addprefix src/,$(addsuffix _csrs_emb.c,$(PERIPHERALS)))
 
-# BOOTLOADER SOURCES
+
 IOB_SOC_BOOT_SRC+=src/iob_soc_boot.S
 IOB_SOC_BOOT_SRC+=src/iob_soc_boot.c
 IOB_SOC_BOOT_SRC+=src/iob_uart.c
 IOB_SOC_BOOT_SRC+=src/iob_uart_csrs_emb.c
 
-# PREBOOT SOURCES
+
 IOB_SOC_PREBOOT_SRC=src/iob_soc_preboot.S
 
 build_iob_soc_software: iob_soc_firmware iob_soc_boot iob_soc_preboot
@@ -78,7 +114,6 @@ iob_soc_boot: iob_bsp
 
 iob_soc_preboot:
 	make $@.elf INCLUDES="$(IOB_SOC_INCLUDES)" LFLAGS="$(IOB_SOC_LFLAGS) -Wl,-Map,$@.map" SRC="$(IOB_SOC_PREBOOT_SRC)" TEMPLATE_LDS="$(TEMPLATE_LDS)"
-
 
 .PHONY: build_iob_soc_software iob_bsp iob_soc_firmware iob_soc_boot iob_soc_preboot
 

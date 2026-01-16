@@ -16,7 +16,10 @@ module iob_soc_iob_aes_ku040_db_g #(
    input  areset_i,
    // rs232_io
    output txd_o,
-   input  rxd_i
+   input  rxd_i,
+   // uart1_io (for fault injection)
+   output uart1_txd_o,
+   input  uart1_rxd_i
 );
    // clk_en_rst
    wire clk;
@@ -42,10 +45,13 @@ module iob_soc_iob_aes_ku040_db_g #(
       .rs232_rxd_i(rxd_i),
       .rs232_txd_o(txd_o),
       .rs232_rts_o(rs232_rts),
-      .rs232_cts_i(high)
+      .rs232_cts_i(high),
+      // uart1_m port (for fault injection)
+      .uart1_rxd_i(uart1_rxd_i),
+      .uart1_txd_o(uart1_txd_o)
    );
 
-   // PLL to generate system clock
+   // PLL to generate system clocky
    iob_xilinx_clock_wizard #(
       .OUTPUT_PER(16.667),
       .INPUT_PER (4.0)

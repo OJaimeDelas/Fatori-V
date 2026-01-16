@@ -18,7 +18,10 @@ module iob_soc_mwrap #(
    input  rs232_rxd_i,
    output rs232_txd_o,
    output rs232_rts_o,
-   input  rs232_cts_i
+   input  rs232_cts_i,
+   // uart1_m (for fault injection)
+   input  uart1_rxd_i,
+   output uart1_txd_o
 );
    // rom_bus_m
    wire          bootrom_mem_clk;
@@ -29,10 +32,10 @@ module iob_soc_mwrap #(
    wire          ext_mem_clk;
    reg  [32-1:0] ext_mem_r_data;
    wire          ext_mem_r_en;
-   wire [13-1:0] ext_mem_r_addr;
+   wire [16-1:0] ext_mem_r_addr;
    wire [32-1:0] ext_mem_w_data;
    wire [ 4-1:0] ext_mem_w_strb;
-   wire [13-1:0] ext_mem_w_addr;
+   wire [16-1:0] ext_mem_w_addr;
 
 
    // Default description
@@ -65,7 +68,10 @@ module iob_soc_mwrap #(
       .rs232_rxd_i         (rs232_rxd_i),
       .rs232_txd_o         (rs232_txd_o),
       .rs232_rts_o         (rs232_rts_o),
-      .rs232_cts_i         (rs232_cts_i)
+      .rs232_cts_i         (rs232_cts_i),
+      // uart1_m port (for fault injection)
+      .uart1_rxd_i         (uart1_rxd_i),
+      .uart1_txd_o         (uart1_txd_o)
    );
 
    // Default description
@@ -84,7 +90,7 @@ module iob_soc_mwrap #(
    // Default description
    iob_ram_t2p_be #(
       .DATA_W              (32),
-      .ADDR_W              (13),
+      .ADDR_W              (16),
       .HEXFILE             (EXT_MEM_HEXFILE),
       .MEM_NO_READ_ON_WRITE(MEM_NO_READ_ON_WRITE)
    ) ext_mem_mem (

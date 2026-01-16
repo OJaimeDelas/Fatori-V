@@ -1,0 +1,23 @@
+# benchmarks/
+
+Benchmark implementations for FATORI-V testing and FI campaigns.
+
+## Structure
+
+Each benchmark is a subdirectory with:
+- Source files (.c, .h)
+- Makefile
+- Optional: requirements.yaml (library dependencies)
+
+## Available Benchmarks
+
+coremark/       - CoreMark industry standard benchmark
+dhrystone/      - Dhrystone integer performance test
+embench/        - Embench-IoT embedded benchmark suite
+fatori_stress/  - Custom stress tests with XOR validation
+hello_world/    - Simple test benchmark
+
+## Integration
+
+Benchmarks referenced in run YAML via name.
+Build system adds: BENCHMARKS_DIR=../../benchmarks/<name>

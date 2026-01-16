@@ -23,7 +23,6 @@ a small bridge in `scripts/exec/fi_bridge/`.
                 `fatori_reg_mon.svh`, `fatori_logic_mon.svh`, `fatori_selftest.svh`).
 - `pblocks/`  — generation of `fatori_pblocks.svh` and `fatori_pblocks.tcl`.
 - `results/`  — scripts that collect and mirror run artefacts under `results/`.
-- `run/`      — reserved for future helpers that operate on multiple runs.
 
 Each of these subfolders has its own `Readme`, a `<area>_settings.py` file and
 one "big" script (`fatori_<area>.py`) that tells the story for that phase.

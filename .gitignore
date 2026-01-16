@@ -1,7 +1,44 @@
-# Build/artefactos pesados
-build/
+# Build artifacts
 *.ebd
 *.ebc
+iob_soc_V1.0/*
+
+# Folders
+results/*
+!results/
+!results/Readme
+tmp/*
+!tmp/
+!tmp/Readme
+runs/*
+!runs/
+!runs/Readme
+!runs/example.yaml
+
+# Testing Scripts
+test.py
+update_imports.sh
+
+# Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
 *.py[cod]
 *\.class
+
+# Logs
+injection_log.txt
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+EOF

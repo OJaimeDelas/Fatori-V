@@ -1,0 +1,34 @@
+# =============================================================================
+# FATORI-V FI Console - Git Ignore Rules
+# =============================================================================
+
+# Build artifacts
+build/
+gen/
+*.ebd
+
+# Testing Scripts
+test.py
+update_imports.sh
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+
+# Logs
+injection_log.txt
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+EOF

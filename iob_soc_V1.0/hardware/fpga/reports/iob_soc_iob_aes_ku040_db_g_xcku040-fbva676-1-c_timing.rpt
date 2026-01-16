@@ -1,8 +1,8 @@
 Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
 ------------------------------------------------------------------------------------------------------------
 | Tool Version      : Vivado v.2020.2 (lin64) Build 3064766 Wed Nov 18 09:12:47 MST 2020
-| Date              : Sat Nov 22 17:12:18 2025
-| Host              : pudim-flan running 64-bit Ubuntu 22.04.5 LTS
+| Date              : Thu Jan 15 17:35:54 2026
+| Host              : sericaia running 64-bit Ubuntu 22.04.5 LTS
 | Command           : report_timing -file reports/iob_soc_iob_aes_ku040_db_g_xcku040-fbva676-1-c_timing.rpt
 | Design            : iob_soc_iob_aes_ku040_db_g
 | Device            : xcku040-fbva676
@@ -12,26 +12,26 @@ Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
 
 Timing Report
 
-Slack (MET) :             1.743ns  (required time - arrival time)
-  Source:                 iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o_reg[22]/C
+Slack (MET) :             1.909ns  (required time - arrival time)
+  Source:                 iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/id_fsm_q_reg_wrapper_fi/gen_passthrough.u_reg/reg0/data_o_reg[0]/C
                             (rising edge-triggered cell FDRE clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
-  Destination:            iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1/WEA[0]
-                            (rising edge-triggered cell RAMB36E2 clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
+  Destination:            iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/mem_reg[24][33]/D
+                            (rising edge-triggered cell FDRE clocked by clk_out1_clock_wizard  {rise@0.000ns fall@8.500ns period=17.000ns})
   Path Group:             clk_out1_clock_wizard
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            17.000ns  (clk_out1_clock_wizard rise@17.000ns - clk_out1_clock_wizard rise@0.000ns)
-  Data Path Delay:        14.297ns  (logic 3.612ns (25.264%)  route 10.685ns (74.736%))
-  Logic Levels:           21  (CARRY8=4 LUT3=3 LUT4=3 LUT5=4 LUT6=7)
-  Clock Path Skew:        -0.198ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    4.150ns = ( 21.150 - 17.000 ) 
-    Source Clock Delay      (SCD):    4.731ns
-    Clock Pessimism Removal (CPR):    0.383ns
+  Data Path Delay:        14.810ns  (logic 3.319ns (22.411%)  route 11.491ns (77.589%))
+  Logic Levels:           20  (LUT2=2 LUT3=1 LUT4=5 LUT5=4 LUT6=8)
+  Clock Path Skew:        -0.276ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    4.514ns = ( 21.514 - 17.000 ) 
+    Source Clock Delay      (SCD):    5.106ns
+    Clock Pessimism Removal (CPR):    0.316ns
   Clock Uncertainty:      0.069ns  ((TSJ^2 + DJ^2)^1/2) / 2 + PE
     Total System Jitter     (TSJ):    0.071ns
     Discrete Jitter          (DJ):    0.119ns
     Phase Error              (PE):    0.000ns
-  Clock Net Delay (Source):      2.291ns (routing 0.396ns, distribution 1.895ns)
-  Clock Net Delay (Destination): 1.948ns (routing 0.365ns, distribution 1.583ns)
+  Clock Net Delay (Source):      2.666ns (routing 0.960ns, distribution 1.706ns)
+  Clock Net Delay (Destination): 2.312ns (routing 0.882ns, distribution 1.430ns)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
@@ -50,76 +50,73 @@ Slack (MET) :             1.743ns  (required time - arrival time)
                          net (fo=1, routed)           0.529     2.339    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
     BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
                                                       0.101     2.440 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
-    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        2.291     4.731    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/clk
-    SLICE_X15Y80         FDRE                                         r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o_reg[22]/C
+    X1Y1 (CLOCK_ROOT)    net (fo=6180, routed)        2.666     5.106    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/id_fsm_q_reg_wrapper_fi/gen_passthrough.u_reg/reg0/clk_i
+    SLICE_X41Y79         FDRE                                         r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/id_fsm_q_reg_wrapper_fi/gen_passthrough.u_reg/reg0/data_o_reg[0]/C
   -------------------------------------------------------------------    -------------------
-    SLICE_X15Y80         FDRE (Prop_CFF_SLICEM_C_Q)
-                                                      0.138     4.869 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o_reg[22]/Q
-                         net (fo=46, routed)          0.545     5.414    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/gen_rdata_mux_check.u_prim_onehot_enc_raddr_b/rf_raddr_b[2]
-    SLICE_X14Y71         LUT5 (Prop_D5LUT_SLICEL_I1_O)
-                                                      0.260     5.674 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/gen_rdata_mux_check.u_prim_onehot_enc_raddr_b/data_o[63]_i_39/O
-                         net (fo=39, routed)          0.791     6.465    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/gen_rdata_mux_check.raddr_onehot_b[15]
-    SLICE_X12Y58         LUT4 (Prop_G6LUT_SLICEL_I2_O)
-                                                      0.089     6.554 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_13/O
-                         net (fo=1, routed)           0.241     6.795    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_13_n_0
-    SLICE_X12Y58         LUT6 (Prop_H6LUT_SLICEL_I0_O)
-                                                      0.218     7.013 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_8/O
-                         net (fo=1, routed)           0.398     7.411    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_8_n_0
-    SLICE_X18Y59         LUT6 (Prop_H6LUT_SLICEM_I5_O)
-                                                      0.173     7.584 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_3/O
-                         net (fo=1, routed)           0.266     7.850    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_3_n_0
-    SLICE_X19Y61         LUT5 (Prop_C6LUT_SLICEL_I1_O)
-                                                      0.219     8.069 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[34]_i_1/O
-                         net (fo=10, routed)          0.746     8.815    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/mem_reg[1][9]
-    SLICE_X15Y92         LUT6 (Prop_D6LUT_SLICEM_I4_O)
-                                                      0.092     8.907 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/i___5_i_12__0/O
-                         net (fo=3, routed)           0.569     9.476    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_operand_b_ex[8]
-    SLICE_X14Y103        LUT3 (Prop_B6LUT_SLICEL_I1_O)
-                                                      0.053     9.529 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/adder_result_ext_o_carry__0_i_15/O
-                         net (fo=1, routed)           0.000     9.529    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/data_o_reg[15][1]
-    SLICE_X14Y103        CARRY8 (Prop_CARRY8_SLICEL_S[1]_CO[7])
-                                                      0.408     9.937 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__0/CO[7]
-                         net (fo=1, routed)           0.030     9.967    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__0_n_0
-    SLICE_X14Y104        CARRY8 (Prop_CARRY8_SLICEL_CI_CO[7])
-                                                      0.025     9.992 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__1/CO[7]
-                         net (fo=1, routed)           0.030    10.022    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__1_n_0
-    SLICE_X14Y105        CARRY8 (Prop_CARRY8_SLICEL_CI_O[0])
-                                                      0.132    10.154 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_i/adder_result_ext_o_carry__2/O[0]
-                         net (fo=88, routed)          1.394    11.548    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[8].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/alu_adder_result_ex_o[22]
-    SLICE_X2Y139         LUT6 (Prop_G6LUT_SLICEL_I0_O)
-                                                      0.166    11.714 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[8].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_141/O
-                         net (fo=1, routed)           0.475    12.189    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/g_pmp.pmp_i/core_outputs_q_reg[1][data_req]_srl2_i_13[3]
-    SLICE_X3Y139         CARRY8 (Prop_CARRY8_SLICEL_DI[3]_CO[7])
-                                                      0.432    12.621 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/g_pmp.pmp_i/core_outputs_q_reg[1][data_req]_srl2_i_42/CO[7]
-                         net (fo=1, routed)           0.498    13.119    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[8].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_55_1[0]
-    SLICE_X5Y135         LUT5 (Prop_D5LUT_SLICEM_I4_O)
-                                                      0.171    13.290 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[8].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_13/O
-                         net (fo=5, routed)           0.712    14.002    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[10].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/g_access_check[2].g_regions[8].region_match_all_reg[2]_70
-    SLICE_X15Y136        LUT6 (Prop_G6LUT_SLICEM_I1_O)
-                                                      0.168    14.170 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[10].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_55/O
-                         net (fo=4, routed)           0.095    14.265    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_7
-    SLICE_X15Y136        LUT4 (Prop_D5LUT_SLICEM_I2_O)
-                                                      0.193    14.458 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_24/O
-                         net (fo=2, routed)           0.235    14.693    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[14].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_3
-    SLICE_X16Y136        LUT3 (Prop_B6LUT_SLICEL_I1_O)
-                                                      0.053    14.746 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[14].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_7/O
-                         net (fo=2, routed)           0.258    15.004    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/data_o[0]_i_5__5
-    SLICE_X15Y135        LUT5 (Prop_E6LUT_SLICEM_I1_O)
-                                                      0.225    15.229 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_3/O
-                         net (fo=4, routed)           0.582    15.811    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_10
-    SLICE_X11Y118        LUT6 (Prop_H6LUT_SLICEM_I3_O)
-                                                      0.055    15.866 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/cs_registers_i/g_pmp_registers.g_pmp_csrs[13].u_pmp_cfg_csr/rdata_reg_inst/no_tmr.reg_inst/reg0/core_outputs_q_reg[1][data_req]_srl2_i_1/O
-                         net (fo=17, routed)          0.916    16.782    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o_reg[0]_38
-    SLICE_X3Y99          LUT3 (Prop_D6LUT_SLICEL_I2_O)
-                                                      0.090    16.872 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/if_stage_i/g_instr_rdata_ra.instr_rdata_id_reg_inst/no_tmr.reg_inst/reg0/data_o[0]_i_2__34/O
-                         net (fo=6, routed)           0.558    17.430    iob_soc_memwrapper/iob_core_inst/iob_axi_full_xbar/iob_axi_merge_0/busy_write_reg_re/reg0/data_o_reg[0]_7
-    SLICE_X3Y79          LUT4 (Prop_B5LUT_SLICEL_I1_O)
-                                                      0.201    17.631 f  iob_soc_memwrapper/iob_core_inst/iob_axi_full_xbar/iob_axi_merge_0/busy_write_reg_re/reg0/write_count_reg[7]_i_3/O
-                         net (fo=11, routed)          0.728    18.359    iob_soc_memwrapper/iob_core_inst/internal_memory/not_MEM_NO_READ_ON_WRITE.mem_reg_3_bram_1
-    SLICE_X9Y82          LUT6 (Prop_F6LUT_SLICEL_I2_O)
-                                                      0.051    18.410 r  iob_soc_memwrapper/iob_core_inst/internal_memory/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1_i_3/O
-                         net (fo=4, routed)           0.618    19.028    iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1_1[0]
-    RAMB36_X1Y18         RAMB36E2                                     r  iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1/WEA[0]
+    SLICE_X41Y79         FDRE (Prop_CFF_SLICEL_C_Q)
+                                                      0.138     5.244 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/id_fsm_q_reg_wrapper_fi/gen_passthrough.u_reg/reg0/data_o_reg[0]/Q
+                         net (fo=18, routed)          0.190     5.434    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/id_fsm_q_reg_wrapper_fi/gen_passthrough.u_reg/reg0/data_o_reg[0]_0
+    SLICE_X39Y79         LUT2 (Prop_E6LUT_SLICEL_I1_O)
+                                                      0.146     5.580 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/id_fsm_q_reg_wrapper_fi/gen_passthrough.u_reg/reg0/instr_first_cycle_id_o_INST_0/O
+                         net (fo=124, routed)         0.400     5.980    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/g_dec_mon.decoder_mon/gen_dec_reps[0].u_dec/gen_rs3_flop.use_rs3_reg_wrapper_fi/gen_passthrough.u_reg/reg0/instr_first_cycle_i
+    SLICE_X38Y71         LUT4 (Prop_D5LUT_SLICEM_I2_O)
+                                                      0.193     6.173 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/g_dec_mon.decoder_mon/gen_dec_reps[0].u_dec/gen_rs3_flop.use_rs3_reg_wrapper_fi/gen_passthrough.u_reg/reg0/rf_raddr_a_o[3]_INST_0/O
+                         net (fo=35, routed)          0.623     6.796    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/gen_rdata_mux_check.u_prim_onehot_enc_raddr_a/rf_raddr_a_o[3]
+    SLICE_X38Y65         LUT5 (Prop_D6LUT_SLICEM_I0_O)
+                                                      0.225     7.021 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/gen_rdata_mux_check.u_prim_onehot_enc_raddr_a/id_stage_i_i_1608/O
+                         net (fo=39, routed)          0.687     7.708    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/gen_rdata_mux_check.raddr_onehot_a[7]
+    SLICE_X46Y59         LUT4 (Prop_F6LUT_SLICEL_I2_O)
+                                                      0.051     7.759 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i_i_807/O
+                         net (fo=1, routed)           0.247     8.006    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i_i_807_n_0
+    SLICE_X45Y59         LUT6 (Prop_H6LUT_SLICEM_I0_O)
+                                                      0.225     8.231 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i_i_301/O
+                         net (fo=1, routed)           0.183     8.414    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i_i_301_n_0
+    SLICE_X44Y59         LUT6 (Prop_G6LUT_SLICEL_I1_O)
+                                                      0.218     8.632 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i_i_137/O
+                         net (fo=44, routed)          0.799     9.431    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/rf_rdata_a_i[31]
+    SLICE_X38Y80         LUT6 (Prop_H6LUT_SLICEM_I5_O)
+                                                      0.091     9.522 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/alu_operand_a_ex_o[31]_INST_0/O
+                         net (fo=47, routed)          1.059    10.581    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/operand_a_i[31]
+    SLICE_X35Y130        LUT6 (Prop_G6LUT_SLICEM_I4_O)
+                                                      0.089    10.670 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][31]_INST_0_i_50/O
+                         net (fo=2, routed)           0.387    11.057    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][31]_INST_0_i_50_n_0
+    SLICE_X33Y129        LUT6 (Prop_C6LUT_SLICEL_I5_O)
+                                                      0.165    11.222 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][31]_INST_0_i_40/O
+                         net (fo=41, routed)          0.392    11.614    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][31]_INST_0_i_40_n_0
+    SLICE_X29Y129        LUT5 (Prop_B5LUT_SLICEM_I0_O)
+                                                      0.184    11.798 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][26]_INST_0_i_28/O
+                         net (fo=3, routed)           0.347    12.145    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][26]_INST_0_i_28_n_0
+    SLICE_X30Y130        LUT5 (Prop_E6LUT_SLICEM_I0_O)
+                                                      0.225    12.370 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][26]_INST_0_i_22/O
+                         net (fo=3, routed)           0.346    12.716    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][26]_INST_0_i_22_n_0
+    SLICE_X32Y129        LUT6 (Prop_H6LUT_SLICEM_I5_O)
+                                                      0.152    12.868 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][6]_INST_0_i_12/O
+                         net (fo=5, routed)           1.231    14.099    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/imd_val_d_o[0][6]_INST_0_i_12_n_0
+    SLICE_X35Y76         LUT2 (Prop_D5LUT_SLICEM_I1_O)
+                                                      0.171    14.270 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/result_o[6]_INST_0_i_9/O
+                         net (fo=1, routed)           0.944    15.214    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/result_o[6]_INST_0_i_9_n_0
+    SLICE_X35Y125        LUT6 (Prop_F6LUT_SLICEM_I1_O)
+                                                      0.093    15.307 f  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/result_o[6]_INST_0_i_2/O
+                         net (fo=1, routed)           0.547    15.854    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/result_o[6]_INST_0_i_2_n_0
+    SLICE_X37Y118        LUT5 (Prop_B5LUT_SLICEL_I1_O)
+                                                      0.253    16.107 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/g_alu_mon.alu_mon/result_o[6]_INST_0/O
+                         net (fo=1, routed)           0.479    16.586    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/alu_result[6]
+    SLICE_X37Y107        LUT4 (Prop_F6LUT_SLICEL_I3_O)
+                                                      0.051    16.637 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/ex_block_i/id_stage_i_i_98/O
+                         net (fo=1, routed)           0.649    17.286    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/result_ex_i[6]
+    SLICE_X39Y89         LUT3 (Prop_B5LUT_SLICEL_I1_O)
+                                                      0.272    17.558 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/id_stage_i/rf_wdata_id_o[6]_INST_0/O
+                         net (fo=1, routed)           0.645    18.203    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/wb_stage_i/rf_wdata_id_i[6]
+    SLICE_X39Y62         LUT4 (Prop_C6LUT_SLICEL_I0_O)
+                                                      0.051    18.254 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/wb_stage_i/rf_wdata_wb_o[6]_INST_0/O
+                         net (fo=34, routed)          0.331    18.585    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/mem[1][38]_i_4_0[6]
+    SLICE_X39Y59         LUT4 (Prop_B6LUT_SLICEL_I3_O)
+                                                      0.089    18.674 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/mem[1][33]_i_3/O
+                         net (fo=1, routed)           0.173    18.847    iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/mem[1][33]_i_3_n_0
+    SLICE_X39Y58         LUT6 (Prop_B6LUT_SLICEL_I1_O)
+                                                      0.237    19.084 r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/u_ibex_core/mem[1][33]_i_1/O
+                         net (fo=31, routed)          0.832    19.916    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/D[33]
+    SLICE_X45Y52         FDRE                                         r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/mem_reg[24][33]/D
   -------------------------------------------------------------------    -------------------
 
                          (clock clk_out1_clock_wizard rise edge)
@@ -137,17 +134,17 @@ Slack (MET) :             1.743ns  (required time - arrival time)
                          net (fo=1, routed)           0.451    19.111    clk_250_to_100_MHz/clock_wizard_inst/clk_out1_clock_wizard
     BUFGCE_X0Y47         BUFGCE (Prop_BUFCE_BUFGCE_I_O)
                                                       0.091    19.202 r  clk_250_to_100_MHz/clock_wizard_inst/clkout1_buf/O
-    X0Y1 (CLOCK_ROOT)    net (fo=9788, routed)        1.948    21.150    iob_soc_memwrapper/ext_mem_mem/clk
-    RAMB36_X1Y18         RAMB36E2                                     r  iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1/CLKARDCLK
-                         clock pessimism              0.383    21.533    
-                         clock uncertainty           -0.069    21.464    
-    RAMB36_X1Y18         RAMB36E2 (Setup_RAMB36E2_RAMB36_CLKARDCLK_WEA[0])
-                                                     -0.693    20.771    iob_soc_memwrapper/ext_mem_mem/not_MEM_NO_READ_ON_WRITE.mem_reg_0_bram_1
+    X1Y1 (CLOCK_ROOT)    net (fo=6180, routed)        2.312    21.514    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/clk
+    SLICE_X45Y52         FDRE                                         r  iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/mem_reg[24][33]/C
+                         clock pessimism              0.316    21.830    
+                         clock uncertainty           -0.069    21.761    
+    SLICE_X45Y52         FDRE (Setup_HFF2_SLICEM_C_D)
+                                                      0.064    21.825    iob_soc_memwrapper/iob_core_inst/cpu/u_top/gen_regfile_fpga.register_file_i/mem_reg[24][33]
   -------------------------------------------------------------------
-                         required time                         20.771    
-                         arrival time                         -19.028    
+                         required time                         21.825    
+                         arrival time                         -19.916    
   -------------------------------------------------------------------
-                         slack                                  1.743    
+                         slack                                  1.909    
 
 
 

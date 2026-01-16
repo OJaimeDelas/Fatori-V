@@ -7,23 +7,23 @@ Name             Origin             Length             Attributes
 Linker script and memory map
 
 
-.memory         0x0000000000000000       0x50
+.memory         0x0000000000000000       0x48
                 0x0000000000000000                . = 0x0
  *(.init)
- .init          0x0000000000000000       0x34 /tmp/ccUaEnZV.o
+ .init          0x0000000000000000       0x28 /run/user/1015/ccd8fU51.o
                 0x0000000000000000                _start
  *(.text)
- .text          0x0000000000000034        0x0 /tmp/ccUaEnZV.o
+ .text          0x0000000000000028        0x0 /run/user/1015/ccd8fU51.o
  *(*)
- .data          0x0000000000000034        0x0 /tmp/ccUaEnZV.o
- .bss           0x0000000000000034        0x0 /tmp/ccUaEnZV.o
+ .data          0x0000000000000028        0x0 /run/user/1015/ccd8fU51.o
+ .bss           0x0000000000000028        0x0 /run/user/1015/ccd8fU51.o
  .riscv.attributes
-                0x0000000000000034       0x1a /tmp/ccUaEnZV.o
-                0x0000000000000050                . = ALIGN (0x4)
- *fill*         0x000000000000004e        0x2 
-                0x0000000000000050                _heap_start = .
-LOAD /tmp/ccUaEnZV.o
-LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/rv32i/ilp32/libgcc.a
-LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libc_nano.a
-LOAD /nix/store/wxfd0xxbq67dc9i4y00ypid0w7fa27qk-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libnosys.a
+                0x0000000000000028       0x1f /run/user/1015/ccd8fU51.o
+                0x0000000000000048                . = ALIGN (0x4)
+ *fill*         0x0000000000000047        0x1 
+                0x0000000000000048                _heap_start = .
+LOAD /run/user/1015/ccd8fU51.o
+LOAD /nix/store/vcz79nh29xywisg3qrwqphz9qjm8c5zp-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libc_nano.a
+LOAD /nix/store/vcz79nh29xywisg3qrwqphz9qjm8c5zp-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/rv32i/ilp32/libgcc.a
+LOAD /nix/store/vcz79nh29xywisg3qrwqphz9qjm8c5zp-riscv-gnu-toolchain/lib/gcc/riscv64-unknown-elf/11.1.0/../../../../riscv64-unknown-elf/lib/rv32i/ilp32/libnosys.a
 OUTPUT(iob_soc_preboot.elf elf32-littleriscv)

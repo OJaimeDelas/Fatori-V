@@ -13,6 +13,52 @@ set USE_EXTMEM [lindex $argv 6]
 set USE_ETHERNET [lindex $argv 7]
 set SDC_PREFIX [lindex $argv 8]
 
+set VIVADO_INPUT [lindex $argv 9]
+
+# Helper procedure to source probes with proper context
+proc source_probe {probe_dir probe_name} {
+    if {$probe_dir == ""} {
+        return
+    }
+    
+    set probe_file "${probe_dir}/${probe_name}"
+    if {[file exists $probe_file]} {
+        puts "=========================================="
+        puts ">>> Sourcing: ${probe_name}"
+        puts ">>> From: ${probe_dir}"
+        puts "=========================================="
+        
+        # Make build.tcl variables available to probes
+        global NAME CSR_IF BOARD VSRC INCLUDE_DIRS IS_FPGA USE_EXTMEM USE_ETHERNET SDC_PREFIX VIVADO_INPUT PART
+        global PROBE_DIR
+        set PROBE_DIR $probe_dir
+        
+        # Source the probe directly
+        # This keeps the working directory at build_dir/hardware/fpga/
+        source $probe_file
+        
+        puts ">>> ${probe_name} complete!"
+        puts "==========================================\n"
+    } else {
+        puts ">>> Probe not found: ${probe_file} (skipping)"
+    }
+}
+
+# ============================================================================
+# HOOK PROBE 1: Pre-Synthesis
+# ============================================================================
+source_probe $VIVADO_INPUT "pre_synthesis.tcl"
+
+#verilog sources, vivado IPs, use file extension
+foreach file [split $VSRC \ ] {
+    puts $file
+    if { [ file extension $file ] == ".edif" } {
+        read_edif $file
+    } elseif {$file != "" && $file != " " && $file != "\n"} {
+        read_verilog -sv $file
+    }
+}
+
 #verilog sources, vivado IPs, use file extension
 foreach file [split $VSRC \ ] {
     puts $file
@@ -76,9 +122,19 @@ if {[file exists "vivado/postmap.tcl"]} {
 
 opt_design
 
+# ============================================================================
+# HOOK PROBE 2: Post-Optimization 
+# ============================================================================
+source_probe $VIVADO_INPUT "post_opt.tcl"
+
 place_design
 
 route_design -timing
+
+# ============================================================================
+# HOOK PROBE 3: Post-Route
+# ============================================================================
+source_probe $VIVADO_INPUT "post_route.tcl"
 
 report_clocks
 report_clock_interaction
@@ -95,8 +151,20 @@ report_timing_summary -file reports/$NAME\_$PART\_timing_summary.rpt
 report_timing -file reports/$NAME\_$PART\_timing_paths.rpt -max_paths 30
 report_bus_skew -file reports/$NAME\_$PART\_bus_skew.rpt
 
+
+# ========================================================================
+# HOOK PROBE 4: Pre-Bitstream
+# ========================================================================
+source_probe $VIVADO_INPUT "pre_bitstream.tcl"
+
 if { $IS_FPGA == "1" } {
     write_bitstream -force $NAME.bit
+
+    # ========================================================================
+    # HOOK PROBE 5: Post-Bitstream
+    # ========================================================================
+    source_probe $VIVADO_INPUT "post_bitstream.tcl"
+
 } else {
     write_verilog -force $NAME\_netlist.v
     write_verilog -force -mode synth_stub ${NAME}_stub.v

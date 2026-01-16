@@ -1,0 +1,48 @@
+# =============================================================================
+# FATORI-V Pblock Generation - Example Configuration
+# =============================================================================
+
+# Architectural Features
+features:
+  FATORI_ICACHE: 1           # 0=prefetch buffer, 1=instruction cache
+  FATORI_BRANCH_TALU: 1      # Branch Target ALU in ID stage
+  FATORI_BRANCH_PRED: 1      # Branch predictor
+  FATORI_WSTAGE: 0           # Writeback stage 
+  FATORI_RV32B: Balanced     # Options: None, Balanced, Full
+  FATORI_RV32M: Fast         # Options: None, Slow, Fast
+  FATORI_FI: 1               # Fault injection mode (0=off, 1=on)
+
+# M-of-N Redundancy Configuration
+# For each module, specify:
+#   MON_N: Number of replicas (1-5)
+#   MON_M: Voting threshold (typically N//2 + 1)
+mon_config:
+  ALU:
+    MON_N: 3
+    MON_M: 2
+  
+  LSU:
+    MON_N: 3
+    MON_M: 2
+  
+  CONTROLLER:
+    MON_N: 1    # No replication
+    MON_M: 0
+  
+  DECODER:
+    MON_N: 1
+    MON_M: 0
+  
+  IF_STAGE:
+    MON_N: 1
+    MON_M: 0
+  
+  MULTDIV:
+    MON_N: 1
+    MON_M: 0
+
+# Notes:
+# - FATORI_FI=1 causes CONTROLLER and DECODER to merge into ID_STAGE
+# - MON_N > 3 is untested for most modules and may cause timing issues
+# - WB_STAGE must remain disabled (breaks architecture)
+# - With ICACHE=1, PREFETCH_BUFFER is automatically excluded

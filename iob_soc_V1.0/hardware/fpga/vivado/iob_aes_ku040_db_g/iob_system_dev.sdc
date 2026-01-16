@@ -30,11 +30,17 @@ set_property CONFIG_VOLTAGE 2.5 [current_design]
 
 set_property CFGBVS VCCO [current_design]
 
-## USB-UART Interface
+## USB-UART0 Interface
 set_property PACKAGE_PIN D20 [get_ports {txd_o}]
 set_property IOSTANDARD LVCMOS18 [get_ports {txd_o}]
 set_property PACKAGE_PIN C19 [get_ports {rxd_i}]
 set_property IOSTANDARD LVCMOS18 [get_ports {rxd_i}]
+
+## USB-UART1 Interface - Fault Injection
+set_property PACKAGE_PIN F18 [get_ports {uart1_rxd_i}]
+set_property IOSTANDARD LVCMOS18 [get_ports {uart1_rxd_i}]
+set_property PACKAGE_PIN G19 [get_ports {uart1_txd_o}]
+set_property IOSTANDARD LVCMOS18 [get_ports {uart1_txd_o}]
 
 ###### User LEDs
 #set_property PACKAGE_PIN D16 [get_ports {led[6]}]

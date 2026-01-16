@@ -22,15 +22,19 @@ module iob_soc #(
    output              ext_mem_clk_o,
    input  reg [32-1:0] ext_mem_r_data_i,
    output              ext_mem_r_en_o,
-   output     [13-1:0] ext_mem_r_addr_o,
+   output     [16-1:0] ext_mem_r_addr_o,
    output     [32-1:0] ext_mem_w_data_o,
    output     [ 4-1:0] ext_mem_w_strb_o,
-   output     [13-1:0] ext_mem_w_addr_o,
+   output     [16-1:0] ext_mem_w_addr_o,
    // rs232_m
    input               rs232_rxd_i,
    output              rs232_txd_o,
    output              rs232_rts_o,
    input               rs232_cts_i
+
+   // UART1 for fault injection
+   , input  uart1_rxd_i
+   , output uart1_txd_o
 );
    // interrupts
    wire [             32-1:0] interrupts;
@@ -111,8 +115,8 @@ module iob_soc #(
    wire                       cpu_d_axi_wlast;
    wire [       AXI_ID_W-1:0] cpu_d_axi_bid;
    // unused_interconnect_bits
-   wire [             17-1:0] unused_m0_araddr_bits;
-   wire [             17-1:0] unused_m0_awaddr_bits;
+   wire [             14-1:0] unused_m0_araddr_bits;
+   wire [             14-1:0] unused_m0_awaddr_bits;
    wire [32 - AXI_ADDR_W-1:0] unused_m1_araddr_bits;
    wire [32 - AXI_ADDR_W-1:0] unused_m1_awaddr_bits;
    wire [             19-1:0] unused_m2_araddr_bits;
@@ -120,7 +124,7 @@ module iob_soc #(
    wire [              2-1:0] unused_m3_araddr_bits;
    wire [              2-1:0] unused_m3_awaddr_bits;
    // int_mem_axi
-   wire [           15-2-1:0] int_mem_axi_araddr;
+   wire [           18-2-1:0] int_mem_axi_araddr;
    wire [              3-1:0] int_mem_axi_arprot;
    wire                       int_mem_axi_arvalid;
    wire                       int_mem_axi_arready;
@@ -137,7 +141,7 @@ module iob_soc #(
    wire [              4-1:0] int_mem_axi_arqos;
    wire [       AXI_ID_W-1:0] int_mem_axi_rid;
    wire                       int_mem_axi_rlast;
-   wire [           15-2-1:0] int_mem_axi_awaddr;
+   wire [           18-2-1:0] int_mem_axi_awaddr;
    wire [              3-1:0] int_mem_axi_awprot;
    wire                       int_mem_axi_awvalid;
    wire                       int_mem_axi_awready;
@@ -274,7 +278,6 @@ module iob_soc #(
    wire [             32-1:0] plic_cbus_iob_rdata;
    wire                       plic_cbus_iob_ready;
 
-
    // RISC-V CPU instance
    iob_ibex #(
       .AXI_ID_W  (1),
@@ -381,7 +384,11 @@ module iob_soc #(
       .plic_iob_rdata_o  (plic_cbus_iob_rdata),
       .plic_iob_ready_o  (plic_cbus_iob_ready),
       // plic_interrupts_i port
-      .plic_interrupts_i (interrupts)
+      .plic_interrupts_i (interrupts),
+
+      // UART1 for fault injection (passed through to CPU)
+      .uart1_rxd_i(uart1_rxd_i),
+      .uart1_txd_o(uart1_txd_o)
    );
 
    // AXI full xbar instance
@@ -591,7 +598,7 @@ module iob_soc #(
    iob_axi_ram #(
       .ID_WIDTH  (AXI_ID_W),
       .LEN_WIDTH (AXI_LEN_W),
-      .ADDR_WIDTH(15),
+      .ADDR_WIDTH(18),
       .DATA_WIDTH(AXI_DATA_W)
    ) internal_memory (
       // clk_i port

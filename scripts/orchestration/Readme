@@ -1,0 +1,22 @@
+# scripts/orchestration/
+
+High-level run orchestration and state management.
+
+## Files
+
+run_controller.py      - Main controller, executes run phases
+run_phases.py          - RunPhase enum and phase definitions
+run_context.py         - RunContext class (immutable run info)
+run_state.py           - RunState class (mutable state tracking)
+run_setup.py           - Pre-run setup (directories, validation)
+run_cleanup.py         - Post-run cleanup (tmp/, logging)
+run_reporter.py        - Run summary and reporting
+run_validation.py      - Configuration validation orchestration
+multi_run_controller.py - Multiple run orchestration
+generate_all.py        - Master file generation orchestrator
+
+## Interfaces
+
+run_controller.execute_run(config) -> int (exit code)
+RunContext: Immutable run parameters
+RunState: Mutable state (current phase, status, errors)

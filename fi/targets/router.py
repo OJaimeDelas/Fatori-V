@@ -2,27 +2,28 @@
 # FATORI-V • FI Targets
 # File: router.py
 # -----------------------------------------------------------------------------
-# Route targets to appropriate injection backend (SEM or GPIO).
+# Route targets to appropriate injection backend (SEM or UART register injection).
 #=============================================================================
 
 import logging
-from .target_types import TargetSpec, TargetKind
+from fi.targets.types import TargetSpec, TargetKind
 
 logger = logging.getLogger(__name__)
 
 
-def route_target(target: TargetSpec, sem_proto, board_if) -> bool:
+def inject_target(target: TargetSpec, sem_proto, board_if, logger=None) -> bool:
     """
-    Route target to appropriate injection backend.
+    Inject target by routing to appropriate backend.
     
     This is the main dispatch function that routes targets based on their kind:
     - CONFIG targets → SEM protocol (configuration bits)
-    - REG targets → Board interface (registers via GPIO)
+    - REG targets → Board interface (registers via UART fi_coms protocol)
     
     Args:
         target: TargetSpec to inject
         sem_proto: SEM protocol wrapper for CONFIG injection
         board_if: Board interface for REG injection
+        logger: Optional logger (for compatibility, not used)
     
     Returns:
         True if injection succeeded, False otherwise
@@ -70,15 +71,15 @@ def _inject_config_bit(target: TargetSpec, sem_proto) -> bool:
 
 def _inject_register(target: TargetSpec, board_if) -> bool:
     """
-    Inject register via board interface (GPIO).
+    Inject register via board interface (UART).
     
-    Extracts the register ID and module name from the target and
-    sends them to the board interface, which handles the GPIO
-    signaling to the FPGA.
+    Extracts the register ID from the target and sends it to the
+    board interface, which handles the UART fi_coms command to
+    the FPGA injection logic.
     
     Args:
         target: TargetSpec with REG kind
-        board_if: Board interface for GPIO control
+        board_if: Board interface for UART-based register injection
     
     Returns:
         True if register injection succeeded
@@ -86,7 +87,7 @@ def _inject_register(target: TargetSpec, board_if) -> bool:
     try:
         reg_id = target.reg_id
         
-        # Send to board interface (GPIO pins)
+        # Send to board interface (UART fi_coms command)
         # The board interface returns True/False for success
         success = board_if.inject_register(reg_id, bit_index=None)
         

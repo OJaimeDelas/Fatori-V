@@ -1,0 +1,29 @@
+# ----------------------------------------------------------------------
+# FATORI-V Generated File Locations
+# ----------------------------------------------------------------------
+# Maps generated files from tmp/generated/ to build tree destinations
+# Format: source_file: destination_path
+# ----------------------------------------------------------------------
+
+# Hardware generation files (SystemVerilog headers)
+# All .svh files go to Ibex hardware source directory
+fatori_features.svh: architecture/submodules/iob_ibex/hardware/src/fatori_features.svh
+fatori_ftm.svh: architecture/submodules/iob_ibex/hardware/src/fatori_ftm.svh
+fatori_reg_mon.svh: architecture/submodules/iob_ibex/hardware/src/fatori_reg_mon.svh
+fatori_logic_mon.svh: architecture/submodules/iob_ibex/hardware/src/fatori_logic_mon.svh
+fatori_selftest.svh: architecture/submodules/iob_ibex/hardware/src/fatori_selftest.svh
+fatori_pblocks.svh: architecture/submodules/iob_ibex/hardware/src/fatori_pblocks.svh
+
+# Software generation files (C headers)
+# Metrics configuration goes to architecture software source
+metrics_config.h: architecture/software/src/metrics_config.h
+
+# Benchmark-specific configuration files
+# Generated as bench_config_<benchmark>.h, copied as bench_config.h to each benchmark
+bench_config_hello_world.h: benchmarks/hello_world/bench_config.h
+bench_config_coremark.h: benchmarks/coremark/bench_config.h
+bench_config_fatori_stress.h: benchmarks/fatori_stress/bench_config.h
+bench_config_embench-iot.h: benchmarks/embench/bench_config.h
+
+# TCL Scripts
+fatori_pblocks.tcl: tmp/tcl/fatori_pblocks.tcl

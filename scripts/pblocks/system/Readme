@@ -1,0 +1,178 @@
+# FATORI-V Pblock Generation - Examples
+
+This directory contains example configurations demonstrating different use cases.
+
+---
+
+## Quick Start
+
+```bash
+# From the pblocks/ directory:
+python3 generate_pblocks.py --input examples/config_example.yaml --output output/system_dict.yaml
+```
+
+---
+
+## Example Configuration Explained
+
+The `config_example.yaml` file shows a typical fault-tolerant configuration:
+
+### Architectural Features
+- **ICACHE=1**: Uses instruction cache (larger IF_STAGE)
+- **BRANCH_TALU=1**: Branch target ALU enabled (faster branches)
+- **BRANCH_PRED=1**: Branch predictor enabled (better performance)
+- **RV32B=Balanced**: Bitmanip extension (ALU grows 4.2x)
+- **RV32M=Fast**: Single-cycle multiplier (466 LUTs)
+- **FI=1**: Fault injection mode (CONTROLLER/DECODER merge into ID_STAGE)
+
+### M-of-N Redundancy
+- **ALU**: MON_N=3 (triple modular redundancy, 2-of-3 voting)
+- **LSU**: MON_N=3 (triple modular redundancy, 2-of-3 voting)
+- **Others**: No replication (MON_N=1)
+
+**Expected Results:**
+- ~7 target modules (FI mode merges CONTROLLER/DECODER)
+- ALU: ~7,400 LUTs (238 × 4.2 × 5.7 × 1.30)
+- LSU: ~1,100 LUTs (154 × 1.0 × 5.7 × 1.40)
+- IF_STAGE: ~1,900 LUTs (431 × 3.2 × 1.15 × 1.35)
+- Total: ~21,000 LUTs (~8.6% of FPGA)
+
+---
+
+## Creating Your Own Configuration
+
+### Step 1: Copy the Example
+```bash
+cp examples/config_example.yaml my_config.yaml
+```
+
+### Step 2: Edit Features
+Modify the `features` section according to your needs:
+
+```yaml
+features:
+  FATORI_ICACHE: 0        # Disable cache (use prefetch)
+  FATORI_RV32B: None      # Disable bitmanip (smaller ALU)
+  FATORI_RV32M: None      # No multiplier
+  FATORI_FI: 0            # Disable FI mode
+```
+
+### Step 3: Configure MON_N
+Set redundancy levels for critical modules:
+
+```yaml
+mon_config:
+  ALU:
+    MON_N: 5    # 5x replication
+    MON_M: 3    # 3-of-5 voting
+  
+  LSU:
+    MON_N: 1    # No replication
+    MON_M: 0
+```
+
+### Step 4: Generate Pblocks
+```bash
+python generate_pblocks.py --input my_config.yaml --output my_output/system_dict.yaml --verbose
+```
+
+---
+
+## Common Configurations
+
+### Minimal (Baseline)
+Smallest possible configuration for testing:
+```yaml
+features:
+  FATORI_ICACHE: 0
+  FATORI_BRANCH_TALU: 0
+  FATORI_BRANCH_PRED: 0
+  FATORI_WSTAGE: 0
+  FATORI_RV32B: None
+  FATORI_RV32M: None
+  FATORI_FI: 0
+
+mon_config:
+  # All MON_N=1 (no replication)
+```
+**Expected:** ~2,300 LUTs total
+
+### Light Fault Tolerance
+Basic fault tolerance for control path:
+```yaml
+features:
+  FATORI_ICACHE: 1
+  FATORI_RV32M: Fast
+  FATORI_FI: 0      # Keep CONTROLLER/DECODER separate
+
+mon_config:
+  CONTROLLER:
+    MON_N: 3
+    MON_M: 2
+  DECODER:
+    MON_N: 3
+    MON_M: 2
+```
+**Expected:** ~4,500 LUTs total
+
+### Maximum Performance
+All features enabled, no redundancy:
+```yaml
+features:
+  FATORI_ICACHE: 1
+  FATORI_BRANCH_TALU: 1
+  FATORI_BRANCH_PRED: 1
+  FATORI_RV32B: Full
+  FATORI_RV32M: Fast
+  FATORI_FI: 0
+
+mon_config:
+  # All MON_N=1
+```
+**Expected:** ~6,000 LUTs total
+
+---
+
+## Configuration Warnings
+
+###  Always Set WSTAGE=0
+Writeback stage is currently broken and will cause architecture failures:
+```yaml
+FATORI_WSTAGE: 0  # MUST BE 0
+```
+
+###  Limit MON_N for Timing
+MON_N > 3 can cause timing closure issues:
+```yaml
+# Recommended maximum
+ALU:
+  MON_N: 3    # Tested and validated
+
+# Avoid unless necessary
+IF_STAGE:
+  MON_N: 5    # May cause timing/routing issues
+```
+
+###  FI Mode Changes Targets
+With FATORI_FI=1:
+- CONTROLLER and DECODER merge into ID_STAGE
+- Target ID_STAGE as a whole, not children separately
+- This is handled automatically by the algorithm
+
+---
+
+## Validating Your Configuration
+
+Run with `--verbose` to see detailed analysis:
+```bash
+python generate_pblocks.py --input my_config.yaml --output output/system_dict.yaml --verbose
+```
+
+Check the generated `pblock_summary.txt` for:
+- Size calculations with breakdown (base, features, MON, margin)
+- Clock region assignments
+- Utilization percentages
+
+**Recommended utilization limits:**
+- Per-region: < 90% (routing margin)
+- Total FPGA: < 80% (headroom for other logic)

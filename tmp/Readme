@@ -1,0 +1,16 @@
+# tmp/
+
+Temporary files generated per run. Contents reset between runs.
+
+## Subdirectories
+
+generated/  - Generated .svh headers, .yaml configs
+tcl/        - Generated + copied TCL files for Vivado
+backup/     - Backups of files before build
+sync/       - Benchmark-FI sync files
+
+## Lifecycle
+
+Created: Start of generation phase
+Populated: Generation, file movement, build phases
+Cleaned: End of run (configurable)

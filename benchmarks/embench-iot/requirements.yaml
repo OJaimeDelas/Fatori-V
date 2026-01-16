@@ -1,0 +1,2 @@
+flags:
+  LLIB: "-lc -lm -lgcc -lc -lgcc -lnosys"

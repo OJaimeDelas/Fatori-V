@@ -2,11 +2,11 @@
 # Vivado v2020.2 (64-bit)
 # SW Build 3064766 on Wed Nov 18 09:12:47 MST 2020
 # IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
-# Start of session at: Sat Nov 22 17:12:54 2025
-# Process ID: 1173928
-# Current directory: /home/jaguiar/jaguiar/iob_soc_V1.0/hardware/fpga
+# Start of session at: Thu Jan 15 18:36:09 2026
+# Process ID: 2300257
+# Current directory: /home/jaguiar/sandbox/Fatori-V/iob_soc_V1.0/hardware/fpga
 # Command line: vivado -nojournal -log vivado.log -mode batch -source vivado/prog.tcl -tclargs iob_soc_iob_aes_ku040_db_g
-# Log file: /home/jaguiar/jaguiar/iob_soc_V1.0/hardware/fpga/vivado.log
+# Log file: /home/jaguiar/sandbox/Fatori-V/iob_soc_V1.0/hardware/fpga/vivado.log
 # Journal file: 
 #-----------------------------------------------------------
 source vivado/prog.tcl
@@ -16,6 +16,7 @@ source vivado/prog.tcl
 #    puts "ERROR: Can't connect to hardware manager.\n"
 #    exit result
 # }
+open_hw_manager: Time (s): cpu = 00:00:02 ; elapsed = 00:00:05 . Memory (MB): peak = 2231.121 ; gain = 0.000 ; free physical = 2506 ; free virtual = 7141
 # if { [catch {connect_hw_server -url $HOST:3121} result] } {
 #    puts "ERROR: Can't connect to hardware server.\n"
 #    exit result
@@ -62,12 +63,19 @@ INFO: [Labtools 27-2302] Device xcku040 (JTAG device index = 0) is programmed wi
 #    exit result
 # }
 INFO: [Labtools 27-3164] End of startup status: HIGH
-program_hw_devices: Time (s): cpu = 00:00:09 ; elapsed = 00:00:09 . Memory (MB): peak = 3240.020 ; gain = 0.000 ; free physical = 134 ; free virtual = 6766
+program_hw_devices: Time (s): cpu = 00:00:09 ; elapsed = 00:00:09 . Memory (MB): peak = 3240.332 ; gain = 1.000 ; free physical = 1014 ; free virtual = 5712
 # if { [catch {refresh_hw_device [lindex [get_hw_devices] 0]} result] } {
 #    puts "ERROR: Can't refresh hardware device.\n"
 #    exit result
 # }
-INFO: [Labtools 27-1434] Device xcku040 (JTAG device index = 0) is programmed with a design that has no supported debug core(s) in it.
+INFO: [Labtools 27-2302] Device xcku040 (JTAG device index = 0) is programmed with a design that has 3 VIO core(s).
+WARNING: [Labtools 27-1347] Unable to find Debug Probes file []. Please update hw_device property [PROBES.FILE]
+ Update of hw_probe objects, will be skipped.
+WARNING: [Labtools 27-1974] Mismatch between the design programmed into the device xcku040_0 and the probes file(s) .
+The device design has 0 ILA core(s) and 3 VIO core(s). 0 ILA core(s) and 0 VIO core(s) are matched in the probes file(s).
+Resolution: 
+1. Reprogram device with the correct programming file and associated probes file(s) OR
+2. Goto device properties and associate the correct probes file(s) with the programming file already programmed in the device.
 # if { [catch {close_hw_target} result] } {
 #    puts "ERROR: Can't close hardware target.\n"
 #    exit result
@@ -86,6 +94,6 @@ INFO: [Labtoolstcl 44-464] Closing hw_target localhost:3121/xilinx_tcf/Digilent/
   **** IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
     ** Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.
 
-source /home/jaguiar/jaguiar/iob_soc_V1.0/hardware/fpga/.Xil/Vivado-1173928-sericaia/webtalk/labtool_webtalk.tcl -notrace
-INFO: [Common 17-206] Exiting Webtalk at Sat Nov 22 17:13:32 2025...
-INFO: [Common 17-206] Exiting Vivado at Sat Nov 22 17:13:32 2025...
+source /home/jaguiar/sandbox/Fatori-V/iob_soc_V1.0/hardware/fpga/.Xil/Vivado-2300257-sericaia/webtalk/labtool_webtalk.tcl -notrace
+INFO: [Common 17-206] Exiting Webtalk at Thu Jan 15 18:37:10 2026...
+INFO: [Common 17-206] Exiting Vivado at Thu Jan 15 18:37:10 2026...

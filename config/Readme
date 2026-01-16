@@ -1,0 +1,16 @@
+# config/
+
+System configuration for logging and behavior.
+
+## Files
+
+log_levels.py       - Event enable/disable per log level (minimal/normal/verbose)
+messages_formats.py - Message format functions for each event type
+constants.py        - Hardware-wired constants (not user-editable)
+
+## Logging System
+
+Event-based logging where each print/log is an "event".
+- Define message in messages_formats.py
+- Enable/disable in log_levels.py per level
+- Separate knobs for console and file output

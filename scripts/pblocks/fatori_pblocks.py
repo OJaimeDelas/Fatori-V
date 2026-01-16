@@ -1,7 +1,0 @@
-### scripts/pblocks/fatori_pblocks.py
-# =============================================================================
-# FATORI-V • PBlocks Controller
-# File: fatori_pblocks.py 
-# -----------------------------------------------------------------------------
-# Coordinates generation of pblock headers and TCL for the run.
-#=============================================================================

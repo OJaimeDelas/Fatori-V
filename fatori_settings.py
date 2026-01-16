@@ -2,68 +2,112 @@
 # FATORI-V • Global Settings
 # File: fatori_settings.py
 # -----------------------------------------------------------------------------
-# Defines global paths and global-level defaults for FATORI-V runs.
-#=============================================================================
-# All paths relative to the repository root '. = Fatori-v/'
+# User-editable configuration for all Fatori-V operations.
+# =============================================================================
 
-# -----------------------------------------------------------------------------
-# Base project directories (relative to the repository root)
-# -----------------------------------------------------------------------------
-RUNS_DIR_NAME: str         = "runs"         # where run YAML files live
-RESULTS_DIR_NAME: str      = "results"      # where per-run results are stored
-GEN_DIR_NAME: str          = "gen"          # where generated headers are kept
-BUILD_DIR_NAME: str        = "build"        # build artefacts and user inputs
-HARDWARE_DIR_NAME: str     = "hardware"     # RTL overrides on top of architecture
-ARCHITECTURE_DIR_NAME: str = "architecture" # reference architecture submodule
-FI_DIR_NAME: str           = "fi"           # FI console and its build artefacts
+from pathlib import Path
 
-# -----------------------------------------------------------------------------
-# Run defaults (identification, seeds, sessions)
-# -----------------------------------------------------------------------------
-DEFAULT_GLOBAL_SEED = None          # if None, a new random seed is generated
+# =============================================================================
+# Dry Run Mode
+# =============================================================================
 
-# -----------------------------------------------------------------------------
-# Header / defines 
-# -----------------------------------------------------------------------------
-GEN_CPY_TO_RESULTS: bool  = True  # Copies generated files to results/<run>/gen
+# When True, system runs through all phases but prints commands instead of executing
+DRY_RUN_MODE = False
 
-# -----------------------------------------------------------------------------
-# Vivado
-# -----------------------------------------------------------------------------
-VIVADO_BIN: str         = "vivado" # Vivado executable name or path
+# ==============================================================================
+# Directory Structure
+# ==============================================================================
 
-# -----------------------------------------------------------------------------
-# Board Conections 
-# -----------------------------------------------------------------------------
-DEFAULT_DEVICE: str = "/dev/ttyUSB0"    # default UART for Fatori-V
-DEFAULT_FPGA_TX_PIN: str = "D20"         # default UART tx pin for Fatori-V
-DEFAULT_FPGA_RX_PIN: str = "C19"         # default UART tx pin for Fatori-V
-DEFAULT_BAUDRATE: int   = 115_200       # default baudrate for Fatori-V
+# Root directory is the location of this settings file
+ROOT_DIR = Path(__file__).parent.resolve()
 
+# Main directories
+RUNS_DIR = ROOT_DIR / "runs"
+RESULTS_DIR = ROOT_DIR / "results"
+INPUTS_DIR = ROOT_DIR / "inputs"
+TMP_DIR = ROOT_DIR / "tmp"
+SCRIPTS_DIR = ROOT_DIR / "scripts"
+FI_DIR = ROOT_DIR / "fi"
+BENCHMARKS_DIR = ROOT_DIR / "benchmarks"
+ARCHITECTURE_DIR = ROOT_DIR / "architecture"
+BUILDDIR_NAME = "iob_soc_V1.0"
+BUILDDIR = ROOT_DIR / BUILDDIR_NAME
 
-# -----------------------------------------------------------------------------
-# Result layout (within results/<run>/)
-# -----------------------------------------------------------------------------
-TOP_COPY_INJECTION_LOG: str = "injection_log.txt"
-TOP_COPY_ACME_LIST: str     = "acme_injection_addresses.txt"
+# Subdirectories under tmp/
+TMP_GENERATED_DIR = TMP_DIR / "generated"
+TMP_BACKUP_DIR = TMP_DIR / "backup"
+TMP_TCL_DIR = TMP_DIR / "tcl"
+TMP_SYNC_DIR = TMP_DIR / "sync"
 
-TOP_SUBDIR_RUN_YAML: str = "."  # optional place to mirror the YAML
-TOP_SUBDIR_REPORTS: str  = "reports"   # build-time reports
-TOP_SUBDIR_PLOTS: str    = "plots"     # plots derived from metrics
+# Subdirectories under inputs/
+INPUTS_HARDWARE_DIR = INPUTS_DIR / "hardware"
+INPUTS_SOFTWARE_DIR = INPUTS_DIR / "software"
+INPUTS_OTHER_DIR = INPUTS_DIR / "others"
+INPUTS_TCL_DIR = INPUTS_DIR / "tcl"
 
-# -----------------------------------------------------------------------------
-# FI console and SEM
-# -----------------------------------------------------------------------------
-DEFAULT_SEM_DEVICE: str = "/dev/ttyUSB0"   # default UART for SEM
-DEFAULT_SEM_FPGA_TX_PIN: str = "F18" # default UART tx pin for SEM console
-DEFAULT_SEM_FPGA_RX_PIN: str = "G19" # default UART rx pin for SEM console
-DEFAULT_SEM_BAUDRATE: int   = 1_250_000    # default baudrate for SEM UART
+# ==============================================================================
+# Build System Configuration
+# ==============================================================================
 
-EBD_DEFAULT_PATH: str   = "fi/build/design.ebd"     # default EBD file for ACME
-ACME_CACHE_DIR: str     = "fi/build/acme"           # where ACME caches results
-ACME_DEFAULT_BOARD: str = "xcku040"                 # default board ID for ACME
+# Reports directory (relative to builddir)
+REPORTS_DIR_RELATIVE = "hardware/fpga/reports"
 
-FI_HEADER_STYLE_FOR_RUNS: str      = "simple"
-FI_HIDE_CONSOLE_COMMANDS: bool     = True
-FI_HIDE_SEM_CHEATSHEET: bool       = True
-FI_HIDE_START_MODE: bool           = True
+# Vivado TCL input directory (relative to builddir)
+VIVADO_INPUT_RELATIVE = "../tmp/tcl/"
+
+# Benchmark directory (relative to builddir)
+BENCHMARK_DIR_RELATIVE_BASE = "../../benchmarks"
+
+# Sync file for benchmark-FI coordination
+SYNC_FILE_NAME = "sync_file.sync"
+SYNC_FILE_RELATIVE_PATH = "hardware/fpga/sync_file.sync"
+
+# External tool scripts
+VIVADO_PARSER_SCRIPT = SCRIPTS_DIR / "reports" / "vivado_report_system.py"
+
+# ==============================================================================
+# User-Editable Defaults
+# ==============================================================================
+
+# Board configuration
+DEFAULT_BOARD = "xcku040"
+BOARD_GRAB_TIMEOUT_DEFAULT = 1000
+
+# FI configuration defaults
+FI_DEVICE_DEFAULT = "/dev/ttyUSB1"
+FI_BAUDRATE_DEFAULT = 1250000
+FI_LOG_LEVEL_DEFAULT = "verbose"
+
+# Build strategy
+FULL_MAKE_BUILD = True  # True: fpga-run per benchmark, False: fpga-bit-only + fpga-fw-run
+
+# Make targets 
+MAKE_FPGA_RUN = "fpga-run"
+MAKE_FPGA_BIT_ONLY = "fpga-bit-only"
+MAKE_FPGA_FW_RUN = "fpga-fw-run"
+MAKE_JOBS_DEFAULT = 4
+
+# Default values for features
+DEFAULT_GLOBAL_SEED = 42
+DEFAULT_HPMC_NUM_LEVEL_0 = 0
+DEFAULT_HPMC_NUM_LEVEL_PLUS = 10
+DEFAULT_HPMC_WIDTH = 32
+DEFAULT_MON_N = 3
+DEFAULT_MON_M = 2
+DEFAULT_BENCHMARK_TIMEOUT = -1
+
+# Validation defaults
+VALIDATION_STRICT_DEFAULT = True
+VALIDATION_SAVE_VERIFIED_DEFAULT = True
+
+# ==============================================================================
+# File Names (for reference in path helpers)
+# ==============================================================================
+
+# Static input file names
+FATORI_REGISTERS_YAML_NAME = "fatori_registers.yaml"
+SYSTEM_DICT_YAML_NAME = "system_dict.yaml"
+SYSTEM_HIERARCHY_YAML_NAME = "system_hierarchy.yaml"
+GEN_LOCATIONS_YAML_NAME = "gen_locations.yaml"
+HARDWARE_LOCATIONS_YAML = "locations.yaml"
+SOFTWARE_LOCATIONS_YAML = "locations.yaml"

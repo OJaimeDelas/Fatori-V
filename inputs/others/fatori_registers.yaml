@@ -1,0 +1,456 @@
+# ----------------------------------------------------------------------
+# FATORI-V register index
+# ----------------------------------------------------------------------
+modules:
+
+# Fault Manager
+- module: fatori_fault_mgr.sv
+  regs:
+  - name: minor_cnt_o
+    id: 1
+  - name: major_cnt_o
+    id: 2
+  - name: minor_seen_o
+    id: 3
+  - name: fault_sticky_o
+    id: 4
+  - name: fetch_en_q
+    id: 5
+  - name: state_q
+    id: 6
+  - name: corrected_cnt_q
+    id: 187
+  - name: cycle_counter_q
+    id: 188
+  - name: first_min_latched_q
+    id: 189
+  - name: cycles_to_first_min_q
+    id: 190
+  - name: first_maj_latched_q
+    id: 191
+  - name: cycles_to_first_maj_q
+    id: 192
+  - name: last_injection_cycle_q
+    id: 193
+  - name: last_detection_latency_q
+    id: 194
+  - name: latency_sum_q
+    id: 195
+  - name: latency_count_q
+    id: 196
+
+# Controller
+- module: ibex_controller.sv
+  regs:
+  - name: mem_resp_intg_err_irq_pending_q
+    id: 7
+  - name: mem_resp_intg_err_addr_q
+    id: 8
+  - name: debug_cause_q
+    id: 9
+  - name: ctrl_fsm_cs
+    id: 10
+  - name: nmi_mode_q
+    id: 11
+  - name: do_single_step_q
+    id: 12
+  - name: debug_mode_q
+    id: 13
+  - name: enter_debug_mode_prio_q
+    id: 14
+  - name: load_err_q
+    id: 15
+  - name: store_err_q
+    id: 16
+  - name: exc_req_q
+    id: 17
+  - name: illegal_insn_q
+    id: 18
+
+# Core Module    
+- module: ibex_core.sv
+  regs:
+  - name: last_fetch_enable
+    id: 19
+  - name: pc_at_fetch_disable
+    id: 20
+  - name: rvfi_instr_new_wb_q
+    id: 21
+  - name: captured_valid
+    id: 22
+  - name: captured_mip
+    id: 23
+  - name: captured_nmi
+    id: 24
+  - name: captured_nmi_int
+    id: 25
+  - name: captured_debug_req
+    id: 26
+  - name: rvfi_irq_valid
+    id: 27
+  - name: rvfi_ext_stage_pre_mip_0
+    id: 28
+  - name: rvfi_ext_stage_nmi_0
+    id: 29
+  - name: rvfi_ext_stage_nmi_int_0
+    id: 30
+  - name: rvfi_ext_stage_debug_req_0
+    id: 31
+  - name: rvfi_ext_stage_irq_valid_0
+    id: 32
+  - name: rvfi_stage_halt_reg_0
+    id: 33
+  - name: rvfi_stage_trap_reg_0
+    id: 34
+  - name: rvfi_stage_intr_reg_0
+    id: 35
+  - name: rvfi_stage_order_reg_0
+    id: 36
+  - name: rvfi_stage_insn_reg_0
+    id: 37
+  - name: rvfi_stage_mode_reg_0
+    id: 38
+  - name: rvfi_stage_ixl_reg_0
+    id: 39
+  - name: rvfi_stage_rs1_addr_reg_0
+    id: 40
+  - name: rvfi_stage_rs2_addr_reg_0
+    id: 41
+  - name: rvfi_stage_rs3_addr_reg_0
+    id: 42
+  - name: rvfi_stage_pc_rdata_reg_0
+    id: 43
+  - name: rvfi_stage_pc_wdata_reg_0
+    id: 44
+  - name: rvfi_stage_mem_rmask_reg_0
+    id: 45
+  - name: rvfi_stage_mem_wmask_reg_0
+    id: 46
+  - name: rvfi_stage_rs1_rdata_reg_0
+    id: 47
+  - name: rvfi_stage_rs2_rdata_reg_0
+    id: 48
+  - name: rvfi_stage_rs3_rdata_reg_0
+    id: 49
+  - name: rvfi_stage_mem_wdata_reg_0
+    id: 50
+  - name: rvfi_stage_mem_addr_reg_0
+    id: 51
+  - name: rvfi_stage_rd_addr_reg_0
+    id: 52
+  - name: rvfi_stage_rd_wdata_reg_0
+    id: 53
+  - name: rvfi_stage_mem_rdata_reg_0
+    id: 54
+  - name: rvfi_ext_stage_debug_mode_reg_0
+    id: 55
+  - name: rvfi_ext_stage_mcycle_reg_0
+    id: 56
+  - name: rvfi_ext_stage_ic_scr_key_valid_reg_0
+    id: 57
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_0
+    id: 58
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_0
+    id: 59
+  - name: rvfi_stage_valid_reg_0
+    id: 60
+  - name: rvfi_ext_stage_pre_mip_reg_0
+    id: 61
+  - name: rvfi_ext_stage_post_mip_reg_0
+    id: 62
+  - name: rvfi_ext_stage_nmi_reg_0
+    id: 63
+  - name: rvfi_ext_stage_nmi_int_reg_0
+    id: 64
+  - name: rvfi_ext_stage_debug_req_reg_0
+    id: 65
+  - name: rvfi_mem_addr
+    id: 66
+  - name: rvfi_mem_rdata
+    id: 67
+  - name: rvfi_mem_wdata
+    id: 68
+  - name: rvfi_rs1_data
+    id: 69
+  - name: rvfi_rs1_addr
+    id: 70
+  - name: rvfi_rs2_data
+    id: 71
+  - name: rvfi_rs2_addr
+    id: 72
+  - name: rvfi_rd_addr_q
+    id: 73
+  - name: rvfi_rd_wdata_q
+    id: 74
+  - name: rvfi_set_trap_pc
+    id: 75
+  - name: rvfi_intr
+    id: 76
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_1
+    id: 169
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_2
+    id: 170
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_3
+    id: 171
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_4
+    id: 172
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_5
+    id: 173
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_6
+    id: 174
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_7
+    id: 175
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_8
+    id: 176
+  - name: rvfi_ext_stage_mhpmcounters_reg_0_9
+    id: 177
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_1
+    id: 178
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_2
+    id: 179
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_3
+    id: 180
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_4
+    id: 181
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_5
+    id: 182
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_6
+    id: 183
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_7
+    id: 184
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_8
+    id: 185
+  - name: rvfi_ext_stage_mhpmcountersh_reg_0_9
+    id: 186
+
+# CS Registers    
+- module: ibex_cs_registers.sv
+  regs:
+  - name: mcountinhibit
+    id: 77
+  - name: priv_lvl_q
+    id: 78
+
+# CSR
+- module: ibex_csr.sv
+  regs:
+  - name: rdata
+    id: 79
+  - name: shadow
+    id: 80
+
+# Decoder
+- module: ibex_decoder.sv
+  regs:
+  - name: use_rs3
+    id: 81
+
+# Dummy Instructions (FTM)
+- module: ibex_dummy_instr.sv
+  regs:
+  - name: dummy_instr_seed
+    id: 82
+  - name: dummy_cnt
+    id: 83
+
+# Fetch FIFO
+- module: ibex_fetch_fifo.sv
+  regs:
+  - name: instr_addr
+    id: 84
+  - name: instr_addr_no_rst
+    id: 85
+  - name: valid
+    id: 86
+  - name: rdata_0
+    id: 87
+  - name: err_0
+    id: 88
+  - name: rdata_1
+    id: 89
+  - name: err_1
+    id: 90
+  - name: rdata_2
+    id: 91
+  - name: err_2
+    id: 92
+
+# ID Stage
+- module: ibex_id_stage.sv
+  regs:
+  - name: imd_val_q_reg_0
+    id: 93
+  - name: imd_val_q_reg_1
+    id: 94
+  - name: branch_set_raw
+    id: 95
+  - name: branch_jump_set_done
+    id: 96
+  - name: branch_taken
+    id: 97
+  - name: id_fsm_q
+    id: 98
+
+# IF Stage
+- module: ibex_if_stage.sv
+  regs:
+  - name: dummy_instr_id
+    id: 99
+  - name: instr_valid_id_q_reg
+    id: 100
+  - name: instr_new_id_q_reg
+    id: 101
+  - name: instr_rdata_id
+    id: 102
+  - name: instr_rdata_alu_id
+    id: 103
+  - name: instr_fetch_err
+    id: 104
+  - name: instr_fetch_err_plus2
+    id: 105
+  - name: instr_rdata_c_id
+    id: 106
+  - name: instr_is_compressed_id
+    id: 107
+  - name: illegal_c_insn_id
+    id: 108
+  - name: pc_id
+    id: 109
+  - name: instr_rdata_id_no_rst
+    id: 110
+  - name: instr_rdata_alu_id_no_rst
+    id: 111
+  - name: instr_fetch_err_no_rst
+    id: 112
+  - name: instr_fetch_err_plus2_no_rst
+    id: 113
+  - name: instr_rdata_c_id
+    id: 114
+  - name: instr_is_compressed_id_no_rst
+    id: 115
+  - name: illegal_c_insn_id_no_rst
+    id: 116
+  - name: pc_id
+    id: 117
+  - name: prev_instr_seq
+    id: 118
+  - name: instr_bp_taken
+    id: 119
+  - name: instr_bp_taken_no_rst
+    id: 120
+  - name: instr_skid_valid_q
+    id: 121
+  - name: instr_skid_bp_taken_q
+    id: 122
+  - name: instr_skid_data_q
+    id: 123
+  - name: instr_skid_addr_q
+    id: 124
+  - name: instr_skid_bp_taken_q_no_rst
+    id: 125
+  - name: instr_skid_data_q_no_rst
+    id: 126
+  - name: instr_skid_addr_q_no_rst
+    id: 127
+
+# Load Store Unit
+- module: ibex_load_store_unit.sv
+  regs:
+  - name: rdata
+    id: 128
+  - name: rdata_offset
+    id: 129
+  - name: data_type
+    id: 130
+  - name: data_sign_ext
+    id: 131
+  - name: data_we
+    id: 132
+  - name: addr_last
+    id: 133
+  - name: ls_fsm_cs
+    id: 134
+  - name: handle_misaligned
+    id: 135
+  - name: pmp_err
+    id: 136
+  - name: lsu_err
+    id: 137
+  - name: fcov_mis_2_en
+    id: 138
+  - name: fcov_mis_bus_err_1
+    id: 139
+
+# Lockstep (FTM)
+- module: ibex_lockstep.sv
+  regs:
+  - name: shadow_inputs_0
+    id: 140
+  - name: shadow_inputs_1
+    id: 141
+  - name: shadow_tag_rdata_0
+    id: 142
+  - name: shadow_data_rdata_0
+    id: 143
+  - name: shadow_tag_rdata_1
+    id: 144
+  - name: shadow_data_rdata_1
+    id: 145
+
+# Prefetch Buffer
+- module: ibex_prefetch_buffer.sv
+  regs:
+  - name: stored_addr
+    id: 146
+  - name: fetch_addr
+    id: 147
+  - name: valid_req
+    id: 148
+  - name: discard_req
+    id: 149
+  - name: rdata_outstanding
+    id: 150
+  - name: branch_discard
+    id: 151
+
+# Top Module
+- module: ibex_top.sv
+  regs:
+  - name: core_busy
+    id: 152
+  - name: scramble_key
+    id: 153
+  - name: scramble_nonce
+    id: 154
+  - name: scramble_key_valid
+    id: 155
+  - name: scramble_req
+    id: 156
+  - name: sampled_scramble_key
+    id: 157
+  - name: pending_dside_accesses_0
+    id: 158
+  - name: pending_dside_accesses_1
+    id: 159
+
+# WriteBack Stage
+- module: ibex_wb_stage.sv
+  regs:
+  - name: wb_valid
+    id: 160
+  - name: rf_we_wb
+    id: 161
+  - name: rf_waddr_wb
+    id: 162
+  - name: rf_wdata_wb
+    id: 163
+  - name: wb_instr_type
+    id: 164
+  - name: wb_pc
+    id: 165
+  - name: wb_compressed
+    id: 166
+  - name: wb_count
+    id: 167
+  - name: dummy_instr_wb
+    id: 168
