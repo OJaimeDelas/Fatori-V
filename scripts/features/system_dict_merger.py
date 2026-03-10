@@ -38,17 +38,22 @@ def load_yaml_file(file_path):
         return {}
 
 
-def extract_coordinates_from_pblock(coordinates_str):
+def extract_coordinates_from_pblock(coordinates_str, board_name="xcku040"):
     """
     Extract x_lo, y_lo, x_hi, y_hi from pblock coordinates string.
+    
+    Converts SLICE coordinates to physical tile coordinates for ACME compatibility.
+    ACME filtering requires tile coordinates (e.g., X=50-357 for XCKU040),
+    while Vivado pblocks use SLICE coordinates (e.g., X=0-47 for XCKU040).
     
     Format: "SLICE_X0Y0:SLICE_X23Y60"
     
     Args:
         coordinates_str: Coordinates string from pblock_dict
+        board_name: FPGA board identifier (default: "xcku040")
     
     Returns:
-        Dictionary with x_lo, y_lo, x_hi, y_hi
+        Dictionary with x_lo, y_lo, x_hi, y_hi in tile coordinates
     """
     try:
         # Parse "SLICE_X0Y0:SLICE_X23Y60"
@@ -56,17 +61,29 @@ def extract_coordinates_from_pblock(coordinates_str):
         start = parts[0].replace("SLICE_", "")  # "X0Y0"
         end = parts[1].replace("SLICE_", "")    # "X23Y60"
         
-        # Extract X and Y values
-        start_x = int(start.split("Y")[0].replace("X", ""))
-        start_y = int(start.split("Y")[1])
-        end_x = int(end.split("Y")[0].replace("X", ""))
-        end_y = int(end.split("Y")[1])
+        # Extract SLICE X and Y values
+        slice_x_lo = int(start.split("Y")[0].replace("X", ""))
+        slice_y_lo = int(start.split("Y")[1])
+        slice_x_hi = int(end.split("Y")[0].replace("X", ""))
+        slice_y_hi = int(end.split("Y")[1])
+        
+        # Convert SLICE coordinates to tile coordinates for ACME
+        # This is board-specific; XCKU040 requires conversion
+        if board_name.lower() == "xcku040":
+            from fi.backend.acme.xcku040 import Xcku040Board
+            board = Xcku040Board()
+            tile_x_lo, tile_y_lo = board.slice_xy_to_tile_xy(slice_x_lo, slice_y_lo)
+            tile_x_hi, tile_y_hi = board.slice_xy_to_tile_xy(slice_x_hi, slice_y_hi)
+        else:
+            # For other boards, assume SLICE == tile (may need board-specific logic)
+            tile_x_lo, tile_y_lo = slice_x_lo, slice_y_lo
+            tile_x_hi, tile_y_hi = slice_x_hi, slice_y_hi
         
         return {
-            "x_lo": start_x,
-            "y_lo": start_y,
-            "x_hi": end_x,
-            "y_hi": end_y
+            "x_lo": tile_x_lo,
+            "y_lo": tile_y_lo,
+            "x_hi": tile_x_hi,
+            "y_hi": tile_y_hi
         }
     except Exception as e:
         logger.log_event('WARNING', warning_message=f"Error parsing coordinates '{coordinates_str}': {e}")
@@ -208,13 +225,15 @@ def merge_system_dicts(config, output_path):
     board_name = get_board_name(config)
     logger.log_event('DEBUG', debug_message=f"  Board: {board_name}")
     
-    # Load fatori_registers.yaml
-    # Add import at top of file after other imports
-    from scripts.common.paths import get_fatori_registers_yaml
-
-    # Then in the code, replace:
-    fatori_registers_path = get_fatori_registers_yaml()
-    fatori_registers_data = load_yaml_file(fatori_registers_path)
+    # Generate fatori_registers_active.yaml (filtered based on enabled macros)
+    from scripts.features.register_filter import create_active_registers_yaml
+    from config.constants import FATORI_REGISTERS_ACTIVE_NAME
+    
+    active_registers_path = cfg.TMP_GENERATED_DIR / FATORI_REGISTERS_ACTIVE_NAME
+    create_active_registers_yaml(config, active_registers_path)
+    
+    # Load fatori_registers_active.yaml (filtered version)
+    fatori_registers_data = load_yaml_file(active_registers_path)
     
     if not fatori_registers_data:
         logger.log_event('ERROR', error_message="fatori_registers.yaml is empty or missing - cannot proceed")
@@ -248,8 +267,8 @@ def merge_system_dicts(config, output_path):
             if not target_name or not coordinates_str:
                 continue
             
-            # Extract coordinates
-            coords = extract_coordinates_from_pblock(coordinates_str)
+           # Extract coordinates (converted to tile coordinates for ACME)
+            coords = extract_coordinates_from_pblock(coordinates_str, board_name)
             
             # Map to module name
             module_name = map_pblock_to_ibex_module(target_name)

@@ -152,3 +152,76 @@ class FIController:
             String with log level
         """
         return get_fi_log_level(self.config)
+    
+    def launch_async(self, benchmark_name, session, timeout_s=None):
+        """
+        Launch fault injection asynchronously for parallel execution with benchmark.
+        
+        This starts the FI console as a background subprocess that will wait for
+        the sync file before beginning injections. The benchmark should be started
+        after this call returns.
+        
+        The FI subprocess waits for: tmp/sync/fatori_benchmark_ready
+        
+        Workflow:
+        1. This method starts FI subprocess (non-blocking)
+        2. FI subprocess waits for sync file
+        3. Caller starts benchmark (which creates/deletes sync file)
+        4. FI subprocess begins injections when sync file appears
+        5. Caller uses wait_for_completion() to collect results
+        
+        Args:
+            benchmark_name: Name of benchmark being executed
+            session: Session object
+            timeout_s: Optional timeout override
+        
+        Returns:
+            FIAsyncHandle object with process handle and metadata,
+            or None if FI is not enabled or validation fails
+        """
+        # Check if FI is enabled
+        if not self.is_fi_enabled(benchmark_name):
+            log_event('FI_NOT_ENABLED', benchmark_name=benchmark_name)
+            return None
+        
+        # Validate configuration if not done already
+        errors, warnings = self.validate()
+        
+        if errors:
+            log_event('FI_LAUNCH_VALIDATION_FAILED', 
+                      error_count=len(errors),
+                      first_error=errors[0])
+            return None
+        
+        # Import here to avoid circular dependency
+        from scripts.exec.fi_launcher import launch_fi_async
+        
+        # Launch FI asynchronously
+        return launch_fi_async(self.config, benchmark_name, session, timeout_s)
+    
+    def wait_for_completion(self, fi_handle):
+        """
+        Wait for asynchronously launched FI to complete and collect results.
+        
+        This blocks until the FI subprocess finishes, then collects
+        and returns the FI results.
+        
+        Args:
+            fi_handle: FIAsyncHandle from launch_async()
+        
+        Returns:
+            FIResult object with completion status and statistics
+        """
+        if fi_handle is None:
+            return FIResult(
+                success=False,
+                timed_out=False,
+                exit_code=-1,
+                error_message="No FI handle provided"
+            )
+        
+        # Import here to avoid circular dependency
+        from scripts.exec.fi_launcher import wait_for_fi_completion
+        
+        # Wait for FI to complete and get results
+        return wait_for_fi_completion(fi_handle)

@@ -20,11 +20,13 @@ def execute_execution_phase(context: RunContext) -> bool:
     Execute execution phase.
     
     This runs all configured benchmarks, optionally with fault injection:
-    1. Create benchmark manager to discover and order benchmarks
-    2. Create FI controller if fault injection is enabled
-    3. Create session manager to track execution sessions
-    4. Run session loop to execute all benchmarks
-    5. Collect session results
+    1. Initialize results directory structure
+    2. Copy YAML files to results directory
+    3. Create benchmark manager to discover and order benchmarks
+    4. Create FI controller if fault injection is enabled
+    5. Create session manager to track execution sessions
+    6. Run session loop to execute all benchmarks
+    7. Collect session results
     
     Args:
         context: Run context with configuration
@@ -35,7 +37,20 @@ def execute_execution_phase(context: RunContext) -> bool:
     log_event('EXECUTION_PHASE_START')
     
     try:
-        # Step 1: Create benchmark manager
+        # Step 1: Initialize results directory structure
+        from scripts.results.directory_manager import initialize_run_structure
+        from scripts.results.yaml_copier import copy_original_yaml
+        
+        # Create run directory structure
+        structure = initialize_run_structure(context.config, base_dir=context.results_dir.parent)
+        context.results_dir = structure['run_dir']
+        
+        # Copy original YAML to results directory
+        # Note: verified_yaml.yaml was already saved during validation phase
+        if context.yaml_path:
+            copy_original_yaml(context.yaml_path, context.results_dir)
+        
+        # Step 2: Create benchmark manager
         log_event('BENCHMARKS_DISCOVERING')
         benchmark_manager = BenchmarkManager(context.config)
         
@@ -78,11 +93,12 @@ def execute_execution_phase(context: RunContext) -> bool:
         # Step 3: Run session loop
         log_event('BENCHMARKS_EXECUTION_START')
         
-        # Run all sessions
+        # Run all sessions with run-specific results directory
         session_results = run_session_loop(
             context.config,
             benchmark_manager,
-            fi_controller
+            fi_controller,
+            results_dir=context.results_dir
         )
         
         # Step 4: Analyze results

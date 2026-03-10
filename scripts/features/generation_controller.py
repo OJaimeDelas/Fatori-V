@@ -7,9 +7,11 @@
 
 from pathlib import Path
 import fatori_settings as cfg
+from config.constants import *
 from scripts.common.common_settings import *
 from scripts.common.yaml_io.yaml_helpers import get_ftm_state
 from scripts.features.fatori_features import generate_features_header
+from scripts.features.override_handler import apply_override
 from scripts.ftm.fatori_ftm import generate_ftm_header
 from scripts.ftm.fatori_reg_mon import generate_reg_mon_header
 from scripts.ftm.fatori_logic_mon import generate_logic_mon_header
@@ -27,6 +29,9 @@ def generate_all_svh_headers(config, output_dir=None):
     - fatori_reg_mon.svh: Register M-of-N configuration (if enabled)
     - fatori_logic_mon.svh: Logic M-of-N configuration (if enabled)
     - fatori_selftest.svh: Self-test stub (if enabled or always)
+    - fatori_pblocks.svh: Pblock KEEP hierarchy macros
+    
+    Files can be overridden via general.overrides.<filename> in config.
     
     Args:
         config: The loaded YAML configuration dictionary
@@ -56,55 +61,63 @@ def generate_all_svh_headers(config, output_dir=None):
     
     # Generate features header (always required)
     log_event('SVH_GENERATING', file_type='features')
-    features_path = generate_features_header(config, output_dir)
+    override_path = apply_override(config, FATORI_FEATURES_SVH, output_dir)
+    if override_path:
+        features_path = override_path
+    else:
+        features_path = generate_features_header(config, output_dir)
     generated_files['features'] = features_path
     log_event('SVH_GENERATED', file_name=features_path.name)
     
     # Generate FTM header (always generated, may be empty)
     log_event('SVH_GENERATING', file_type='ftm')
-    ftm_path = generate_ftm_header(config, output_dir)
+    override_path = apply_override(config, FATORI_FTM_SVH, output_dir)
+    if override_path:
+        ftm_path = override_path
+    else:
+        ftm_path = generate_ftm_header(config, output_dir)
     generated_files['ftm'] = ftm_path
     log_event('SVH_GENERATED', file_name=ftm_path.name)
     
     # Generate register M-of-N header (if enabled)
     reg_mon_enabled = get_ftm_state(config, KEY_FTM_REG_MON)
-    if reg_mon_enabled:
-        log_event('SVH_GENERATING', file_type='reg_mon')
+    log_event('SVH_GENERATING', file_type='reg_mon')
+    override_path = apply_override(config, FATORI_REG_MON_SVH, output_dir)
+    if override_path:
+        reg_mon_path = override_path
+    elif reg_mon_enabled:
         reg_mon_path = generate_reg_mon_header(config, output_dir)
-        if reg_mon_path:
-            generated_files['reg_mon'] = reg_mon_path
-            log_event('SVH_GENERATED', file_name=reg_mon_path.name)
-        else:
-            log_event('SVH_SKIPPED', file_type='reg_mon', reason='override_enabled')
-            generated_files['reg_mon'] = None
     else:
-        # Still generate stub file
-        log_event('SVH_GENERATING', file_type='reg_mon_stub')
+        # Generate stub file
         reg_mon_path = generate_reg_mon_header(config, output_dir)
-        generated_files['reg_mon'] = reg_mon_path
         log_event('SVH_GENERATED', file_name=reg_mon_path.name, status='disabled')
+    generated_files['reg_mon'] = reg_mon_path
+    if not override_path:
+        log_event('SVH_GENERATED', file_name=reg_mon_path.name)
     
     # Generate logic M-of-N header (if enabled)
     logic_mon_enabled = get_ftm_state(config, KEY_FTM_LOGIC_MON)
-    if logic_mon_enabled:
-        log_event('SVH_GENERATING', file_type='logic_mon')
+    log_event('SVH_GENERATING', file_type='logic_mon')
+    override_path = apply_override(config, FATORI_LOGIC_MON_SVH, output_dir)
+    if override_path:
+        logic_mon_path = override_path
+    elif logic_mon_enabled:
         logic_mon_path = generate_logic_mon_header(config, output_dir)
-        if logic_mon_path:
-            generated_files['logic_mon'] = logic_mon_path
-            log_event('SVH_GENERATED', file_name=logic_mon_path.name)
-        else:
-            log_event('SVH_SKIPPED', file_type='logic_mon', reason='override_enabled')
-            generated_files['logic_mon'] = None
     else:
-        # Still generate stub file
-        log_event('SVH_GENERATING', file_type='logic_mon_stub')
+        # Generate stub file
         logic_mon_path = generate_logic_mon_header(config, output_dir)
-        generated_files['logic_mon'] = logic_mon_path
         log_event('SVH_GENERATED', file_name=logic_mon_path.name, status='disabled')
+    generated_files['logic_mon'] = logic_mon_path
+    if not override_path:
+        log_event('SVH_GENERATED', file_name=logic_mon_path.name)
     
     # Generate self-test header (always generate stub)
     log_event('SVH_GENERATING', file_type='selftest')
-    selftest_path = generate_selftest_header(config, output_dir)
+    override_path = apply_override(config, FATORI_SELFTEST_SVH, output_dir)
+    if override_path:
+        selftest_path = override_path
+    else:
+        selftest_path = generate_selftest_header(config, output_dir)
     generated_files['selftest'] = selftest_path
     log_event('SVH_GENERATED', file_name=selftest_path.name)
     

@@ -29,6 +29,11 @@ def cleanup_tmp_directory(preserve_on_failure: bool = True, run_succeeded: bool 
         log_event('DEBUG_TMP_DIR_NOT_EXISTS')
         return True
     
+    # In dry-run mode, never cleanup tmp/ (preserve for inspection)
+    if cfg.DRY_RUN_MODE:
+        log_event('CLEANUP_SKIP_DRY_RUN', tmp_dir=str(tmp_dir))
+        return True
+    
     # Preserve on failure if requested
     if preserve_on_failure and not run_succeeded:
         log_event('CLEANUP_PRESERVING_TMP', tmp_dir=str(tmp_dir))

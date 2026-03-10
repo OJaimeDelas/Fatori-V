@@ -7,161 +7,141 @@
 
 import sys
 from pathlib import Path
-from scripts.cli.argument_parser import parse_arguments, get_cli_summary
-from scripts.cli.override_applicator import apply_cli_overrides
-from scripts.cli.progress_display import ProgressDisplay
-from scripts.orchestration.run_controller import RunController
-from scripts.orchestration.run_cleanup import cleanup_run
-from scripts.orchestration.multi_run_controller import run_multiple
-from scripts.common.yaml_io.load_run_yaml import load_run_yaml
+from scripts.cli.argument_parser import parse_arguments
 from scripts.logging.logger import initialize_logger, log_event
+from scripts.orchestration.run_executors import execute_single_run, execute_multiple_runs
+
+# ANSI color codes
+COLOR_HEADER = '\033[1;36m'  # Cyan bold
+COLOR_INFO = '\033[1;37m'    # White bold  
+COLOR_DRY_RUN = '\033[1;35m' # Magenta bold
+COLOR_RESET = '\033[0m'
 
 
-def execute_single_run(yaml_path: Path, cli_args) -> int:
+def print_fatori_header(yaml_files: list, dry_run: bool):
     """
-    Execute a single run configuration.
+    Print FATORI-V header with run list and dry-run notice.
     
     Args:
-        yaml_path: Path to configuration YAML file
-        cli_args: Parsed CLI arguments
-    
-    Returns:
-        Exit code (0 for success, non-zero for failure)
+        yaml_files: List of YAML configuration files
+        dry_run: Whether dry-run mode is enabled
     """
-    log_event('FATORI_START')
-    log_event('CONFIG_LOADED', yaml_path=yaml_path)
+    print(f"\n{COLOR_HEADER}{'='*80}")
+    print("FATORI-V - Fault Injection Framework for RISC-V")
+    print(f"{'='*80}{COLOR_RESET}\n")
     
-    # Display CLI arguments if any overrides
-    if cli_args:
-        log_event('CLI_SUMMARY', summary=get_cli_summary(cli_args))
-    
-    # Load configuration
-    try:
-        config = load_run_yaml(yaml_path)
-    except Exception as e:
-        log_event('ERROR_CONFIG_LOAD_FAILED', error_message=str(e))
-        return 1
-    
-    # Apply CLI overrides if provided
-    if cli_args:
-        config = apply_cli_overrides(config, cli_args)
-    
-    # Set dry-run mode flag if requested
-    if cli_args and cli_args.dry_run:
-        import fatori_settings as cfg
-        cfg.DRY_RUN_MODE = True
-        log_event('DRY_RUN_MODE_ENABLED')
-    
-    # Create and execute run controller
-    try:
-        # Determine log level
-        log_level = cli_args.log_level if cli_args else None
-        
-        # Create controller (pass config if CLI overrides applied)
-        if cli_args:
-            controller = RunController(yaml_path, log_level=log_level, config=config)
-        else:
-            controller = RunController(yaml_path, log_level=log_level)
-        
-        # Execute workflow
-        success = controller.execute()
-        
-        # Cleanup
-        if controller.context:
-            cleanup_run(controller.context, success, preserve_tmp=True)
-        
-        # Return appropriate exit code
-        if success:
-            log_event('RUN_SUCCESS')
-            return 0
-        else:
-            log_event('RUN_FAILED_GENERAL')
-            return 1
-    
-    except KeyboardInterrupt:
-        log_event('RUN_INTERRUPTED')
-        if controller.context:
-            cleanup_run(controller.context, False, preserve_tmp=True)
-        return 130  # Standard exit code for SIGINT
-    
-    except Exception as e:
-        log_event('ERROR_UNEXPECTED', error_message=str(e))
-        
-        # Try to cleanup
-        if controller and controller.context:
-            try:
-                cleanup_run(controller.context, False, preserve_tmp=True)
-            except:
-                pass
-        
-        return 1
-
-
-def execute_multiple_runs(yaml_paths: list, cli_args) -> int:
-    """
-    Execute multiple run configurations.
-    
-    Args:
-        yaml_paths: List of paths to configuration YAML files
-        cli_args: Parsed CLI arguments
-    
-    Returns:
-        Exit code (0 if all succeeded, non-zero otherwise)
-    """
-    # Display CLI arguments if any overrides
-    if cli_args:
-        log_event('CLI_SUMMARY', summary=get_cli_summary(cli_args))
-    
-    # Run all configurations
-    results = run_multiple(yaml_paths, cli_args)
-    
-    # Determine overall success
-    if all_successful:
-        log_event('ALL_RUNS_SUCCESS', total_count=len(results))
-        return 0
+    # Show run list
+    if len(yaml_files) == 1:
+        print(f"{COLOR_INFO}Configuration: {yaml_files[0]}{COLOR_RESET}\n")
     else:
-        failed_count = sum(1 for r in results if not r.success)
-        log_event('MULTIPLE_RUNS_FAILED', failed_count=failed_count, total_count=len(results))
-        return 1
+        print(f"{COLOR_INFO}Scheduled runs: {len(yaml_files)}{COLOR_RESET}")
+        for yaml_file in yaml_files:
+            print(f"  - {yaml_file.name}")
+        print()
+    
+    # Show dry-run notice if enabled
+    if dry_run:
+        print(f"{COLOR_DRY_RUN}{'='*80}")
+        print("DRY-RUN MODE ENABLED")
+        print(f"{'='*80}{COLOR_RESET}")
+        print("Commands will be displayed but not executed.")
+        print("Files will be generated and validation will run.")
+        print(f"{COLOR_DRY_RUN}{'='*80}{COLOR_RESET}\n")
+
+
+def discover_yaml_files():
+    """
+    Auto-discover all .yaml files in runs/ directory.
+    
+    Returns:
+        Sorted list of Path objects for .yaml files
+    """
+    runs_dir = Path('runs')
+    
+    if not runs_dir.exists():
+        log_event('ERROR', message="runs/ directory not found")
+        return []
+    
+    yaml_files = sorted(runs_dir.glob('*.yaml'))
+    
+    if not yaml_files:
+        log_event('WARNING', warning_message="No .yaml files found in runs/ directory")
+    
+    return yaml_files
 
 
 def main():
     """
     Main entry point for FATORI-V.
     
-    Parses CLI arguments and executes single or multiple runs.
+    Steps:
+    1. Parse CLI arguments
+    2. Initialize logger
+    3. Handle special modes (arch-restore, display-checks)
+    4. Discover/validate YAML files
+    5. Print header
+    6. Execute runs
     
     Returns:
         Exit code (0 for success, non-zero for failure)
     """
-    # Initialize general log file
-    general_log_file = Path('results') / 'fatori_general_log.txt'
-    
     # Parse CLI arguments
     try:
         args = parse_arguments()
-        
-        # Initialize logger with general log and user's log level
-        log_level = args.log_level if hasattr(args, 'log_level') and args.log_level else 'normal'
-        initialize_logger(
-            log_level=log_level,
-            general_log_file=general_log_file
-        )
-        
     except SystemExit as e:
         return e.code
     
-    # Check if YAML files exist
+    # Initialize logger
+    general_log_file = Path('results') / 'fatori_general_log.txt'
+    log_level = args.log_level if hasattr(args, 'log_level') and args.log_level else 'normal'
+    initialize_logger(log_level=log_level, general_log_file=general_log_file)
+    
+    # Special mode: --arch-restore
+    if args.arch_restore:
+        from scripts.orchestration.arch_restore import execute_arch_restore
+        return execute_arch_restore()
+    
+    # Special mode: --display-checks
+    if args.display_checks:
+        from config.validation_checks import display_all_checks
+        print("=" * 80)
+        print("FATORI-V Validation Checks")
+        print("=" * 80)
+        display_all_checks()
+        return 0
+    
+    # Determine which YAML files to run
+    if args.single_run:
+        # Single run mode: run specific file from runs/
+        single_yaml = Path('runs') / args.single_run
+        if not single_yaml.exists():
+            log_event('ERROR_FILE_NOT_FOUND', filepath=str(single_yaml))
+            print(f"ERROR: Configuration file not found: {single_yaml}")
+            return 1
+        args.yaml_files = [single_yaml]
+    elif not args.yaml_files:
+        # Auto-discovery mode: find all .yaml in runs/
+        args.yaml_files = discover_yaml_files()
+        if not args.yaml_files:
+            print("ERROR: No configuration files found. Specify YAML files or add them to runs/ directory.")
+            return 1
+    
+    # Validate all YAML files exist
     for yaml_path in args.yaml_files:
         if not yaml_path.exists():
             log_event('ERROR_FILE_NOT_FOUND', filepath=str(yaml_path))
+            print(f"ERROR: Configuration file not found: {yaml_path}")
             return 1
     
     # Add continue_on_error attribute if not present
     if not hasattr(args, 'continue_on_error'):
         args.continue_on_error = False
     
-    # Single run or multiple runs
+    # Print FATORI-V header with run list and dry-run notice
+    dry_run = hasattr(args, 'dry_run') and args.dry_run
+    print_fatori_header(args.yaml_files, dry_run)
+    
+    # Execute runs
     if len(args.yaml_files) == 1:
         return execute_single_run(args.yaml_files[0], args)
     else:

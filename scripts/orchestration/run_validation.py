@@ -110,11 +110,8 @@ def validate_run(config: Dict, results_dir: Path, strict: bool = None) -> Tuple[
     # Display results
     display_validation_summary(validation_result)
     
-    # Save verified config if validation passed
-    if is_valid:
-        verified_config_path = results_dir / "verified_config.yaml"
-        save_verified_config(config, verified_config_path)
-    else:
+    # Check if validation passed
+    if not is_valid:
         log_event('ERROR_VALIDATION_FAILED_CANNOT_PROCEED')
     
     return is_valid, validation_result

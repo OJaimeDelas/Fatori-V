@@ -2,19 +2,17 @@
 # FATORI-V • Execution • FI Command Builder
 # File: fi_command_builder.py
 # -----------------------------------------------------------------------------
-# Builds fault injection console commands from YAML configuration.
+# Builds fault injection console command from configuration.
 # =============================================================================
 
-from typing import Dict, Any, List
+from pathlib import Path
 import fatori_settings as cfg
-from scripts.common.common_settings import *
-from scripts.common.yaml_io.yaml_helpers import get_nested
 from scripts.logging import logger
 
 
 def get_fi_specifics(config):
     """
-    Extract fault_injection specifics from configuration.
+    Get fault injection specifics from configuration.
     
     Args:
         config: The loaded YAML configuration dictionary
@@ -22,8 +20,61 @@ def get_fi_specifics(config):
     Returns:
         Dictionary with FI specifics
     """
-    fi_specifics = get_nested(config, KEY_SPECIFICS, KEY_SPEC_FI, default={})
-    return fi_specifics if isinstance(fi_specifics, dict) else {}
+    return config.get('specifics', {}).get('fault_tolerance', {}).get('fault_injection', {})
+
+
+def get_run_seed(config):
+    """
+    Get run seed from configuration.
+    
+    Args:
+        config: The loaded YAML configuration dictionary
+    
+    Returns:
+        Integer seed value
+    """
+    return config.get('run', {}).get('identification', {}).get('seed', 123456)
+
+
+def get_fi_device(config):
+    """
+    Get FI device path from configuration.
+    
+    Args:
+        config: The loaded YAML configuration dictionary
+    
+    Returns:
+        String with device path
+    """
+    return cfg.FI_DEVICE_DEFAULT
+
+
+def get_fi_baudrate(config):
+    """
+    Get FI baudrate from configuration.
+    
+    Args:
+        config: The loaded YAML configuration dictionary
+    
+    Returns:
+        Integer with baudrate
+    """
+    return cfg.FI_BAUDRATE_DEFAULT
+
+
+def get_fi_log_level(config):
+    """
+    Get FI log level from configuration.
+    
+    Args:
+        config: The loaded YAML configuration dictionary
+    
+    Returns:
+        String with log level (minimal/normal/verbose)
+    """
+    results = config.get('general', {}).get('results', {})
+    log_level = results.get('fi_log_level', 'normal')
+    return log_level
 
 
 def get_area_profile_name(config):
@@ -34,15 +85,10 @@ def get_area_profile_name(config):
         config: The loaded YAML configuration dictionary
     
     Returns:
-        String with area profile name (device, modules, address_list, target_list)
+        String with area profile name
     """
-    fi_specifics = get_fi_specifics(config)
-    area_config = fi_specifics.get('area', {})
-    
-    # Profile can be specified directly or inferred from presence of sub-keys
-    profile = area_config.get('profile', 'device')
-    
-    return str(profile).lower()
+    general_fi = config.get('general', {}).get('fault_injection', {})
+    return general_fi.get('area_profile', 'device')
 
 
 def get_time_profile_name(config):
@@ -53,20 +99,17 @@ def get_time_profile_name(config):
         config: The loaded YAML configuration dictionary
     
     Returns:
-        String with time profile name (uniform, poisson, microburst, etc.)
+        String with time profile name
     """
-    fi_specifics = get_fi_specifics(config)
-    time_config = fi_specifics.get('time', {})
-    
-    # Profile can be specified directly
-    profile = time_config.get('profile', 'uniform')
-    
-    return str(profile).lower()
+    general_fi = config.get('general', {}).get('fault_injection', {})
+    return general_fi.get('time_profile', 'uniform')
 
 
 def build_area_arguments(config, area_profile):
     """
     Build area-specific command line arguments.
+    
+    Constructs --area-args="key=value,key=value" format and special flags.
     
     Args:
         config: The loaded YAML configuration dictionary
@@ -79,61 +122,71 @@ def build_area_arguments(config, area_profile):
     area_config = fi_specifics.get('area', {})
     
     args = []
+    area_args_dict = {}
+    
+    # Get common area arguments (under specifics.fault_tolerance.fault_injection.area)
+    repeat = area_config.get('repeat', True)
+    tpool_size = area_config.get('target_pool_size', 200)
+    ratio = area_config.get('ratio', 0.5)
+    strict = area_config.get('strict', False)
+    seed = area_config.get('seed')
+    
+    # Add common arguments to area_args
+    area_args_dict['repeat'] = 'true' if repeat else 'false'
+    area_args_dict['tpool_size'] = str(tpool_size)
+    area_args_dict['ratio'] = str(ratio)
+    
+    # Handle strict flag separately
+    if strict:
+        args.append('--ratio-strict')
+    
+    # Handle seed
+    if seed is not None:
+        args.extend(['--area-seed', str(seed)])
+    else:
+        # Use run seed
+        run_seed = get_run_seed(config)
+        args.extend(['--area-seed', str(run_seed)])
+    
+    # Get profile-specific arguments
+    profile_config = area_config.get(area_profile, {})
     
     if area_profile == 'device':
-        # Device profile - entire device, no additional args needed
-        # Just need mode if specified
-        device_cfg = area_config.get('device', {})
-        mode = device_cfg.get('mode', 'sequential')
-        args.extend(['--area-mode', mode])
+        # Device profile
+        mode = profile_config.get('mode', 'sequential')
+        area_args_dict['mode'] = mode
     
     elif area_profile == 'modules':
-        # Modules profile - specific module targets
-        modules_cfg = area_config.get('modules', {})
+        # Modules profile
+        module_mode = profile_config.get('module_mode', 'weighted')
+        target_mode = profile_config.get('target_mode', 'sequential')
+        weights_str = profile_config.get('weights', '1-1-1')
+        targets_dict = profile_config.get('targets', {})
         
-        # Get targets list
-        targets = modules_cfg.get('targets', [])
-        if isinstance(targets, dict):
-            # Format: {module_name: enabled}
-            targets = [name for name, enabled in targets.items() if enabled]
+        area_args_dict['module_mode'] = module_mode
+        area_args_dict['target_mode'] = target_mode
         
-        if targets:
-            targets_str = ','.join(str(t) for t in targets)
-            args.extend(['--area-targets', targets_str])
+        # Keep weights in dash-separated format (weights=1-1-1)
+        area_args_dict['weights'] = weights_str
         
-        # Get mode
-        mode = modules_cfg.get('mode', 'sequential')
-        args.extend(['--area-mode', mode])
-    
-    elif area_profile == 'address_list':
-        # Address list profile - specific addresses from file
-        addr_cfg = area_config.get('address_list', {})
-        
-        # Get address list file path
-        addr_file = addr_cfg.get('file') or addr_cfg.get('path')
-        if addr_file:
-            args.extend(['--area-addresses', str(addr_file)])
-        
-        # Get mode
-        mode = addr_cfg.get('mode', 'sequential')
-        args.extend(['--area-mode', mode])
+        # Get enabled targets - use is_enabled to handle "on"/"off" strings and booleans
+        if isinstance(targets_dict, dict):
+            from scripts.common.yaml_io.yaml_helpers import is_enabled
+            enabled_targets = [name for name, value in targets_dict.items() if is_enabled(value)]
+            if enabled_targets:
+                targets_str = '+'.join(enabled_targets)
+                area_args_dict['modules'] = targets_str
     
     elif area_profile == 'target_list':
-        # Target list profile - similar to modules but different semantics
-        target_cfg = area_config.get('target_list', {})
-        
-        # Get targets
-        targets = target_cfg.get('targets', [])
-        if isinstance(targets, dict):
-            targets = [name for name, enabled in targets.items() if enabled]
-        
-        if targets:
-            targets_str = ','.join(str(t) for t in targets)
-            args.extend(['--area-targets', targets_str])
-        
-        # Get mode
-        mode = target_cfg.get('mode', 'sequential')
-        args.extend(['--area-mode', mode])
+        # Target list profile
+        pool_file = profile_config.get('pool_file', '')
+        if pool_file:
+            area_args_dict['pool_file'] = pool_file
+    
+    # Build --area-args string with quotes
+    if area_args_dict:
+        area_args_str = ','.join(f"{k}={v}" for k, v in area_args_dict.items())
+        args.extend(['--area-args', f'"{area_args_str}"'])
     
     return args
 
@@ -141,6 +194,8 @@ def build_area_arguments(config, area_profile):
 def build_time_arguments(config, time_profile):
     """
     Build time-specific command line arguments.
+    
+    Constructs --time-args="key=value,key=value" format and special flags.
     
     Args:
         config: The loaded YAML configuration dictionary
@@ -153,212 +208,147 @@ def build_time_arguments(config, time_profile):
     time_config = fi_specifics.get('time', {})
     
     args = []
+    time_args_dict = {}
+    
+    # Handle seed
+    seed = time_config.get('seed')
+    if seed is not None:
+        args.extend(['--time-seed', str(seed)])
+    else:
+        # Use run seed
+        run_seed = get_run_seed(config)
+        args.extend(['--time-seed', str(run_seed)])
+    
+    # Get profile-specific arguments
+    profile_config = time_config.get(time_profile, {})
     
     if time_profile == 'uniform':
-        # Uniform time distribution
-        uniform_cfg = time_config.get('uniform', {})
+        # Uniform profile
+        rate_hz = profile_config.get('rate_hz')
+        period_s = profile_config.get('period_s')
+        duration_s = profile_config.get('duration_s')
         
-        # Start time (when to begin injections)
-        if 'start' in uniform_cfg:
-            args.extend(['--time-start', str(uniform_cfg['start'])])
+        if period_s is not None:
+            time_args_dict['period_s'] = str(period_s)
+        elif rate_hz is not None:
+            time_args_dict['rate_hz'] = str(rate_hz)
         
-        # Duration (how long to inject)
-        if 'duration' in uniform_cfg:
-            args.extend(['--time-duration', str(uniform_cfg['duration'])])
-        
-        # Period (time between injections)
-        if 'period' in uniform_cfg:
-            args.extend(['--time-period', str(uniform_cfg['period'])])
-    
-    elif time_profile == 'poisson':
-        # Poisson process time distribution
-        poisson_cfg = time_config.get('poisson', {})
-        
-        # Lambda (rate parameter)
-        if 'lambda' in poisson_cfg:
-            args.extend(['--time-lambda', str(poisson_cfg['lambda'])])
-        
-        # Duration
-        if 'duration' in poisson_cfg:
-            args.extend(['--time-duration', str(poisson_cfg['duration'])])
-    
-    elif time_profile == 'microburst':
-        # Microburst time distribution
-        burst_cfg = time_config.get('microburst', {})
-        
-        # Burst count
-        if 'count' in burst_cfg:
-            args.extend(['--time-burst-count', str(burst_cfg['count'])])
-        
-        # Burst duration
-        if 'duration' in burst_cfg:
-            args.extend(['--time-burst-duration', str(burst_cfg['duration'])])
-        
-        # Inter-burst delay
-        if 'delay' in burst_cfg:
-            args.extend(['--time-burst-delay', str(burst_cfg['delay'])])
-    
-    elif time_profile == 'mmpp2':
-        # MMPP2 (2-state Markov modulated Poisson process)
-        mmpp2_cfg = time_config.get('mmpp2', {})
-        
-        # Parameters as comma-separated string
-        if 'params' in mmpp2_cfg:
-            params = mmpp2_cfg['params']
-            if isinstance(params, (list, tuple)):
-                params_str = ','.join(str(p) for p in params)
-            else:
-                params_str = str(params)
-            args.extend(['--time-mmpp2-params', params_str])
+        if duration_s is not None:
+            time_args_dict['duration_s'] = str(duration_s)
     
     elif time_profile == 'ramp':
-        # Ramp profile (linearly increasing rate)
-        ramp_cfg = time_config.get('ramp', {})
+        # Ramp profile
+        start_rate_hz = profile_config.get('start_rate_hz')
+        end_rate_hz = profile_config.get('end_rate_hz')
+        duration_s = profile_config.get('duration_s')
         
-        # Start rate
-        if 'start' in ramp_cfg:
-            args.extend(['--time-ramp-start', str(ramp_cfg['start'])])
+        if start_rate_hz is not None:
+            time_args_dict['start_rate_hz'] = str(start_rate_hz)
+        if end_rate_hz is not None:
+            time_args_dict['end_rate_hz'] = str(end_rate_hz)
+        if duration_s is not None:
+            time_args_dict['duration_s'] = str(duration_s)
+    
+    elif time_profile == 'poisson':
+        # Poisson profile
+        rate_hz = profile_config.get('rate_hz')
+        duration_s = profile_config.get('duration_s')
         
-        # End rate
-        if 'end' in ramp_cfg:
-            args.extend(['--time-ramp-end', str(ramp_cfg['end'])])
+        if rate_hz is not None:
+            time_args_dict['rate_hz'] = str(rate_hz)
+        if duration_s is not None:
+            time_args_dict['duration_s'] = str(duration_s)
+    
+    elif time_profile == 'mmpp2':
+        # MMPP2 profile
+        low_hz = profile_config.get('low_hz')
+        high_hz = profile_config.get('high_hz')
+        p_low_to_high = profile_config.get('p_low_to_high')
+        p_high_to_low = profile_config.get('p_high_to_low')
+        start_state = profile_config.get('start_state')
+        duration_s = profile_config.get('duration_s')
         
-        # Duration
-        if 'duration' in ramp_cfg:
-            args.extend(['--time-ramp-duration', str(ramp_cfg['duration'])])
+        if low_hz is not None:
+            time_args_dict['low_hz'] = str(low_hz)
+        if high_hz is not None:
+            time_args_dict['high_hz'] = str(high_hz)
+        if p_low_to_high is not None:
+            time_args_dict['p_low_to_high'] = str(p_low_to_high)
+        if p_high_to_low is not None:
+            time_args_dict['p_high_to_low'] = str(p_high_to_low)
+        if start_state is not None:
+            time_args_dict['start_state'] = start_state
+        if duration_s is not None:
+            time_args_dict['duration_s'] = str(duration_s)
     
     elif time_profile == 'trace':
-        # Trace-based profile (from file)
-        trace_cfg = time_config.get('trace', {})
+        # Trace profile
+        file_path = profile_config.get('file') or profile_config.get('path')
+        mode = profile_config.get('mode')
+        repeat = profile_config.get('repeat')
+        duration_s = profile_config.get('duration_s')
         
-        # Trace file path
-        if 'file' in trace_cfg:
-            args.extend(['--time-trace-file', str(trace_cfg['file'])])
+        if file_path:
+            time_args_dict['file'] = str(file_path)
+        if mode:
+            time_args_dict['mode'] = mode
+        if repeat is not None:
+            time_args_dict['repeat'] = str(repeat)
+        if duration_s is not None:
+            time_args_dict['duration_s'] = str(duration_s)
+    
+    elif time_profile == 'microburst':
+        # Microburst profile
+        burst_rate_hz = profile_config.get('burst_rate_hz')
+        idle_rate_hz = profile_config.get('idle_rate_hz')
+        burst_duration_s = profile_config.get('burst_duration_s')
+        idle_duration_s = profile_config.get('idle_duration_s')
+        bursts = profile_config.get('bursts')
+        duration_s = profile_config.get('duration_s')
+        
+        if burst_rate_hz is not None:
+            time_args_dict['burst_rate_hz'] = str(burst_rate_hz)
+        if idle_rate_hz is not None:
+            time_args_dict['idle_rate_hz'] = str(idle_rate_hz)
+        if burst_duration_s is not None:
+            time_args_dict['burst_duration_s'] = str(burst_duration_s)
+        if idle_duration_s is not None:
+            time_args_dict['idle_duration_s'] = str(idle_duration_s)
+        if bursts is not None:
+            time_args_dict['bursts'] = str(bursts)
+        if duration_s is not None:
+            time_args_dict['duration_s'] = str(duration_s)
+    
+    # Build --time-args string with quotes
+    if time_args_dict:
+        time_args_str = ','.join(f"{k}={v}" for k, v in time_args_dict.items())
+        args.extend(['--time-args', f'"{time_args_str}"'])
     
     return args
 
 
-def get_sem_clock_hz(config):
+def build_fi_command(config, benchmark_name):
     """
-    Get SEM clock frequency from configuration.
+    Build fault injection console command from configuration.
+    
+    Constructs the FI console command with all necessary parameters:
+    - Device and communication settings
+    - Area and time profiles
+    - Seeds and debugging options
     
     Args:
         config: The loaded YAML configuration dictionary
+        benchmark_name: Name of the benchmark being executed
+        output_log_path: Optional path where injection log should be written (deprecated, not used)
     
     Returns:
-        Integer with SEM clock frequency in Hz
-    """
-    fi_specifics = get_fi_specifics(config)
-    
-    # Check if sem_clk_hz is specified in config
-    sem_clk = fi_specifics.get('sem_clk_hz')
-    
-    if sem_clk is not None:
-        return int(sem_clk)
-    
-    # Fall back to default
-    return cfg.FI_SEM_CLK_HZ
-
-
-def get_fi_device(config):
-    """
-    Get FI device path from configuration.
-    
-    Args:
-        config: The loaded YAML configuration dictionary
-    
-    Returns:
-        String with device path (e.g., /dev/ttyUSB1)
-    """
-    fi_specifics = get_fi_specifics(config)
-    
-    # Check if device is specified
-    device = fi_specifics.get('device')
-    
-    if device is not None:
-        return str(device)
-    
-    # Fall back to default
-    return cfg.FI_DEVICE_DEFAULT
-
-
-def get_fi_baudrate(config):
-    """
-    Get FI serial baudrate from configuration.
-    
-    Args:
-        config: The loaded YAML configuration dictionary
-    
-    Returns:
-        Integer with baudrate
-    """
-    fi_specifics = get_fi_specifics(config)
-    
-    # Check if baudrate is specified
-    baudrate = fi_specifics.get('baudrate')
-    
-    if baudrate is not None:
-        return int(baudrate)
-    
-    # Fall back to default
-    return cfg.FI_BAUDRATE_DEFAULT
-
-
-def get_fi_log_level(config):
-    """
-    Get FI log level from configuration.
-    
-    Args:
-        config: The loaded YAML configuration dictionary
-    
-    Returns:
-        String with log level (debug, info, warning, error)
-    """
-    # Check results section for FI log level
-    results_config = get_nested(config, KEY_GENERAL, KEY_GEN_RESULTS, default={})
-    log_level = results_config.get('fi_log_level')
-    
-    if log_level:
-        return str(log_level).lower()
-    
-    # Fall back to default
-    return cfg.FI_LOG_LEVEL_DEFAULT
-
-
-def build_fi_command(config, benchmark_name, output_log_path=None):
-    """
-    Build complete FI console command from configuration.
-    
-    This constructs the full command line for launching the external
-    FI console with all parameters derived from YAML configuration.
-    
-    Command structure:
-    python3 fi/fi_console.py \\
-      --device /dev/ttyUSB1 \\
-      --baudrate 1250000 \\
-      --sem-clk 50000000 \\
-      --log-level info \\
-      --area-profile modules \\
-      --area-targets alu,controller,decoder \\
-      --time-profile uniform \\
-      --time-start 0 \\
-      --time-duration 1000000 \\
-      --output injection_log.txt
-    
-    Args:
-        config: The loaded YAML configuration dictionary
-        benchmark_name: Name of benchmark being executed (for logging)
-        output_log_path: Path where injection log should be written
-    
-    Returns:
-        String with complete command
+        String with complete FI command
     """
     logger.log_event('DEBUG', debug_message="Building FI command...")
     
     # Get basic FI parameters
     device = get_fi_device(config)
     baudrate = get_fi_baudrate(config)
-    sem_clk = get_sem_clock_hz(config)
     log_level = get_fi_log_level(config)
     
     # Get profiles
@@ -367,21 +357,29 @@ def build_fi_command(config, benchmark_name, output_log_path=None):
     
     logger.log_event('DEBUG', debug_message=f"  Device: {device}")
     logger.log_event('DEBUG', debug_message=f"  Baudrate: {baudrate}")
-    logger.log_event('DEBUG', debug_message=f"  SEM clock: {sem_clk} Hz")
     logger.log_event('DEBUG', debug_message=f"  Area profile: {area_profile}")
     logger.log_event('DEBUG', debug_message=f"  Time profile: {time_profile}")
     
-    # Build command as list
+    # Build command as list with correct argument names
     cmd_parts = [
         'python3',
-        'fi/fi_console.py',
-        '--device', device,
-        '--baudrate', str(baudrate),
-        '--sem-clk', str(sem_clk),
+        'fi/fault_injection.py',
+        '--dev', device,
+        '--baud', str(baudrate),
         '--log-level', log_level,
-        '--area-profile', area_profile,
-        '--time-profile', time_profile,
+        '--area', area_profile,
+        '--time', time_profile,
     ]
+    
+    # Add global seed if specified
+    run_seed = get_run_seed(config)
+    if run_seed is not None:
+        cmd_parts.extend(['--global-seed', str(run_seed)])
+    
+    # Add debug flag in dry-run mode to simulate hardware
+    if cfg.DRY_RUN_MODE:
+        cmd_parts.append('--debug')
+        logger.log_event('DEBUG', debug_message="  Debug mode: enabled (dry-run)")
     
     # Add area-specific arguments
     area_args = build_area_arguments(config, area_profile)
@@ -391,9 +389,30 @@ def build_fi_command(config, benchmark_name, output_log_path=None):
     time_args = build_time_arguments(config, time_profile)
     cmd_parts.extend(time_args)
     
-    # Add output log path if specified
-    if output_log_path:
-        cmd_parts.extend(['--output', str(output_log_path)])
+    # Add EBD file argument (essential configuration database)
+    # Path is relative to ROOT_DIR where FI subprocess runs
+    ebd_path = Path('iob_soc_V1.0') / 'hardware' / 'fpga' / 'iob_soc_iob_aes_ku040_db_g.ebd'
+    cmd_parts.extend(['--ebd', str(ebd_path)])
+    
+    # Add system dict argument (merged system hierarchy)
+    # Path is relative to ROOT_DIR where FI subprocess runs
+    system_dict_path = Path('tmp') / 'generated' / 'system_dict_merged.yaml'
+    cmd_parts.extend(['--system-dict', str(system_dict_path)])
+    
+    # Add sync file for benchmark coordination
+    # Note: Firmware creates this sync file, not FATORI-V
+    # FI subprocess runs from ROOT_DIR, so path is relative to ROOT_DIR
+    from scripts.build.path_resolver import resolve_sync_file
+    sync_path = resolve_sync_file()
+    
+    # Get path relative to ROOT_DIR (where FI subprocess executes)
+    try:
+        sync_path_for_fi = Path(sync_path).relative_to(cfg.ROOT_DIR)
+    except ValueError:
+        # If sync_path is not under ROOT_DIR, use absolute path as fallback
+        sync_path_for_fi = Path(sync_path)
+    
+    cmd_parts.extend(['--wait-for-file', str(sync_path_for_fi)])
     
     # Convert to string
     cmd = ' '.join(cmd_parts)

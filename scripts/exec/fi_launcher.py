@@ -63,12 +63,9 @@ def launch_fi(config, benchmark_name, session, timeout_s=None):
     if timeout_s is None:
         timeout_s = session.timeout_s
     
-    # Determine output log path
-    output_log_path = session.fi_log_path if session.fi_log_path else (session.session_dir / "injection_log.txt")
-    
-    # Build FI command
+    # Build FI command (no output_log_path param anymore)
     try:
-        fi_command = build_fi_command(config, benchmark_name, output_log_path)
+        fi_command = build_fi_command(config, benchmark_name)
     except Exception as e:
         log_event('FI_COMMAND_BUILD_FAILED', error_message=str(e))
         return FIResult(
@@ -78,21 +75,29 @@ def launch_fi(config, benchmark_name, session, timeout_s=None):
             error_message=f"Command build failed: {e}"
         )
     
+    # Prepare FI terminal output log file
+    # FI terminal output goes to: results/<run_id>/sessions/<bench_id>/fi/fi_terminal_log.txt
+    fi_dir = session.session_dir / "fi"
+    fi_dir.mkdir(parents=True, exist_ok=True)
+    fi_terminal_log_path = fi_dir / "fi_terminal_log.txt"
+    
+    # Log and print FI command
     log_event('FI_COMMAND_BUILT',
               command=fi_command,
-              output_log=str(output_log_path),
+              output_log=str(fi_terminal_log_path),
               timeout_s=timeout_s)
     
-    # Start FI console subprocess
+    # Start FI console subprocess with output redirected to file
     try:
+        fi_terminal_log_file = open(fi_terminal_log_path, 'w')
+        
         # Execute from project root
         process = subprocess.Popen(
             fi_command,
             shell=True,
             cwd=str(cfg.ROOT_DIR),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1
+            stdout=fi_terminal_log_file,
+            stderr=subprocess.STDOUT  # Merge stderr into stdout
         )
         
         log_event('FI_PROCESS_STARTED', pid=process.pid)
@@ -181,4 +186,177 @@ def launch_fi(config, benchmark_name, session, timeout_s=None):
             timed_out=False,
             exit_code=-1,
             error_message=str(e)
+        )
+
+
+@dataclass
+class FIAsyncHandle:
+    """
+    Handle for asynchronously launched FI process.
+    
+    This allows the caller to wait for completion and collect results later.
+    """
+    process: subprocess.Popen  # The running subprocess
+    benchmark_name: str        # Associated benchmark
+    session: object            # Associated session
+    timeout_s: int             # Timeout for this FI execution
+    output_log_path: Path      # Where FI output is being logged
+    start_time: float          # When FI was started (time.time())
+
+
+def launch_fi_async(config, benchmark_name, session, timeout_s=None):
+    """
+    Launch fault injection console asynchronously as background process.
+    
+    This starts the FI console subprocess but does not wait for it to complete.
+    The subprocess will wait for the sync file before beginning injections.
+    
+    Caller should:
+    1. Call this to start FI subprocess
+    2. Start the benchmark (which creates/deletes sync file)
+    3. Call wait_for_fi_completion() to collect results
+    
+    Args:
+        config: The loaded YAML configuration dictionary
+        benchmark_name: Name of benchmark being executed
+        session: Session object for this execution
+        timeout_s: Optional timeout override (uses session timeout by default)
+    
+    Returns:
+        FIAsyncHandle object, or None if launch fails
+    """
+    log_event('FI_LAUNCH_ASYNC_START', benchmark_name=benchmark_name)
+    
+    # Use session timeout if not specified
+    if timeout_s is None:
+        timeout_s = session.timeout_s
+    
+    # Build FI command (no output_log_path param anymore)
+    try:
+        fi_command = build_fi_command(config, benchmark_name)
+    except Exception as e:
+        log_event('FI_COMMAND_BUILD_FAILED', error_message=str(e))
+        return None
+    
+    # Prepare FI terminal output log file
+    # FI terminal output goes to: results/<run_id>/sessions/<bench_id>/fi/fi_terminal_log.txt
+    fi_dir = session.session_dir / "fi"
+    fi_dir.mkdir(parents=True, exist_ok=True)
+    fi_terminal_log_path = fi_dir / "fi_terminal_log.txt"
+    
+    # Log and print FI command
+    log_event('FI_COMMAND_BUILT',
+              command=fi_command,
+              output_log=str(fi_terminal_log_path),
+              timeout_s=timeout_s)
+    
+    # Start FI console subprocess with output redirected to file
+    try:
+        fi_terminal_log_file = open(fi_terminal_log_path, 'w')
+        
+        # Execute from project root
+        process = subprocess.Popen(
+            fi_command,
+            shell=True,
+            cwd=str(cfg.ROOT_DIR),
+            stdout=fi_terminal_log_file,
+            stderr=subprocess.STDOUT  # Merge stderr into stdout
+        )
+        
+        log_event('FI_PROCESS_STARTED_ASYNC', pid=process.pid)
+        
+        # Create handle
+        handle = FIAsyncHandle(
+            process=process,
+            benchmark_name=benchmark_name,
+            session=session,
+            timeout_s=timeout_s,
+            output_log_path=fi_terminal_log_path,
+            start_time=time.time()
+        )
+        
+        return handle
+    
+    except Exception as e:
+        log_event('FI_LAUNCH_ASYNC_EXCEPTION', error_message=str(e))
+        return None
+
+
+def wait_for_fi_completion(fi_handle):
+    """
+    Wait for asynchronously launched FI to complete and collect results.
+    
+    This blocks indefinitely until the FI subprocess finishes.
+    No timeout - FI must complete naturally.
+    
+    Args:
+        fi_handle: FIAsyncHandle from launch_fi_async()
+    
+    Returns:
+        FIResult object
+    """
+    if fi_handle is None:
+        return FIResult(
+            success=False,
+            timed_out=False,
+            exit_code=-1,
+            error_message="No FI handle provided"
+        )
+    
+    log_event('FI_WAIT_FOR_COMPLETION_START', pid=fi_handle.process.pid)
+    log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] Blocking on process.wait() for PID {fi_handle.process.pid}")
+    
+    try:
+        process = fi_handle.process
+        
+        # Wait indefinitely for FI subprocess to complete
+        # No timeout - just block until process exits
+        log_event('DEBUG', debug_message="[FI-WAIT-DEBUG] Calling process.wait() with no timeout...")
+        exit_code = process.wait()
+        log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] process.wait() returned with exit_code={exit_code}")
+        
+        # Determine success based on exit code
+        success = (exit_code == 0)
+        
+        # Collect FI output
+        output_data = None
+        injection_count = 0
+        
+        log_event('DEBUG', debug_message="[FI-WAIT-DEBUG] Collecting FI output...")
+        try:
+            output_data = collect_fi_output(fi_handle.session.session_dir)
+            
+            if output_data and output_data.get('parsed'):
+                injection_count = output_data['parsed'].get('injection_count', 0)
+                log_event('FI_OUTPUT_COLLECTED', injection_count=injection_count)
+        except Exception as e:
+            log_event('WARNING', warning_message=f"Failed to collect FI output: {e}")
+        
+        # Create result
+        result = FIResult(
+            success=success,
+            timed_out=False,
+            exit_code=exit_code,
+            injection_count=injection_count,
+            error_message=None if success else f"FI exited with code {exit_code}"
+        )
+        
+        log_event('FI_WAIT_FOR_COMPLETION_COMPLETE', 
+                  success=success,
+                  exit_code=exit_code,
+                  injection_count=injection_count)
+        
+        return result
+    
+    except Exception as e:
+        log_event('FI_WAIT_FOR_COMPLETION_EXCEPTION', error_message=str(e))
+        import traceback
+        log_event('FI_WAIT_TRACEBACK', traceback=traceback.format_exc())
+        
+        return FIResult(
+            success=False,
+            timed_out=False,
+            exit_code=-1,
+            injection_count=0,
+            error_message=f"Exception while waiting: {e}"
         )

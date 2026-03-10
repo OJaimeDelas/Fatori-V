@@ -34,9 +34,9 @@ def execute_build_phase(context: RunContext) -> bool:
         skip_clean = not CLEAN_BEFORE_BUILD
         skip_ibex_setup = not RUN_IBEX_SETUP
         
-        log_event('BUILD_PHASE_CONFIG',
-                  clean_before_build=CLEAN_BEFORE_BUILD,
-                  run_ibex_setup=RUN_IBEX_SETUP)
+        # log_event('BUILD_PHASE_CONFIG',
+        #           clean_before_build=CLEAN_BEFORE_BUILD,
+        #           run_ibex_setup=RUN_IBEX_SETUP)
         
         # Get enabled benchmarks from config
         from scripts.common.yaml_io.yaml_helpers import get_benchmarks, is_benchmark_enabled

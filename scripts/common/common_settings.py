@@ -35,7 +35,14 @@ KEY_GEN_RESULTS = "results"
 # Keys under features
 KEY_FEAT_FAULT_MANAGER = "fault_manager"
 KEY_FEAT_FTMS = "fault_tolerance_mechanisms"
+KEY_FEAT_PERF_MECH = "performance_mechanisms"
 KEY_FEAT_ISA = "isa_extensions"
+
+# Performance mechanism sub-keys
+KEY_PERF_ICACHE = "icache"
+KEY_PERF_WSTAGE = "wstage"
+KEY_PERF_BRANCH_PRED = "branch_pred"
+KEY_PERF_BRANCH_TALU = "branch_target_alu"
 
 # ISA extension keys
 KEY_ISA_RV32E = "RV32E"

@@ -1,52 +1,152 @@
 # =============================================================================
 # FATORI-V • Pblock Algorithm
 # File: constants.py
-# 
-# Baseline module sizes, scaling factors, and FPGA specifications
+# -----------------------------------------------------------------------------
+# Baseline module sizes, scaling factors, and FPGA specifications from
+# empirical characterization (Chapter 7, Table 7.3)
 # =============================================================================
 
 # =============================================================================
-# BASELINE MODULE SIZES (from CONFIG 01 - Absolute Baseline)
+# BASELINE MODULE SIZES (C01 - Absolute Baseline)
 # =============================================================================
-# These are the minimum sizes measured with all features disabled:
-# - ICACHE=0, RV32B=None, RV32M=None, BRANCH_PRED=0, BRANCH_TALU=0
+# Measured with all features disabled:
+# - ICACHE=0, RV32B=None, RV32M=None, BRANCH_PRED=0, BRANCH_TALU=0, WSTAGE=0
 # - All MON_N=1, All FTMs=0, METRIC_LAYER=0
 
 BASELINE_SIZES = {
-    'ALU': 238,                # Arithmetic Logic Unit (LUTs, FFs)
+    'ALU': 238,                # Arithmetic Logic Unit
     'CONTROLLER': 129,         # Control FSM
     'DECODER': 93,             # Instruction decoder
     'LSU': 154,                # Load/Store Unit
     'IF_STAGE': 431,           # Instruction Fetch stage (with prefetch)
-    'ID_STAGE': 365,           # Instruction Decode stage
+    'ID_STAGE': 365,           # Instruction Decode stage (includes CTRL+DEC)
     'EX_BLOCK': 238,           # Execution block (ALU only, no multiplier)
-    'WB_STAGE': 33,            # Writeback stage (minimal glue logic)
-    'PREFETCH_BUFFER': 168,    # Prefetch buffer (mutually exclusive with cache)
-    'BRANCH_PREDICT': 38,      # Branch predictor
-    'MULTDIV': 466,            # Multiplier/Divider (fast variant baseline)
+    'WB_STAGE': 33,            # Writeback stage (merged mode)
+    'PREFETCH_BUFFER': 168,    # Prefetch buffer (mutually exclusive with ICACHE)
+    'BRANCH_PREDICT': 38,      # Branch predictor module
+    'MULTDIV': 466,            # Multiplier/Divider (Fast variant baseline)
     'ICACHE': 4,               # I-cache wrapper (actual cache in BRAM)
+    'FAULT_MGR': 1,            # Fault manager baseline
 }
 
-# Baseline FFs for reference (not used in pblock sizing, but documented)
-BASELINE_FFS = {
-    'ALU': 0,
-    'CONTROLLER': 14,
-    'DECODER': 0,
-    'LSU': 68,
-    'IF_STAGE': 280,
-    'ID_STAGE': 17,
-    'EX_BLOCK': 0,
-    'WB_STAGE': 0,
-    'PREFETCH_BUFFER': 196,
-    'BRANCH_PREDICT': 0,
-    'MULTDIV': 75,
-    'ICACHE': 1,
+# Name aliases for user-friendly config names
+NAME_ALIASES = {
+    'BRANCH_PREDICTOR': 'BRANCH_PREDICT',
+    'MULTIPLIER': 'MULTDIV',
+    'MULT': 'MULTDIV',
+    'FAULT_MANAGER': 'FAULT_MGR',
 }
+
+# =============================================================================
+# MULTIPLICATIVE FEATURE FACTORS
+# =============================================================================
+
+# RV32B Bitmanip Extension impact on ALU (C02-C04)
+RV32B_FACTORS = {
+    'None': 1.0,       # No bitmanip (baseline)
+    'Balanced': 4.2,   # Balanced: ALU=1000, factor=4.20
+    'OTEarlGrey': 7.5, # OTEarlGrey: ALU=1772, factor=7.45 (rounded to 7.5)
+    'Full': 8.9,       # Full: ALU=2118, factor=8.90
+}
+
+# ICACHE impact on IF_STAGE (C08)
+ICACHE_FACTOR = 3.2  # IF_STAGE: 431 → 1382 (3.21×)
+
+# =============================================================================
+# ADDITIVE FEATURE COMPONENTS (LUTs)
+# =============================================================================
+
+# RV32B additive impact on DECODER (C02-C04)
+S_RV32B_DECODER = {
+    'None': 0,
+    'Balanced': 55,      # DECODER +55 (C02)
+    'OTEarlGrey': 59,    # DECODER +59 (C03)
+    'Full': 56,          # DECODER +56 (C04)
+}
+
+# MULTDIV integration overhead (C05-C07)
+S_MULTDIV_ALU = 18       # ALU +18 when RV32M enabled
+S_MULTDIV_ID = 72        # ID_STAGE +72 when RV32M enabled
+
+# Branch predictor integration overhead (C09)
+S_BP_IF = 200            # IF_STAGE +200 when BRANCH_PRED enabled
+
+# Branch Target ALU overhead (C10)
+S_BTALU_ID = 38          # ID_STAGE +38 when BRANCH_TALU enabled
+
+# Writeback stage overhead (C11)
+S_WSTAGE_WB = 4          # WB_STAGE +4 when WSTAGE enabled
+S_WSTAGE_CTRL = 11       # CONTROLLER +11 when WSTAGE enabled
+S_WSTAGE_DEC = 11        # DECODER +11 when WSTAGE enabled
+
+# MON logic wrapper overhead (C12-C24)
+# Fixed overhead independent of N for N≥2
+S_MON = 120              # All modules: +120 LUTs when MON enabled
+
+# METRIC_LAYER overhead on FAULT_MGR (C25-C30)
+# Only minimal overhead - bulk goes to cs_registers (not a pblock target)
+S_ML_MAX = 5             # FAULT_MGR: 1→5 LUTs (max across all ML levels)
+
+# Register MON overhead (C38-C45)
+# Empirically shows optimization effects at 100% coverage
+R_MODULE = 0             # No overhead (Vivado optimization dominates)
+
+# Voter LUT coefficient per module for register_m_of_n overhead.
+# Unit: LUTs per replication step, i.e. voter_luts = FF_BASELINE[module] × (N - 1).
+# Calibrated from placed-design measurements with anchored cell patterns:
+#   coefficient = (actual_module_luts_with_reg_mon − baseline_luts) / (N − 1)
+# Coefficient derived from IF_STAGE observation (medium_ft, N=3):
+#   (2270 − 431) / (3 − 1) = 919.5 → 920.  Applied uniformly: ≈3.3 LUTs/FF/step.
+FF_BASELINE_SIZES = {
+    'ALU':              66,   # 20 FFs × 3.3 LUTs/FF/step
+    'CONTROLLER':      130,   # Kept from prior calibration; not observed to overflow
+    'DECODER':          82,   # 25 FFs × 3.3 LUTs/FF/step
+    'LSU':             280,   # Kept from prior calibration; not observed to overflow
+    'IF_STAGE':        920,   # Calibrated: (2270 − 431) / (3 − 1) = 919.5 → 920
+    'ID_STAGE':        680,   # Kept from prior calibration; not observed to overflow
+    'EX_BLOCK':         30,   # Small pipeline register
+    'WB_STAGE':         50,   # Write-back pipeline register
+    'PREFETCH_BUFFER': 130,   # Prefetch FIFO state
+    'BRANCH_PREDICT':   40,   # Branch history state
+    'MULTDIV':          80,   # Multiplier state registers
+    'ICACHE':           30,   # Cache control state
+    'FAULT_MGR':        20,   # Fault counters/state
+}
+
+# =============================================================================
+# MULTIPLIER VARIANTS (C05-C07)
+# =============================================================================
+
+MULTIPLIER_SIZES = {
+    'None': 0,
+    'Slow': 621,            # CONFIG 05: Multi-cycle, 0 DSP
+    'Fast': 466,            # CONFIG 06: Fast, 1 DSP
+    'Single_cycle': 434,    # CONFIG 07: Single-cycle, 4 DSP (corrected from 500)
+}
+
+# DSP resource consumption per MULTDIV variant
+MULTIPLIER_DSP = {
+    'None': 0,
+    'Slow': 0,
+    'Fast': 1,
+    'Single_cycle': 4,
+}
+
+# =============================================================================
+# SAFETY MARGINS (C32-C37 validation)
+# =============================================================================
+# Uniform 15% margin prevents placement failures across all feature combinations
+
+SAFETY_MARGIN = 1.25     # Universal margin (M=1.15 from Chapter 7)
+
+def get_safety_margin(module):
+    """Get safety margin for any module (uniform)."""
+    return SAFETY_MARGIN
 
 # =============================================================================
 # FATORI_FI MODE EFFECTS
 # =============================================================================
-# When FATORI_FI is enabled, some modules are heavily optimized/merged
+# When FATORI_FI is enabled, CONTROLLER and DECODER are heavily optimized/merged
 
 FATORI_FI_MERGED_MODULES = {
     'CONTROLLER': 18,  # 129L → 18L (86% reduction, merged into parent)
@@ -54,115 +154,39 @@ FATORI_FI_MERGED_MODULES = {
 }
 
 # When FI mode is active, these modules should NOT be targeted independently
-# Instead, target their parent module (ID_STAGE)
 FI_MODE_INVALID_TARGETS = ['CONTROLLER', 'DECODER']
 
 # =============================================================================
-# ARCHITECTURAL FEATURE SCALING FACTORS
+# CONDITIONAL MODULE RULES
 # =============================================================================
 
-# RV32B (Bitmanip Extension) impact on ALU size
-RV32B_FACTORS = {
-    'None': 1.0,      # No bitmanip (baseline 238L)
-    'Balanced': 4.2,  # Balanced bitmanip (measured 1006L in CONFIG 02)
-    'Full': 8.9,      # Full bitmanip (measured 2118L in CONFIG 03)
+CONDITIONAL_MODULES = {
+    'PREFETCH_BUFFER': lambda cfg: cfg.get('FATORI_ICACHE', 0) == 0,
+    'ICACHE': lambda cfg: cfg.get('FATORI_ICACHE', 0) == 1,
+    'BRANCH_PREDICT': lambda cfg: cfg.get('FATORI_BRANCH_PRED', 0) == 1,
+    'MULTDIV': lambda cfg: cfg.get('FATORI_RV32M', 'None') != 'None',
+    'WB_STAGE': lambda cfg: cfg.get('FATORI_WSTAGE', 0) == 1,
+    'FAULT_MGR': lambda cfg: cfg.get('FATORI_FAULT_MGR', 0) == 1,
 }
 
-# I-Cache impact on IF_STAGE size
-ICACHE_FACTOR = 3.2  # IF_STAGE grows from 431L to 1382L (CONFIG 04)
+ALWAYS_PRESENT_MODULES = ['ALU', 'LSU', 'IF_STAGE', 'ID_STAGE', 'EX_BLOCK']
 
-# Branch predictor overhead (additive to IF_STAGE)
-BRANCH_PRED_OVERHEAD_LUTS = 120  # Adds ~28% to IF_STAGE (CONFIG 06)
+# =============================================================================
+# MODULE HIERARCHY
+# =============================================================================
 
-# Branch Target ALU overhead (percentage increase to ID_STAGE)
-BRANCH_TALU_FACTOR = 1.10  # ID_STAGE: 365L → 402L (CONFIG 05)
-
-# Multiplier sizes (absolute LUT counts to add to EX_BLOCK)
-MULTIPLIER_SIZES = {
-    'None': 0,
-    'Slow': 621,   # Multi-cycle multiplier (CONFIG 07)
-    'Fast': 466,   # Single-cycle multiplier (CONFIG 08)
+MODULE_HIERARCHY = {
+    'IF_STAGE': ['PREFETCH_BUFFER', 'ICACHE'],
+    'ID_STAGE': ['CONTROLLER', 'DECODER'],
+    'EX_BLOCK': ['ALU', 'MULTDIV'],
 }
 
-# =============================================================================
-# MON_N SCALING FACTORS
-# =============================================================================
-# M-of-N replication scales sub-linearly due to Vivado optimization
-# (No keep_hierarchy on individual replicas for timing closure)
-
-def get_mon_factor(module, mon_n):
-    """
-    Calculate MON_N scaling factor for a given module.
-    
-    Args:
-        module (str): Module name (e.g., 'ALU', 'LSU')
-        mon_n (int): Number of replicas (1-5)
-    
-    Returns:
-        float: Scaling factor to apply to base size
-    
-    Notes:
-        - MON_N=1 returns 1.0 (no replication)
-        - ALU has validated empirical formula: 1.5 + 1.4*N
-        - Other modules use conservative estimates until tested
-    """
-    if mon_n == 1:
-        return 1.0
-    
-    # Validated formula from ALU experiments (CONFIG 09, 10)
-    # MON_N=3: 238L × 4.7 = 1129L (measured)
-    # MON_N=5: 238L × 8.6 = 2054L (measured)
-    if module == 'ALU':
-        return 1.5 + 1.4 * mon_n
-    
-    # DECODER showed anomalous scaling (11.1x for MON_N=3 in CONFIG 13)
-    # Use conservative linear scaling with high base overhead
-    elif module == 'DECODER':
-        return 3.7 * mon_n
-    
-    # Other modules: No validated data yet
-    # Use ALU formula with 30% pessimism factor
-    else:
-        return (1.5 + 1.4 * mon_n) * 1.30
-
-
-# =============================================================================
-# SAFETY MARGINS
-# =============================================================================
-# Optional margins to account for routing overhead and placement constraints
-
-SAFETY_MARGINS = {
-    'ALU': 1.10,              # 10%
-    'DECODER': 1.15,          # 15% (anomaly protection)
-    'LSU': 1.10,              # 10%
-    'CONTROLLER': 1.10,       # 10%
-    'IF_STAGE': 1.10,         # 10%
-    'ID_STAGE': 1.10,         # 10%
-    'EX_BLOCK': 1.10,         # 10%
-    'WB_STAGE': 1.08,         # 8%
-    'PREFETCH_BUFFER': 1.08,  # 8%
-    'BRANCH_PREDICT': 1.08,   # 8%
-    'MULTDIV': 1.08,          # 8%
-    'ICACHE': 1.08,           # 8%
-}
-
-# Default margin for unlisted modules
-DEFAULT_SAFETY_MARGIN = 1.35
-
-
-def get_safety_margin(module):
-    """Get safety margin for a module."""
-    return SAFETY_MARGINS.get(module, DEFAULT_SAFETY_MARGIN)
-
-
-# =============================================================================
-# PLACEMENT STRATEGY
-# =============================================================================
-
-# Target utilization per clock region (0.0-1.0)
-# Lower values spread pblocks across more regions for better routing
-# Recommended: 0.60-0.70 for tight pblocks with good routing
-TARGET_REGION_UTILIZATION = 0.70  # 70% target per region
+def get_parent_module(module):
+    """Get parent module name, or None if module is top-level."""
+    for parent, children in MODULE_HIERARCHY.items():
+        if module in children:
+            return parent
+    return None
 
 # =============================================================================
 # FPGA SPECIFICATIONS (Xilinx XCKU040-FBVA676-1-C)
@@ -172,23 +196,20 @@ FPGA_SPECS = {
     'device': 'XCKU040-FBVA676-1-C',
     'family': 'Kintex UltraScale',
     
-    # Clock region grid
     'clock_regions': {
-        'columns': 2,         # X0-X1
-        'rows': 5,            # Y0-Y4
-        'total': 10,          # 2 × 5 grid
+        'columns': 4,  # X0, X1, X2, X3
+        'rows': 5,     # Y0, Y1, Y2, Y3, Y4
+        'total': 20,   # 4×5 grid
     },
     
-    # Resources per clock region (approximate)
     'per_region': {
-        'luts': 12000,        # Slice LUTs per region
-        'ffs': 24000,         # Flip-flops per region
-        'slices': 2400,       # Configurable Logic Blocks
-        'brams': 60,          # Block RAMs
-        'dsps': 120,          # DSP48E2 slices
+        'luts': 12000,
+        'ffs': 24000,
+        'slices': 2400,
+        'brams': 60,
+        'dsps': 120,  # Average - actual varies by column
     },
     
-    # Total device resources
     'total': {
         'luts': 242400,
         'ffs': 484800,
@@ -197,24 +218,50 @@ FPGA_SPECS = {
         'dsps': 1920,
     },
     
-    # Slice geometry
     'slice_geometry': {
-        'luts_per_slice': 8,      # Each slice has 8 LUTs
-        'ffs_per_slice': 16,      # Each slice has 16 FFs
-        'slices_per_clb': 1,      # 1 slice per CLB in UltraScale
-    }
+        'luts_per_slice': 8,
+        'ffs_per_slice': 16,
+        'slices_per_clb': 1,
+    },
+    
+    # Physical coordinate limits (4×5 grid, verified from Vivado)
+    'slice_limits': {
+        'x_max': 100,  # SLICE_X0 to SLICE_X100 (empirically verified)
+        'y_max': 299,  # 5 rows × 60 slices - 1
+    },
+    
+    # Clock region dimensions in slices (per-column, empirically verified)
+    # X0Y*: X0-X23   (24 wide)
+    # X1Y*: X24-X48  (25 wide)
+    # X2Y*: X49-X75  (27 wide)
+    # X3Y*: X76-X100 (25 wide)
+    'region_dims': {
+        'height': 60,  # All regions are 60 slices tall
+        'col_widths': [24, 25, 27, 25],  # Width per column (X0, X1, X2, X3)
+        'col_x_bases': [0, 24, 49, 76],  # Starting X coordinate per column
+    },
+    
+    # DSP48 tile distribution (empirically verified from Vivado query)
+    # All clock regions have DSP tiles on FBVA676 package (previous assumption was wrong)
+    # DSP Y coordinates: 24 DSPs per region (Y0-Y23, Y24-Y47, ..., Y96-Y119)
+    # DSP X columns per clock region column:
+    #   X0Y*: DSP X0-X3   (4 DSP columns, 96 DSPs/region)
+    #   X1Y*: DSP X4-X7   (4 DSP columns, 96 DSPs/region)
+    #   X2Y*: DSP X8-X13  (6 DSP columns, 144 DSPs/region)
+    #   X3Y*: DSP X14-X15 (2 DSP columns, 48 DSPs/region)
+    'dsp_regions': {
+        'dsps_per_region_row': 24,  # 24 DSPs tall per region (Y dimension)
+        'dsp_x_primary': [0, 4, 8, 14],  # Primary DSP X column per clock region column
+    },
 }
-
 
 def get_clock_region_capacity():
     """Get the LUT capacity of one clock region."""
     return FPGA_SPECS['per_region']['luts']
 
-
 def get_total_regions():
     """Get total number of clock regions."""
     return FPGA_SPECS['clock_regions']['total']
-
 
 def luts_to_slices(lut_count):
     """
@@ -225,69 +272,32 @@ def luts_to_slices(lut_count):
     
     Returns:
         int: Approximate number of slices needed
-    
-    Notes:
-        - Each slice contains 8 LUTs
-        - Add 10% overhead for packing inefficiency
     """
     slices = int(lut_count / 8.0 * 1.10) + 1
     return slices
 
-
 # =============================================================================
-# CONDITIONAL MODULE RULES
+# PLACEMENT STRATEGY
 # =============================================================================
-# Rules for determining which modules should be targeted based on configuration
 
-CONDITIONAL_MODULES = {
-    'PREFETCH_BUFFER': lambda cfg: cfg.get('FATORI_ICACHE', 0) == 0,
-    'ICACHE': lambda cfg: cfg.get('FATORI_ICACHE', 0) == 1,
-    'BRANCH_PREDICT': lambda cfg: cfg.get('FATORI_BRANCH_PRED', 0) == 1,
-    'MULTDIV': lambda cfg: cfg.get('FATORI_RV32M', 'None') != 'None',
-    'WB_STAGE': lambda cfg: cfg.get('FATORI_WSTAGE', 0) == 1,  # Currently disabled
-}
-
-# Modules that are always present (unconditional)
-ALWAYS_PRESENT_MODULES = ['ALU', 'LSU', 'IF_STAGE', 'ID_STAGE', 'EX_BLOCK']
-
-
-# =============================================================================
-# MODULE HIERARCHY
-# =============================================================================
-# Parent-child relationships for nested pblocks
-
-MODULE_HIERARCHY = {
-    'IF_STAGE': ['PREFETCH_BUFFER', 'ICACHE'],
-    'ID_STAGE': ['CONTROLLER', 'DECODER'],
-    'EX_BLOCK': ['ALU', 'MULTDIV'],
-}
-
-
-def get_parent_module(module):
-    """Get parent module name, or None if module is top-level."""
-    for parent, children in MODULE_HIERARCHY.items():
-        if module in children:
-            return parent
-    return None
-
+TARGET_REGION_UTILIZATION = 0.70  # 70% target per region
 
 # =============================================================================
 # VALIDATION CONSTANTS
 # =============================================================================
 
-# Valid configuration values
-VALID_RV32B_VALUES = ['None', 'Balanced', 'Full']
-VALID_RV32M_VALUES = ['None', 'Slow', 'Fast']
-VALID_MON_N_RANGE = (1, 5)  # MON_N can be 1 to 5
+VALID_RV32B_VALUES = ['None', 'Balanced', 'OTEarlGrey', 'Full']
+VALID_RV32M_VALUES = ['None', 'Slow', 'Fast', 'Single_cycle']
+VALID_MON_N_RANGE = (1, 5)
 
-# Maximum allowed MON_N per module (for safety)
+# Maximum recommended MON_N (empirically N≥2 gives identical overhead)
 MAX_RECOMMENDED_MON_N = {
-    'ALU': 5,          # Tested up to 5
-    'LSU': 3,          # Untested beyond 3
-    'CONTROLLER': 3,   # Untested
-    'DECODER': 3,      # Anomaly at 3, recommend caution
-    'IF_STAGE': 3,     # Bugs at 5, recommend max 3
-    'MULTDIV': 3,      # Untested
+    'ALU': 5,
+    'LSU': 5,
+    'CONTROLLER': 5,
+    'DECODER': 5,
+    'IF_STAGE': 5,
+    'MULTDIV': 5,
 }
 
-DEFAULT_MAX_MON_N = 3
+DEFAULT_MAX_MON_N = 5

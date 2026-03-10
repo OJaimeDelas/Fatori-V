@@ -11,13 +11,22 @@ from config.constants import MACRO_PREFIX
 # Pblock target names to KEEP macro names
 # These correspond to modules in the Ibex pipeline that can be targeted for FI
 PBLOCK_TARGET_MACROS = {
+    # Pipeline stages
+    "if_stage": "KEEP_IF_STAGE",
+    "id_stage": "KEEP_ID_STAGE",
+    "wb_stage": "KEEP_WB_STAGE",
+    # Execution units
     "alu": "KEEP_ALU",
     "multiplier": "KEEP_MULTIPLIER",
     "mult": "KEEP_MULTIPLIER",  # Alias
-    "branch_adder": "KEEP_BRANCH_ADDER",
     "decoder": "KEEP_DECODER",
     "controller": "KEEP_CONTROLLER",
     "lsu": "KEEP_LSU",
+    "branch_predictor": "KEEP_BRANCH_PREDICT",
+    "branch_pred": "KEEP_BRANCH_PREDICT",  # Alias
+    "prefetch_buffer": "KEEP_PREFETCH_BUFFER",
+    "fault_manager": "KEEP_FAULT_MGR",
+    "fault_mgr": "KEEP_FAULT_MGR",  # Alias
 }
 
 # Conditional targets - these targets only exist if certain features are enabled

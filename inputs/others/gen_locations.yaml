@@ -23,7 +23,21 @@ metrics_config.h: architecture/software/src/metrics_config.h
 bench_config_hello_world.h: benchmarks/hello_world/bench_config.h
 bench_config_coremark.h: benchmarks/coremark/bench_config.h
 bench_config_fatori_stress.h: benchmarks/fatori_stress/bench_config.h
-bench_config_embench-iot.h: benchmarks/embench/bench_config.h
+bench_config_embench-iot.h: benchmarks/embench-iot/bench_config.h
 
 # TCL Scripts
 fatori_pblocks.tcl: tmp/tcl/fatori_pblocks.tcl
+
+# ----------------------------------------------------------------------
+# Exclude Section - Intermediate Files
+# ----------------------------------------------------------------------
+# Files listed here are generated but not allocated to architecture.
+# They are intermediate outputs used for documentation/analysis only.
+# No warnings will be generated for these files during allocation.
+# ----------------------------------------------------------------------
+exclude:
+  - pblock_dict.yaml
+  - pblock_config.yaml
+  - pblock_summary.txt
+  - system_dict_merged.yaml
+  - fatori_registers_active.yaml

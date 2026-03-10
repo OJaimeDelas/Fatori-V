@@ -51,25 +51,34 @@ def generate_features_header(config, output_dir):
         lines.append("`define FATORI_FI")
         lines.append("")
     
-    # Get Ibex configuration
-    ibex_config = get_nested(config, KEY_SPECIFICS, KEY_SPEC_IBEX, default={})
-    icache_enable = ibex_config.get(KEY_IBEX_ICACHE, False)
-    regfile_type = ibex_config.get(KEY_IBEX_REGFILE, "ff")
-    multiplier_type = ibex_config.get(KEY_IBEX_MULTIPLIER, "none")
-    bit_manip_type = ibex_config.get(KEY_IBEX_BIT_MANIP, "none")
+    # Get performance mechanisms from general configuration
+    perf_mech_config = get_nested(config, KEY_GENERAL, KEY_GEN_FEATURES, KEY_FEAT_PERF_MECH, default={})
     
-    # FATORI_ICACHE
+    # FATORI_ICACHE - from performance_mechanisms.icache
+    icache_enable = perf_mech_config.get(KEY_PERF_ICACHE, False)
     icache_val = 1 if icache_enable else 0
     lines.append(f"`__FATORI_MACRO_DEF(FATORI_ICACHE, {icache_val})")
     
-    # FATORI_WSTAGE (always 1 for our configuration)
-    lines.append("`__FATORI_MACRO_DEF(FATORI_WSTAGE, 1)")
+    # FATORI_WSTAGE - from performance_mechanisms.wstage
+    wstage_enable = perf_mech_config.get(KEY_PERF_WSTAGE, False)
+    wstage_val = 1 if wstage_enable else 0
+    lines.append(f"`__FATORI_MACRO_DEF(FATORI_WSTAGE, {wstage_val})")
     
-    # FATORI_BRANCH_TALU (always 1)
-    lines.append("`__FATORI_MACRO_DEF(FATORI_BRANCH_TALU, 1)")
+    # FATORI_BRANCH_TALU - from performance_mechanisms.branch_target_alu
+    branch_talu_enable = perf_mech_config.get(KEY_PERF_BRANCH_TALU, False)
+    branch_talu_val = 1 if branch_talu_enable else 0
+    lines.append(f"`__FATORI_MACRO_DEF(FATORI_BRANCH_TALU, {branch_talu_val})")
     
-    # FATORI_BRANCH_PRED (always 1)
-    lines.append("`__FATORI_MACRO_DEF(FATORI_BRANCH_PRED, 1)")
+    # FATORI_BRANCH_PRED - from performance_mechanisms.branch_pred
+    branch_pred_enable = perf_mech_config.get(KEY_PERF_BRANCH_PRED, False)
+    branch_pred_val = 1 if branch_pred_enable else 0
+    lines.append(f"`__FATORI_MACRO_DEF(FATORI_BRANCH_PRED, {branch_pred_val})")
+    
+    # Get Ibex configuration for regfile, multiplier, bit manipulation
+    ibex_config = get_nested(config, KEY_SPECIFICS, KEY_SPEC_IBEX, default={})
+    regfile_type = ibex_config.get(KEY_IBEX_REGFILE, "ff")
+    multiplier_type = ibex_config.get(KEY_IBEX_MULTIPLIER, "none")
+    bit_manip_type = ibex_config.get(KEY_IBEX_BIT_MANIP, "none")
     
     # FATORI_REGFILE
     regfile_enum = get_regfile_enum(regfile_type)
@@ -81,31 +90,46 @@ def generate_features_header(config, output_dir):
     rv32m_enabled = get_isa_extension_state(config, KEY_ISA_RV32M)
     rv32e_enabled = get_isa_extension_state(config, KEY_ISA_RV32E)
     
-    # FATORI_RV32B - only define if enabled
+    # FATORI_RV32B - always define
+    # If extension disabled: use "none", if enabled: use specifics.ibex.bit_manipulation
     if rv32b_enabled:
         bit_manip_enum = get_bit_manip_enum(bit_manip_type)
-        lines.append(f"`__FATORI_MACRO_DEF(FATORI_RV32B, {bit_manip_enum})")
+    else:
+        bit_manip_enum = get_bit_manip_enum("none")
+    lines.append(f"`__FATORI_MACRO_DEF(FATORI_RV32B, {bit_manip_enum})")
     
-    # FATORI_RV32M - only define if enabled
+    # FATORI_RV32M - always define
+    # If extension disabled: use "none", if enabled: use specifics.ibex.multiplier
     if rv32m_enabled:
         multiplier_enum = get_multiplier_enum(multiplier_type)
-        lines.append(f"`__FATORI_MACRO_DEF(FATORI_RV32M, {multiplier_enum})")
+    else:
+        multiplier_enum = get_multiplier_enum("none")
+    lines.append(f"`__FATORI_MACRO_DEF(FATORI_RV32M, {multiplier_enum})")
     
     # FATORI_RV32E
     rv32e_val = 1 if rv32e_enabled else 0
     lines.append(f"`__FATORI_MACRO_DEF(FATORI_RV32E, {rv32e_val})")
     
-    # Get metrics configuration
+    # Get metrics_level from general (not specifics)
+    metrics_level = get_nested(config, KEY_GENERAL, KEY_METRICS_LEVEL, default=0)
+    
+    # Get override from specifics if present
     metrics_config = get_nested(config, KEY_SPECIFICS, KEY_SPEC_METRICS, default={})
-    metrics_level = metrics_config.get(KEY_METRICS_LEVEL, 0)
+    custom_layer_override = metrics_config.get('custom_fi_layer_override')
     
-    # HPMC counters
+    # HPMC counters configuration
     if metrics_level == 0:
-        hpmc_num = cfg.DEFAULT_HPMC_NUM_LEVEL_0
+        hpmc_num = 0
+        hpmc_width = 32
     else:
-        hpmc_num = metrics_config.get(KEY_METRICS_HPMC_NUM, cfg.DEFAULT_HPMC_NUM_LEVEL_PLUS)
-    
-    hpmc_width = metrics_config.get(KEY_METRICS_HPMC_WIDTH, cfg.DEFAULT_HPMC_WIDTH)
+        # Get overrides from specifics.metrics or use defaults based on metrics_level
+        hpmc_num = metrics_config.get('ibex_hpmc_num')
+        if hpmc_num is None:
+            hpmc_num = 10  # Default for metrics_level > 0
+        
+        hpmc_width = metrics_config.get('ibex_hpmc_width')
+        if hpmc_width is None:
+            hpmc_width = 32  # Default width
     
     lines.append(f"`__FATORI_MACRO_DEF(FATORI_MHPMCOUNTER_NUM, {hpmc_num})")
     lines.append(f"`__FATORI_MACRO_DEF(FATORI_MHPMCOUNTER_W, {hpmc_width})")
@@ -131,14 +155,30 @@ def generate_features_header(config, output_dir):
     
     lines.append("")
     
-    # FT layers based on metrics_level
-    if metrics_level >= 1:
+    # FT layers based on metrics_level (or custom override)
+    if custom_layer_override is not None:
+        effective_layer = custom_layer_override
+    else:
+        effective_layer = metrics_level
+    
+    # Add comment explaining metrics layers
+    lines.append("")
+    lines.append("// METRIC_LAYER Selection")
+    lines.append("// 0 = Baseline (mcycle, minstret only)")
+    lines.append("// 1 = + HPM counters (mhpmcounter3-12)")
+    lines.append("// 2 = + Error counting (minor_cnt, major_cnt) + injection counting")
+    lines.append("// 3 = + Correction tracking (corrected_cnt) + per-class major breakdown (major_internal_cnt, major_bus_cnt, double_fault_cnt)")
+    lines.append("// 4 = + Timing metrics (cycles_to_first_min/maj, detect_latency)")
+    lines.append("// 5 = + Latency statistics (latency_sum, latency_cnt)")
+
+    
+    if effective_layer >= 2:
         lines.append("`define FATORI_FT_LAYER_1")
-    if metrics_level >= 2:
+    if effective_layer >= 3:
         lines.append("`define FATORI_FT_LAYER_2")
-    if metrics_level >= 3:
+    if effective_layer >= 4:
         lines.append("`define FATORI_FT_LAYER_3")
-    if metrics_level >= 4:
+    if effective_layer >= 5:
         lines.append("`define FATORI_FT_LAYER_4")
     
     # Write the complete file with proper header

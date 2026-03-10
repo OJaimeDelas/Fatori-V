@@ -11,7 +11,7 @@ from scripts.common.common_settings import *
 from scripts.common.yaml_io.yaml_helpers import get_isa_extension_state
 from scripts.mapping.board_mapping import get_make_board_name
 from scripts.mapping.isa_mapping import get_isa_make_flags
-from scripts.exec.requirements_parser import get_benchmark_libraries
+from scripts.exec.requirements_parser import get_benchmark_flags
 from scripts.build.path_resolver import (
     resolve_vivado_input,
     resolve_benchmark_dir,
@@ -97,13 +97,9 @@ def build_fpga_run_command(config, benchmark_name, grab_timeout=None):
     benchmark_dir = resolve_benchmark_dir(benchmark_name)
     cmd_parts.append(format_make_parameter("BENCHMARK_DIR", benchmark_dir))
     
-    # Add GRAB_TIMEOUT parameter
-    if grab_timeout is None:
-        grab_timeout = get_nested(
-            config, 
-            KEY_RUN, KEY_RUN_HW, KEY_HW_GRAB_TIMEOUT, 
-            default=cfg.BOARD_GRAB_TIMEOUT_DEFAULT
-        )
+    # Add GRAB_TIMEOUT parameter (always use default, not from config)
+    # This is for board acquisition timeout, not benchmark execution timeout
+    grab_timeout = cfg.BOARD_GRAB_TIMEOUT_DEFAULT
     cmd_parts.append(format_make_parameter("GRAB_TIMEOUT", grab_timeout))
     
     # Add VIVADO_INPUT parameter
@@ -114,10 +110,10 @@ def build_fpga_run_command(config, benchmark_name, grab_timeout=None):
     isa_flags = get_isa_flags_from_config(config)
     cmd_parts.extend(isa_flags)
     
-    # Add LLIB parameter if benchmark requires libraries
-    llib = get_benchmark_libraries(benchmark_name)
-    if llib:
-        cmd_parts.append(format_make_parameter("LLIB", llib))
+    # Add all custom flags from requirements.yaml
+    custom_flags = get_benchmark_flags(benchmark_name)
+    for flag_name, flag_value in custom_flags.items():
+        cmd_parts.append(format_make_parameter(flag_name, flag_value))
     
     cmd = " ".join(cmd_parts)
     log_event('MAKE_CMD_BUILT',
@@ -194,24 +190,20 @@ def build_fpga_fw_run_command(config, benchmark_name, grab_timeout=None):
     benchmark_dir = resolve_benchmark_dir(benchmark_name)
     cmd_parts.append(format_make_parameter("BENCHMARK_DIR", benchmark_dir))
     
-    # Add GRAB_TIMEOUT parameter
-    if grab_timeout is None:
-        grab_timeout = get_nested(
-            config, 
-            KEY_RUN, KEY_RUN_HW, KEY_HW_GRAB_TIMEOUT, 
-            default=cfg.BOARD_GRAB_TIMEOUT_DEFAULT
-        )
+    # Add GRAB_TIMEOUT parameter (always use default, not from config)
+    # This is for board acquisition timeout, not benchmark execution timeout
+    grab_timeout = cfg.BOARD_GRAB_TIMEOUT_DEFAULT
     cmd_parts.append(format_make_parameter("GRAB_TIMEOUT", grab_timeout))
     
     # Add VIVADO_INPUT parameter
     vivado_input = resolve_vivado_input()
     cmd_parts.append(format_make_parameter("VIVADO_INPUT", vivado_input))
     
-    # Add LLIB parameter if benchmark requires libraries
-    llib = get_benchmark_libraries(benchmark_name)
-    if llib:
-        cmd_parts.append(format_make_parameter("LLIB", llib))
-    
+    # Add all custom flags from requirements.yaml
+    custom_flags = get_benchmark_flags(benchmark_name)
+    for flag_name, flag_value in custom_flags.items():
+        cmd_parts.append(format_make_parameter(flag_name, flag_value))
+        
     cmd = " ".join(cmd_parts)
     log_event('MAKE_CMD_BUILT',
               command_type='fpga_fw_run',

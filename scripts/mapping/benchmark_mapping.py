@@ -11,20 +11,47 @@ from config.constants import MACRO_PREFIX
 # Benchmark iteration count macros
 # These are used in bench_config.h to control how many times benchmarks run
 BENCHMARK_CONFIG_MACROS = {
-    "coremark": f"{MACRO_PREFIX}COREMARK_ITERATIONS",
-    "dhrystone": f"{MACRO_PREFIX}DHRYSTONE_ITERATIONS",
-    "embench_iot": f"{MACRO_PREFIX}EMBENCH_ITERATIONS",
+    "coremark": "ITERATIONS",
+    "dhrystone": "ITERATIONS",
 }
 
 # FATORI stress test target macros
-# Each stress test targets specific fault detection capabilities
-FATORI_STRESS_TARGETS = [
-    "ctrl",      # Control flow stress test
-    "alu",       # ALU stress test
-    "load",      # Load/store stress test
-    "branch",    # Branch prediction stress test
-    "mult",      # Multiplier stress test (if RV32M enabled)
-]
+# Maps target names to their enable macros in bench_config.h
+FATORI_STRESS_TARGET_MACROS = {
+    "alu": "FATORI_TARGET_ALU",
+    "multiplier": "FATORI_TARGET_MULTIPLIER",
+    "decoder": "FATORI_TARGET_DECODER",
+    "controller": "FATORI_TARGET_CONTROLLER",
+    "lsu": "FATORI_TARGET_LSU",
+    "branch_pred": "FATORI_TARGET_BRANCH_PREDICT",
+    "compressed": "FATORI_TARGET_COMPRESSED",
+}
+
+# Embench-IoT sub-benchmark macros
+# Maps sub-benchmark names to their enable macros in bench_config.h
+EMBENCH_IOT_MACROS = {
+    "aha-mont64": "EMBENCH_AHA_MONT64",
+    "crc32": "EMBENCH_CRC32",
+    "cubic": "EMBENCH_CUBIC",
+    "edn": "EMBENCH_EDN",
+    "huffbench": "EMBENCH_HUFFBENCH",
+    "matmult-int": "EMBENCH_MATMULT_INT",
+    "md5sum": "EMBENCH_MD5SUM",
+    "minver": "EMBENCH_MINVER",
+    "nbody": "EMBENCH_NBODY",
+    "nettle-aes": "EMBENCH_NETTLE_AES",
+    "nettle-sha256": "EMBENCH_NETTLE_SHA256",
+    "nsichneu": "EMBENCH_NSICHNEU",
+    "picojpeg": "EMBENCH_PICOJPEG",
+    "primecount": "EMBENCH_PRIMECOUNT",
+    "qrduino": "EMBENCH_QRDUINO",
+    "sglib-combined": "EMBENCH_SGLIB_COMBINED",
+    "slre": "EMBENCH_SLRE",
+    "st": "EMBENCH_ST",
+    "statemate": "EMBENCH_STATEMATE",
+    "ud": "EMBENCH_UD",
+    "wikisort": "EMBENCH_WIKISORT",
+}
 
 # Embench-IoT sub-benchmarks
 # These are individual benchmarks within the Embench-IoT suite
@@ -70,36 +97,26 @@ def get_iterations_macro(benchmark_name):
 
 def get_fatori_stress_target_macros():
     """
-    Get list of macro names for FATORI stress test targets.
+    Get mapping of FATORI stress test targets to their enable macros.
     
     Each stress test has a corresponding macro that enables it.
     
     Returns:
         Dictionary mapping stress test name to macro name
     """
-    macros = {}
-    for target in FATORI_STRESS_TARGETS:
-        macro_name = f"{MACRO_PREFIX}STRESS_{target.upper()}"
-        macros[target] = macro_name
-    
-    return macros
+    return FATORI_STRESS_TARGET_MACROS
 
 
 def get_embench_subbench_macros():
     """
-    Get list of macro names for Embench-IoT sub-benchmarks.
+    Get mapping of Embench-IoT sub-benchmarks to their enable macros.
+    
+    Each sub-benchmark has a corresponding enable macro.
     
     Returns:
-        Dictionary mapping sub-benchmark name to macro name
+        Dictionary mapping benchmark name to macro name
     """
-    macros = {}
-    for subbench in EMBENCH_IOT_BENCHMARKS:
-        # Convert benchmark name to valid macro name (replace hyphens with underscores)
-        macro_suffix = subbench.upper().replace("-", "_")
-        macro_name = f"{MACRO_PREFIX}EMBENCH_{macro_suffix}"
-        macros[subbench] = macro_name
-    
-    return macros
+    return EMBENCH_IOT_MACROS
 
 
 def is_embench_iot(benchmark_name):
@@ -139,7 +156,7 @@ def is_fatori_stress(benchmark_name):
         return True
     
     # Check if it matches a specific stress target
-    return benchmark_lower in [t.lower() for t in FATORI_STRESS_TARGETS]
+    return benchmark_lower in [t.lower() for t in FATORI_STRESS_TARGET_MACROS.keys()]
 
 
 def get_benchmark_category(benchmark_name):
@@ -174,7 +191,7 @@ def get_all_fatori_stress_targets():
     Returns:
         List of stress test target strings
     """
-    return FATORI_STRESS_TARGETS.copy()
+    return list(FATORI_STRESS_TARGET_MACROS.keys())
 
 
 def get_all_embench_benchmarks():

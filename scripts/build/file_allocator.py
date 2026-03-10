@@ -33,26 +33,6 @@ def collect_generated_files():
     return files
 
 
-def collect_tcl_files():
-    """
-    Collect all TCL files from tmp/tcl/ directory.
-    
-    Returns:
-        List of Path objects for all TCL files
-    """
-    tcl_dir = cfg.TMP_TCL_DIR
-    
-    if not tcl_dir.exists():
-        logger.log_event('WARNING', warning_message=f"TCL directory doesn't exist: {tcl_dir}")
-        return []
-    
-    # Collect all .tcl files
-    files = list(tcl_dir.glob('*.tcl'))
-    
-    logger.log_event('DEBUG', debug_message=f"Found {len(files)} TCL files in {tcl_dir}")
-    return files
-
-
 def collect_static_hardware_files():
     """
     Collect static hardware files from inputs/hardware/ directory.
@@ -99,13 +79,61 @@ def collect_static_software_files():
     return files
 
 
-def copy_file_to_destination(source_path, dest_path):
+def validate_destination_path(dest_path, base_dir):
     """
-    Copy a file to its destination, creating parent directories as needed.
+    Validate that destination path is safe and within expected boundaries.
+    
+    This prevents accidental deletion or corruption of files outside
+    the architecture directory or in critical system locations.
+    
+    Args:
+        dest_path: Destination path to validate
+        base_dir: Expected base directory (e.g., architecture/)
+    
+    Returns:
+        Tuple of (is_valid: bool, error_message: str or None)
+    """
+    dest_path = Path(dest_path).resolve()
+    base_dir = Path(base_dir).resolve()
+    
+    # Check 1: Path must be absolute
+    if not dest_path.is_absolute():
+        return False, f"Destination path must be absolute: {dest_path}"
+    
+    # Check 2: Path must be under base directory
+    try:
+        dest_path.relative_to(base_dir)
+    except ValueError:
+        return False, f"Destination path {dest_path} is not under base directory {base_dir}"
+    
+    # Check 3: Path must not go to critical system directories
+    critical_dirs = ['/bin', '/boot', '/dev', '/etc', '/lib', '/proc', '/sys', '/usr']
+    for critical_dir in critical_dirs:
+        try:
+            dest_path.relative_to(critical_dir)
+            return False, f"Destination path {dest_path} targets critical system directory {critical_dir}"
+        except ValueError:
+            continue  # Not under this critical dir, check next
+    
+    # Check 4: Parent directory must be creatable/accessible
+    parent = dest_path.parent
+    if parent.exists() and not parent.is_dir():
+        return False, f"Parent path exists but is not a directory: {parent}"
+    
+    return True, None
+
+
+def copy_file_to_destination(source_path, dest_path, validate_base_dir=None):
+    """
+    Copy a file to its destination with validation and error handling.
+    
+    This is the surgical copy operation that ensures only the specified
+    file is touched and nothing else in the architecture is affected.
     
     Args:
         source_path: Source file path
         dest_path: Destination file path
+        validate_base_dir: Optional base directory for validation
     
     Returns:
         Boolean indicating success
@@ -113,35 +141,62 @@ def copy_file_to_destination(source_path, dest_path):
     source_path = Path(source_path)
     dest_path = Path(dest_path)
     
+    # Validate source exists
     if not source_path.exists():
         logger.log_event('ERROR_FILE_NOT_FOUND', file_path=str(source_path))
         return False
     
+    # Validate source is a file
+    if not source_path.is_file():
+        logger.log_event('ERROR', message=f"Source is not a file: {source_path}")
+        return False
+    
+    # Validate destination path if base directory provided
+    if validate_base_dir:
+        is_valid, error_msg = validate_destination_path(dest_path, validate_base_dir)
+        if not is_valid:
+            logger.log_event('ERROR', message=f"Invalid destination path: {error_msg}")
+            return False
+    
     try:
-        # Create parent directories
+        # Create parent directories only (never delete anything)
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Copy file
+        # Copy file (this only writes the single file, never deletes)
         shutil.copy2(source_path, dest_path)
         logger.log_event('FILE_COPY', source=str(source_path.name), destination=str(dest_path))
         return True
+    except PermissionError as e:
+        logger.log_event('ERROR', message=f"Permission denied copying {source_path} to {dest_path}: {e}")
+        return False
     except Exception as e:
         logger.log_event('ERROR', message=f"Error copying {source_path} to {dest_path}: {e}")
         return False
 
 
-def allocate_generated_files(allocation_map, backup_enabled=True):
+def allocate_generated_files(allocation_map, exclude_list=None, backup_enabled=True):
     """
     Allocate generated files to architecture tree using allocation map.
     
+    This performs surgical file allocation with validation:
+    - Skips files in exclude list (silently, no warnings)
+    - Skips files without mappings (with warning)
+    - Validates all destination paths before any copying
+    - Backs up existing files before overwriting
+    - Only copies successfully validated files
+    
     Args:
         allocation_map: Dictionary mapping source names to destination paths
+        exclude_list: List of filenames to skip (no warnings)
         backup_enabled: If True, backup existing files before overwriting
     
     Returns:
         List of successfully copied destination paths
     """
     logger.log_event('DEBUG', debug_message="Allocating generated files to architecture...")
+    
+    if exclude_list is None:
+        exclude_list = []
     
     # Collect generated files
     generated_files = collect_generated_files()
@@ -150,20 +205,35 @@ def allocate_generated_files(allocation_map, backup_enabled=True):
         logger.log_event('WARNING', warning_message="No generated files to allocate")
         return []
     
-    # Determine destinations and files to backup
+    # Determine destinations and validate paths
     file_pairs = []  # List of (source, dest) tuples
     files_to_backup = []
+    validation_failed = []
+    excluded_count = 0
     
     for source_file in generated_files:
+        # Check if file is in exclude list
+        if source_file.name in exclude_list:
+            excluded_count += 1
+            logger.log_event('DEBUG', debug_message=f"Skipping excluded file: {source_file.name}")
+            continue
+        
         # Get destination from allocation map
         dest_path = get_destination_path(
             source_file, 
             allocation_map, 
-            base_dir=cfg.ARCHITECTURE_DIR
+            base_dir=cfg.ROOT_DIR  # Use ROOT_DIR as base for path resolution
         )
         
         if not dest_path:
             logger.log_event('WARNING', warning_message=f"No allocation mapping for: {source_file.name}")
+            continue
+        
+        # Validate destination path
+        is_valid, error_msg = validate_destination_path(dest_path, cfg.ROOT_DIR)
+        if not is_valid:
+            logger.log_event('ERROR', message=f"Invalid destination for {source_file.name}: {error_msg}")
+            validation_failed.append(source_file.name)
             continue
         
         file_pairs.append((source_file, dest_path))
@@ -172,71 +242,44 @@ def allocate_generated_files(allocation_map, backup_enabled=True):
         if dest_path.exists():
             files_to_backup.append(dest_path)
     
+    # Log excluded files summary
+    if excluded_count > 0:
+        logger.log_event('DEBUG', debug_message=f"Excluded {excluded_count} intermediate file(s) from allocation")
+    
+    # Report validation failures
+    if validation_failed:
+        logger.log_event('ERROR', message=f"Allocation validation failed for {len(validation_failed)} file(s): {', '.join(validation_failed)}")
+        logger.log_event('ERROR', message="File allocation aborted to prevent corruption. Fix allocation mappings in gen_locations.yaml")
+        return []
+    
     # Backup existing files if enabled
     if backup_enabled and files_to_backup:
         logger.log_event('DEBUG', debug_message=f"Backing up {len(files_to_backup)} existing files...")
         backup_files(files_to_backup)
     
-    # Copy files to destinations
+    # Copy files to destinations with validation
     copied_files = []
+    failed_copies = []
+    
     for source_file, dest_path in file_pairs:
-        if copy_file_to_destination(source_file, dest_path):
+        if copy_file_to_destination(source_file, dest_path, validate_base_dir=cfg.ROOT_DIR):
             copied_files.append(dest_path)
+        else:
+            failed_copies.append(source_file.name)
+    
+    # Report copy failures
+    if failed_copies:
+        logger.log_event('WARNING', warning_message=f"Failed to copy {len(failed_copies)} file(s): {', '.join(failed_copies)}")
     
     logger.log_event('DEBUG', debug_message=f"Allocated {len(copied_files)} generated files")
     return copied_files
 
-
-def allocate_tcl_files(backup_enabled=True):
-    """
-    Allocate TCL files to VIVADO_INPUT directory in architecture.
-    
-    TCL files go to architecture/hardware/fpga/vivado/tcl/
-    
-    Args:
-        backup_enabled: If True, backup existing files before overwriting
-    
-    Returns:
-        List of successfully copied destination paths
-    """
-    logger.log_event('DEBUG', debug_message="Allocating TCL files to architecture...")
-    
-    # Collect TCL files
-    tcl_files = collect_tcl_files()
-    
-    if not tcl_files:
-        logger.log_event('WARNING', warning_message="No TCL files to allocate")
-        return []
-    
-    # TCL destination directory (VIVADO_INPUT location)
-    tcl_dest_dir = cfg.ARCHITECTURE_DIR / "hardware" / "fpga" / "vivado" / "tcl"
-    
-    # Determine files to backup
-    files_to_backup = []
-    for tcl_file in tcl_files:
-        dest_path = tcl_dest_dir / tcl_file.name
-        if dest_path.exists():
-            files_to_backup.append(dest_path)
-    
-    # Backup existing files if enabled
-    if backup_enabled and files_to_backup:
-        logger.log_event('DEBUG', debug_message=f"Backing up {len(files_to_backup)} existing TCL files...")
-        backup_files(files_to_backup)
-    
-    # Copy TCL files
-    copied_files = []
-    for tcl_file in tcl_files:
-        dest_path = tcl_dest_dir / tcl_file.name
-        if copy_file_to_destination(tcl_file, dest_path):
-            copied_files.append(dest_path)
-    
-    logger.log_event('DEBUG', debug_message=f"Allocated {len(copied_files)} TCL files")
-    return copied_files
-
-
 def allocate_static_files(hardware_map, software_map, backup_enabled=True):
     """
     Allocate static hardware and software files to architecture tree.
+    
+    This performs surgical file allocation with validation for both
+    hardware and software static files.
     
     Args:
         hardware_map: Hardware allocation mapping
@@ -255,60 +298,86 @@ def allocate_static_files(hardware_map, software_map, backup_enabled=True):
     if hardware_files:
         files_to_backup = []
         file_pairs = []
+        validation_failed = []
         
         for source_file in hardware_files:
             dest_path = get_destination_path(
                 source_file,
                 hardware_map,
-                base_dir=cfg.ARCHITECTURE_DIR
+                base_dir=cfg.ROOT_DIR
             )
             
             if not dest_path:
                 logger.log_event('WARNING', warning_message=f"No allocation mapping for hardware file: {source_file.name}")
                 continue
             
-            file_pairs.append((source_file, dest_path))
-            if dest_path.exists():
-                files_to_backup.append(dest_path)
-        
-        # Backup if needed
-        if backup_enabled and files_to_backup:
-            backup_files(files_to_backup)
-        
-        # Copy files
-        for source_file, dest_path in file_pairs:
-            if copy_file_to_destination(source_file, dest_path):
-                copied_files.append(dest_path)
-    
-    # Allocate software files
-    software_files = collect_static_software_files()
-    if software_files:
-        files_to_backup = []
-        file_pairs = []
-        
-        for source_file in software_files:
-            dest_path = get_destination_path(
-                source_file,
-                software_map,
-                base_dir=cfg.ARCHITECTURE_DIR
-            )
-            
-            if not dest_path:
-                logger.log_event('WARNING', warning_message=f"No allocation mapping for software file: {source_file.name}")
+            # Validate destination path
+            is_valid, error_msg = validate_destination_path(dest_path, cfg.ROOT_DIR)
+            if not is_valid:
+                logger.log_event('ERROR', message=f"Invalid destination for {source_file.name}: {error_msg}")
+                validation_failed.append(source_file.name)
                 continue
             
             file_pairs.append((source_file, dest_path))
             if dest_path.exists():
                 files_to_backup.append(dest_path)
         
-        # Backup if needed
-        if backup_enabled and files_to_backup:
-            backup_files(files_to_backup)
+        # Report validation failures
+        if validation_failed:
+            logger.log_event('ERROR', message=f"Hardware file validation failed for {len(validation_failed)} file(s)")
+            logger.log_event('ERROR', message="Allocation aborted for hardware files to prevent corruption")
+        else:
+            # Backup if needed
+            if backup_enabled and files_to_backup:
+                backup_files(files_to_backup)
+            
+            # Copy files with validation
+            for source_file, dest_path in file_pairs:
+                if copy_file_to_destination(source_file, dest_path, validate_base_dir=cfg.ROOT_DIR):
+                    copied_files.append(dest_path)
+    
+    # Allocate software files
+    software_files = collect_static_software_files()
+    if software_files:
+        files_to_backup = []
+        file_pairs = []
+        validation_failed = []
         
-        # Copy files
-        for source_file, dest_path in file_pairs:
-            if copy_file_to_destination(source_file, dest_path):
-                copied_files.append(dest_path)
+        for source_file in software_files:
+            dest_path = get_destination_path(
+                source_file,
+                software_map,
+                base_dir=cfg.ROOT_DIR
+            )
+            
+            if not dest_path:
+                logger.log_event('WARNING', warning_message=f"No allocation mapping for software file: {source_file.name}")
+                continue
+            
+            # Validate destination path
+            is_valid, error_msg = validate_destination_path(dest_path, cfg.ROOT_DIR)
+            if not is_valid:
+                logger.log_event('ERROR', message=f"Invalid destination for {source_file.name}: {error_msg}")
+                validation_failed.append(source_file.name)
+                continue
+            
+            file_pairs.append((source_file, dest_path))
+            if dest_path.exists():
+                files_to_backup.append(dest_path)
+        
+        # Report validation failures
+        if validation_failed:
+            logger.log_event('ERROR', message=f"Software file validation failed for {len(validation_failed)} file(s)")
+            logger.log_event('ERROR', message="Allocation aborted for software files to prevent corruption")
+        else:
+            # Backup if needed
+            if backup_enabled and files_to_backup:
+                backup_files(files_to_backup)
+            
+            # Copy files with validation
+            for source_file, dest_path in file_pairs:
+                if copy_file_to_destination(source_file, dest_path, validate_base_dir=cfg.ROOT_DIR):
+                    copied_files.append(dest_path)
     
     logger.log_event('DEBUG', debug_message=f"Allocated {len(copied_files)} static files")
     return copied_files
@@ -322,9 +391,9 @@ def allocate_files(config, backup_enabled=True):
     following the location mappings defined in locations.yaml files.
     
     Workflow:
-    1. Load allocation maps (gen_locations, hardware, software)
+    1. Load allocation maps (gen_locations, hardware, software) and exclude list
     2. Backup existing files that will be overwritten (if enabled)
-    3. Copy generated files to destinations
+    3. Copy generated files to destinations (skip excluded files)
     4. Copy TCL files to VIVADO_INPUT location
     5. Copy static hardware and software files
     
@@ -342,11 +411,12 @@ def allocate_files(config, backup_enabled=True):
     """
     logger.log_event('FILE_MOVEMENT_START')
     
-    # Load allocation maps
+    # Load allocation maps and exclude list
     allocation_maps = load_allocation_maps()
     gen_map = allocation_maps['gen_locations']
     hardware_map = allocation_maps['hardware_locations']
     software_map = allocation_maps['software_locations']
+    exclude_list = allocation_maps.get('exclude_list', [])
     
     # Allocate files
     allocated_files = {
@@ -355,13 +425,14 @@ def allocate_files(config, backup_enabled=True):
         'static': []
     }
     
-    # Allocate generated files
+    # Allocate generated files (with exclude list)
     logger.log_event('DEBUG', debug_message="Allocating generated files...")
-    allocated_files['generated'] = allocate_generated_files(gen_map, backup_enabled)
+    allocated_files['generated'] = allocate_generated_files(gen_map, exclude_list, backup_enabled)
     
     # Allocate TCL files
     logger.log_event('DEBUG', debug_message="Allocating TCL files...")
-    allocated_files['tcl'] = allocate_tcl_files(backup_enabled)
+    # TCL files stay in tmp/tcl and are sourced from there by hook scripts
+    allocated_files['tcl'] = []
     
     # Allocate static files
     logger.log_event('DEBUG', debug_message="Allocating static files...")

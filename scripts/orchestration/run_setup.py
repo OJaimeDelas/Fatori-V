@@ -67,7 +67,7 @@ def create_results_directory(config: Dict) -> Path:
     safe_name = run_name.replace(' ', '_').replace('/', '_')
     
     # Add timestamp for uniqueness
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    timestamp = datetime.now().strftime('%d%m%y_%H%M')
     dir_name = f"{safe_name}_{timestamp}"
     
     # Create directory
@@ -77,7 +77,7 @@ def create_results_directory(config: Dict) -> Path:
     log_event('RESULTS_DIR_CREATED', results_dir=str(results_dir))
     
     # Create subdirectories
-    subdirs = ['phases', 'sessions', 'logs']
+    subdirs = ['gen', 'reports', 'sessions']
     for subdir in subdirs:
         (results_dir / subdir).mkdir(exist_ok=True)
     

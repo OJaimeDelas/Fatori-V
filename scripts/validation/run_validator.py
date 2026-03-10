@@ -1,15 +1,6 @@
-# =============================================================================
-# FATORI-V • Run Validator
-# File: run_validator.py
-# -----------------------------------------------------------------------------
-# Main validation orchestrator for run configurations.
-# =============================================================================
-
 from scripts.common.common_settings import *
 from scripts.validation.validation_settings import *
 from scripts.validation.schema_validator import *
-from scripts.validation.isa_validator import *
-from scripts.validation.ftm_validator import *
 from scripts.logging.logger import log_event
 
 
@@ -18,6 +9,7 @@ def validate_run_config(config, strict=STRICT_MODE_DEFAULT):
     Perform complete validation of a run configuration.
     
     This orchestrates all validation checks and aggregates results.
+    All business logic validation is in validation_checks.py (user validations).
     
     Args:
         config: The loaded YAML configuration dictionary
@@ -31,19 +23,24 @@ def validate_run_config(config, strict=STRICT_MODE_DEFAULT):
     # Create combined result
     combined = create_validation_result()
     
-    # Run all validation checks
+    # Run structural validation checks only
     validators = [
         ("Schema", validate_schema),
         ("Field Types", validate_field_types),
         ("Value Ranges", validate_value_ranges),
-        ("ISA Extensions", validate_isa_extensions),
-        ("Multiplier Config", validate_multiplier_config),
-        ("Bit Manipulation Config", validate_bit_manip_config),
-        ("Regfile Config", validate_regfile_config),
-        ("FTM Consistency", validate_ftm_consistency),
-        ("M-of-N Parameters", validate_mon_parameters),
-        ("FTM Specific Configs", validate_ftm_specific_configs),
     ]
+    
+    # Run user-defined validations (all business logic is here)
+    from scripts.validation.user_validator import execute_user_validations
+    user_result = execute_user_validations(config)
+    combined[KEY_ERRORS].extend(user_result[KEY_ERRORS])
+    combined[KEY_WARNINGS].extend(user_result[KEY_WARNINGS])
+    combined[KEY_CORRECTIONS].extend(user_result[KEY_CORRECTIONS])
+    if not user_result[KEY_VALID]:
+        combined[KEY_VALID] = False
+    
+    # Continue with standard validators
+    validators = validators  # Keep original list for loop below
     
     for validator_name, validator_func in validators:
         result = validator_func(config)
@@ -61,8 +58,15 @@ def validate_run_config(config, strict=STRICT_MODE_DEFAULT):
         if not result[KEY_VALID]:
             combined[KEY_VALID] = False
     
-    # In strict mode, warnings also invalidate the configuration
+    # In strict mode, warnings invalidate ONLY if no corrections were applied
+    # Warnings with corrections are considered resolved
     if strict and combined[KEY_WARNINGS]:
+        # If warnings exist but no corrections were applied, validation fails
+        if not combined[KEY_CORRECTIONS]:
+            combined[KEY_VALID] = False
+    
+    # Always fail if there are actual errors (regardless of strict mode)
+    if combined[KEY_ERRORS]:
         combined[KEY_VALID] = False
     
     return combined[KEY_VALID], combined

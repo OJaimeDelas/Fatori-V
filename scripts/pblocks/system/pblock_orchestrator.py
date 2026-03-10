@@ -7,12 +7,14 @@
 
 from pathlib import Path
 import fatori_settings as cfg
-from config.constants import PBLOCK_CONFIG_YAML
-from scripts.common.yaml_io.yaml_helpers import any_benchmark_has_fi
+from config.constants import PBLOCK_CONFIG_YAML, FATORI_PBLOCKS_SVH
+from scripts.common.common_settings import KEY_GENERAL
+from scripts.common.yaml_io.yaml_helpers import any_benchmark_has_fi, get_nested
 from scripts.pblocks.generation.fatori_pblocks import generate_pblocks_svh
 from scripts.pblocks.system.config_builder import build_pblock_config
 from scripts.pblocks.system.pblock_caller import call_pblock_system
 from scripts.pblocks.generation.tcl_controller import generate_all_tcl_files
+from scripts.features.override_handler import apply_override
 from scripts.logging import logger
 from config.constants import HEADER_WIDTH
 
@@ -58,8 +60,10 @@ def orchestrate_pblock_generation(config):
         'tcl_scripts': {}
     }
     
-    # Check if FI is enabled
+    # Check if FI is enabled and get area profile
     fi_enabled = any_benchmark_has_fi(config)
+    fi_general_config = get_nested(config, KEY_GENERAL, "fault_injection", default={})
+    area_profile = fi_general_config.get("area_profile", "device")
     
     # Step 1: Generate pblock_config.yaml
     logger.log_event('DEBUG', debug_message="Step 1: Generating pblock configuration...")
@@ -68,8 +72,9 @@ def orchestrate_pblock_generation(config):
     generated_files['pblock_config'] = pblock_config_path
     logger.log_event('DEBUG', debug_message=f"  → {pblock_config_path}")
     
-    # Step 2: Call external pblock system (if FI enabled)
-    if fi_enabled:
+    # Step 2: Call external pblock system (only if FI enabled AND area_profile is "modules")
+    # For "device" area profile, no pblocks needed
+    if fi_enabled and area_profile == "modules":
         logger.log_event('DEBUG', debug_message="Step 2: Calling external pblock placement system...")
         pblock_outputs = call_pblock_system(pblock_config_path, cfg.TMP_GENERATED_DIR)
         
@@ -82,16 +87,23 @@ def orchestrate_pblock_generation(config):
                 generated_files['pblock_dict'] = pblock_outputs['pblock_dict']
                 logger.log_event('DEBUG', debug_message=f"  → {pblock_outputs['pblock_dict']}")
         else:
-            logger.log_event('WARNING', debug_message="External pblock system not available or failed")
-            logger.log_event('WARNING', debug_message="Continuing without external pblock constraints")
+            logger.log_event('WARNING', warning_message="External pblock system not available or failed")
+            logger.log_event('WARNING', warning_message="Continuing without external pblock constraints")
+    elif fi_enabled and area_profile != "modules":
+        logger.log_event('DEBUG', debug_message=f"Step 2: Area profile is '{area_profile}' - no targeted placement blocks needed")
     else:
         logger.log_event('DEBUG', debug_message="Step 2: Skipping external pblock system (FI not enabled)")
     
-    # Step 3: Generate fatori_pblocks.svh
+    # Step 3: Generate fatori_pblocks.svh (or use override)
     logger.log_event('DEBUG', debug_message="Step 3: Generating pblocks SVH header...")
-    pblock_svh_path = generate_pblocks_svh(config, cfg.TMP_GENERATED_DIR)
+    override_path = apply_override(config, FATORI_PBLOCKS_SVH, cfg.TMP_GENERATED_DIR)
+    if override_path:
+        pblock_svh_path = override_path
+        logger.log_event('DEBUG', debug_message=f"  → {pblock_svh_path} (from override)")
+    else:
+        pblock_svh_path = generate_pblocks_svh(config, cfg.TMP_GENERATED_DIR)
+        logger.log_event('DEBUG', debug_message=f"  → {pblock_svh_path}")
     generated_files['pblock_svh'] = pblock_svh_path
-    logger.log_event('DEBUG', debug_message=f"  → {pblock_svh_path}")
     
     # Step 4: Generate all TCL scripts
     logger.log_event('DEBUG', debug_message="Step 4: Generating Vivado TCL scripts...")

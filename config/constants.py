@@ -96,6 +96,7 @@ METRICS_CONFIG_H = "metrics_config.h"
 # Pblock system files
 PBLOCK_CONFIG_YAML = "pblock_config.yaml"
 PBLOCK_DICT_YAML = "pblock_dict.yaml"
+FATORI_REGISTERS_ACTIVE_NAME = "fatori_registers_active.yaml"
 SYSTEM_DICT_MERGED_NAME = "system_dict_merged.yaml"
 
 # Results and metrics files

@@ -68,7 +68,10 @@ def validate_schema(config):
 
 def validate_field_types(config):
     """
-    Validate that fields have the correct data types.
+    Validate that required fields have correct data types.
+    
+    Only validates critical structural types (seed must be int).
+    Type validation for features moved to validation_checks.py.
     
     Args:
         config: The configuration dictionary
@@ -82,25 +85,6 @@ def validate_field_types(config):
     seed = get_nested(config, KEY_RUN, KEY_RUN_IDENTIFICATION, KEY_IDENT_SEED)
     if seed is not None and not isinstance(seed, int):
         add_error(result, f"Field '{KEY_RUN}.{KEY_RUN_IDENTIFICATION}.{KEY_IDENT_SEED}' must be an integer")
-    
-    # Validate boolean fields under features
-    features = get_nested(config, KEY_GENERAL, KEY_GEN_FEATURES)
-    if features:
-        # Check ISA extensions are boolean
-        isa = features.get(KEY_FEAT_ISA, {})
-        for isa_key in [KEY_ISA_RV32E, KEY_ISA_RV32M, KEY_ISA_RV32B, KEY_ISA_RV32C]:
-            value = isa.get(isa_key)
-            if value is not None and not isinstance(value, bool):
-                add_error(result, f"ISA extension '{isa_key}' must be a boolean")
-        
-        # Check FTMs are boolean
-        ftms = features.get(KEY_FEAT_FTMS, {})
-        for ftm_key in [KEY_FTM_REG_MON, KEY_FTM_LOGIC_MON, KEY_FTM_SELFTEST,
-                        KEY_FTM_RF_ECC, KEY_FTM_RF_WE_GLITCH, KEY_FTM_RF_RADDR_GLITCH,
-                        KEY_FTM_HARDENED_PC]:
-            value = ftms.get(ftm_key)
-            if value is not None and not isinstance(value, bool):
-                add_error(result, f"FTM '{ftm_key}' must be a boolean")
     
     return result
 

@@ -7,16 +7,27 @@
 
 from constants import (
     BASELINE_SIZES,
+    FF_BASELINE_SIZES,
+    NAME_ALIASES,
     RV32B_FACTORS,
     ICACHE_FACTOR,
-    BRANCH_PRED_OVERHEAD_LUTS,
-    BRANCH_TALU_FACTOR,
+    S_RV32B_DECODER,
+    S_MULTDIV_ALU,
+    S_MULTDIV_ID,
+    S_BP_IF,
+    S_BTALU_ID,
+    S_WSTAGE_WB,
+    S_WSTAGE_CTRL,
+    S_WSTAGE_DEC,
+    S_MON,
+    S_ML_MAX,
+    R_MODULE,
     MULTIPLIER_SIZES,
+    MULTIPLIER_DSP,
     FATORI_FI_MERGED_MODULES,
     FI_MODE_INVALID_TARGETS,
     CONDITIONAL_MODULES,
     ALWAYS_PRESENT_MODULES,
-    get_mon_factor,
     get_safety_margin,
 )
 
@@ -27,42 +38,104 @@ from constants import (
 
 def select_targets(config):
     """
-    Determine which modules should have pblocks based on configuration.
+    Select targets based on explicit user targets list.
+    
+    Returns tuple: (enabled_targets, disabled_targets, name_mapping)
+    - enabled_targets: Normalized names of enabled targets
+    - disabled_targets: Normalized names of disabled targets
+    - name_mapping: Dict mapping normalized_name -> original_name
     
     Args:
-        config (dict): User configuration with features and MON settings
+        config (dict): User configuration
     
     Returns:
-        list: List of target module names to create pblocks for
-    
-    Notes:
-        - FATORI_FI mode affects target selection (CONTROLLER/DECODER merge)
-        - Some modules are conditional (ICACHE, BRANCH_PRED, MULTDIV)
-        - WB_STAGE is currently disabled (breaks architecture)
+        tuple: (list of enabled, list of disabled, dict of name mapping)
     """
-    targets = list(ALWAYS_PRESENT_MODULES)
+    if 'targets' in config:
+        user_targets = config['targets']
+        features = config.get('features', {})
+        
+        # Normalize and validate, separating enabled from disabled
+        enabled, disabled, name_mapping = validate_and_normalize_targets(user_targets, features)
+        return enabled, disabled, name_mapping
+    else:
+        # Auto-select: only enabled targets, no disabled, no name mapping needed
+        targets = auto_select_targets(config)
+        # For auto-select, normalized name = original name
+        name_mapping = {t: t for t in targets}
+        return targets, [], name_mapping
+
+def normalize_target_name(target):
+    """
+    Normalize user config names to internal names.
     
-    # Check FATORI_FI mode
-    features = config.get('features', {})
-    fi_mode = features.get('FATORI_FI', 0)
+    Args:
+        target (str): User-provided target name
     
-    if not fi_mode:
-        # Without FATORI_FI, CONTROLLER and DECODER are valid targets
-        targets.extend(['CONTROLLER', 'DECODER'])
-    # With FATORI_FI, CONTROLLER and DECODER are merged into ID_STAGE
-    # ID_STAGE is already in ALWAYS_PRESENT_MODULES
+    Returns:
+        str: Normalized internal name
+    """
+    return NAME_ALIASES.get(target, target)
+
+def validate_and_normalize_targets(user_targets, features):
+    """
+    Validate and normalize target names, separating enabled from disabled.
     
-    # Add conditional modules based on configuration
-    for module, condition_func in CONDITIONAL_MODULES.items():
-        if module == 'WB_STAGE':
-            # WB_STAGE currently disabled (architecture issue)
+    Returns tuple of (enabled_targets, disabled_targets, name_mapping):
+    - enabled_targets: Normalized names of targets that exist in design
+    - disabled_targets: Normalized names of targets that are disabled
+    - name_mapping: Dict mapping normalized_name -> original_name
+    
+    Args:
+        user_targets (list): User-provided target names
+        features (dict): Feature configuration
+    
+    Returns:
+        tuple: (list of enabled, list of disabled, dict of name mapping)
+    """
+    enabled_targets = []
+    disabled_targets = []
+    name_mapping = {}
+    errors = []
+    
+    for target in user_targets:
+        # Normalize name
+        normalized = normalize_target_name(target)
+        
+        # Track original name for output
+        name_mapping[normalized] = target
+        
+        # Check if exists in baseline
+        if normalized not in BASELINE_SIZES:
+            errors.append(f"Unknown target: '{target}' (normalized to '{normalized}')")
             continue
         
-        if condition_func(features):
-            targets.append(module)
+        # Check conditional existence - if disabled, add to disabled_targets
+        is_disabled = False
+        
+        if normalized == 'ICACHE' and features.get('FATORI_ICACHE', 0) == 0:
+            is_disabled = True
+        elif normalized == 'PREFETCH_BUFFER' and features.get('FATORI_ICACHE', 0) == 1:
+            is_disabled = True
+        elif normalized == 'MULTDIV' and features.get('FATORI_RV32M', 'None') == 'None':
+            is_disabled = True
+        elif normalized == 'BRANCH_PREDICT' and features.get('FATORI_BRANCH_PRED', 0) == 0:
+            is_disabled = True
+        elif normalized == 'FAULT_MGR' and features.get('FATORI_FAULT_MGR', 0) == 0:
+            is_disabled = True
+        elif normalized == 'WB_STAGE' and features.get('FATORI_WSTAGE', 0) == 0:
+            is_disabled = True
+        
+        # Categorize
+        if is_disabled:
+            disabled_targets.append(normalized)
+        else:
+            enabled_targets.append(normalized)
     
-    return targets
-
+    if errors:
+        raise ValueError("Target validation errors:\n" + "\n".join(errors))
+    
+    return enabled_targets, disabled_targets, name_mapping
 
 # =============================================================================
 # SIZE CALCULATION
@@ -72,60 +145,125 @@ def calculate_pblock_sizes(config):
     """
     Calculate pblock sizes for all target modules.
     
+    Returns tuple: (enabled_sizes, disabled_targets, name_mapping)
+    - enabled_sizes: Dict of {normalized_name: size} for enabled targets
+    - disabled_targets: List of normalized names that are disabled
+    - name_mapping: Dict mapping normalized_name -> original_name
+    
     Args:
         config (dict): User configuration dictionary
     
     Returns:
-        dict: {module_name: size_in_luts}
+        tuple: (dict of sizes, list of disabled, dict of name mapping)
     
     Algorithm:
-        For each target:
+        For each enabled target:
             size = base × feature_factor × mon_factor × safety_margin
+        For disabled targets:
+            size = 0 (empty pblock)
     """
-    targets = select_targets(config)
+    enabled_targets, disabled_targets, name_mapping = select_targets(config)
     sizes = {}
     
-    for target in targets:
+    # Calculate sizes for enabled targets
+    for target in enabled_targets:
         size = calculate_module_size(target, config)
         sizes[target] = size
     
-    return sizes
+    return sizes, disabled_targets, name_mapping
 
-
-def calculate_module_size(module, config):
+def auto_select_targets(config):
     """
-    Calculate pblock size for a single module.
+    Auto-select targets based on enabled features (legacy behavior).
+    
+    Selects all modules that exist in the design based on configuration.
+    This is the old behavior when no explicit targets list is provided.
     
     Args:
-        module (str): Module name (e.g., 'ALU', 'LSU')
         config (dict): User configuration
     
     Returns:
-        int: Pblock size in LUTs
-    
-    Formula:
-        size = baseline × feature_factor × mon_factor × safety_margin
+        list: Modules to create pblocks for
     """
     features = config.get('features', {})
-    mon_config = config.get('mon_config', {})
+    fi_mode = features.get('FATORI_FI', 0)
     
+    targets = []
+    
+    # Always present modules
+    targets.extend(ALWAYS_PRESENT_MODULES)
+    
+    # Conditional modules
+    for module, condition_func in CONDITIONAL_MODULES.items():
+        if condition_func(features):
+            targets.append(module)
+    
+    # Remove FI-invalid targets
+    if fi_mode:
+        targets = [t for t in targets if t not in FI_MODE_INVALID_TARGETS]
+    
+    return targets
+
+def calculate_module_size(module, config):
+    """
+    Calculate pblock size for a single module using equation 7.1.
+
+    Implements: Pblock = [(B × ΠF + ΣS) × MON_logic(N) + S_MON + S_voter] × M
+
+    S_voter accounts for register M-of-N voter circuits: each replicated FF
+    needs approximately 2 LUTs of majority-voter logic (for N=3), giving
+    voter_luts = FF_BASELINE[module] × (reg_mon_N - 1).
+
+    Args:
+        module (str): Module name (e.g., 'ALU', 'LSU', 'FAULT_MGR')
+        config (dict): User configuration
+
+    Returns:
+        int: Pblock size in LUTs
+    """
+    features = config.get('features', {})
+    logic_mon_config = config.get('logic_mon_config', {})
+    # reg_mon_config maps module name -> N (1 = no replication)
+    reg_mon_config = config.get('reg_mon_config', {})
+
     # Get baseline size
     base_size = get_baseline_size(module, features)
-    
-    # Get feature scaling factor
-    feature_factor = get_feature_factor(module, features)
-    
-    # Get MON_N scaling factor
-    mon_n = mon_config.get(module, {}).get('MON_N', 1)
-    mon_factor = get_mon_factor(module, mon_n)
-    
-    # Get safety margin
+
+    # Special case: FAULT_MGR — small module, no voter overhead modeled
+    if module == 'FAULT_MGR':
+        margin = get_safety_margin(module)
+        size = int((base_size + S_ML_MAX) * margin)
+        return size
+
+    # Step 1: B × ΠF (baseline × multiplicative features)
+    feature_factor = get_multiplicative_feature_factor(module, features)
+    size_after_mult_features = base_size * feature_factor
+
+    # Step 2: + ΣS (add additive feature components)
+    additive_overhead = get_additive_feature_overhead(module, features)
+    size_after_features = size_after_mult_features + additive_overhead
+
+    # Step 3: × MON_logic(N) (always 1.0, empirically no scaling)
+    # MON_logic(N) = 1.0 for all N, so this is a no-op
+
+    # Step 4: + S_MON (logic M-of-N wrapper overhead if enabled)
+    mon_n = logic_mon_config.get(module, {}).get('MON_N', 1)
+    mon_overhead = S_MON if mon_n >= 2 else 0
+    size_after_mon = size_after_features + mon_overhead
+
+    # Step 5: + S_voter (register M-of-N voter LUT overhead)
+    # voter_luts = FF_BASELINE × (N-1): each FF replication adds voter circuits.
+    # Vivado does not optimise away replicated FFs, so this overhead is hard.
+    reg_mon_n = reg_mon_config.get(module, 1)
+    ff_baseline = FF_BASELINE_SIZES.get(module, 0)
+    voter_overhead = ff_baseline * max(0, reg_mon_n - 1)
+    size_after_voter = size_after_mon + voter_overhead
+
+    # Step 6: × M (apply safety margin)
     margin = get_safety_margin(module)
-    
-    # Calculate final size
-    size = int(base_size * feature_factor * mon_factor * margin)
-    
-    return size
+    final_size = int(size_after_voter * margin)
+
+    return final_size
 
 
 # =============================================================================
@@ -159,115 +297,161 @@ def get_baseline_size(module, features):
 # FEATURE FACTOR CALCULATION
 # =============================================================================
 
-def get_feature_factor(module, features):
+def get_multiplicative_feature_factor(module, features):
     """
-    Calculate feature scaling factor for a module.
+    Calculate MULTIPLICATIVE feature scaling factor for a module.
+    
+    Additive terms handled separately via get_additive_feature_overhead().
     
     Args:
         module (str): Module name
         features (dict): Feature configuration dictionary
     
     Returns:
-        float: Feature scaling factor (1.0 = no scaling)
-    
-    Notes:
-        - Different modules affected by different features
-        - Some effects are multiplicative, some additive (handled separately)
+        float: Multiplicative scaling factor (1.0 = no scaling)
     """
     if module == 'ALU':
-        return get_alu_feature_factor(features)
+        return get_alu_mult_factor(features)
     
     elif module == 'IF_STAGE':
-        return get_if_stage_feature_factor(features)
+        return get_if_stage_mult_factor(features)
     
     elif module == 'ID_STAGE':
-        return get_id_stage_feature_factor(features)
+        return get_id_stage_mult_factor(features)
     
     elif module == 'EX_BLOCK':
-        return get_ex_block_feature_factor(features)
+        return get_ex_block_mult_factor(features)
     
     else:
-        # Other modules not significantly affected by features
         return 1.0
 
 
-def get_alu_feature_factor(features):
+def get_additive_feature_overhead(module, features):
     """
-    Calculate ALU feature factor based on RV32B extension.
+    Calculate total ADDITIVE feature overhead for a module (ΣS).
+    
+    Args:
+        module (str): Module name
+        features (dict): Feature configuration
     
     Returns:
-        float: Scaling factor (1.0, 4.2, or 8.9)
+        int: Total additive overhead in LUTs
+    """
+    overhead = 0
+    
+    # Per-module additive terms
+    if module == 'ALU':
+        overhead += get_alu_additive(features)
+    elif module == 'DECODER':
+        overhead += get_decoder_additive(features)
+    elif module == 'IF_STAGE':
+        overhead += get_if_stage_additive(features)
+    elif module == 'ID_STAGE':
+        overhead += get_id_stage_additive(features)
+    elif module == 'WB_STAGE':
+        overhead += get_wb_stage_additive(features)
+    elif module == 'CONTROLLER':
+        overhead += get_controller_additive(features)
+    
+    return overhead
+
+
+# =============================================================================
+# MULTIPLICATIVE FEATURE FACTORS (ΠF terms)
+# =============================================================================
+
+def get_alu_mult_factor(features):
+    """ALU multiplicative factor: RV32B only."""
+    rv32b = features.get('FATORI_RV32B', 'None')
+    return RV32B_FACTORS.get(rv32b, 1.0)
+
+
+def get_if_stage_mult_factor(features):
+    """IF_STAGE multiplicative factor: ICACHE only."""
+    if features.get('FATORI_ICACHE', 0) == 1:
+        return ICACHE_FACTOR
+    return 1.0
+
+
+def get_id_stage_mult_factor(features):
+    """ID_STAGE has no multiplicative factors."""
+    return 1.0
+
+
+def get_ex_block_mult_factor(features):
+    """
+    EX_BLOCK multiplicative factor: ALU RV32B scaling.
+    
+    Note: MULTDIV is additive (absolute size), not multiplicative.
     """
     rv32b = features.get('FATORI_RV32B', 'None')
     return RV32B_FACTORS.get(rv32b, 1.0)
 
 
-def get_if_stage_feature_factor(features):
-    """
-    Calculate IF_STAGE feature factor based on ICACHE and BRANCH_PRED.
-    
-    Returns:
-        float: Scaling factor
-    
-    Notes:
-        - ICACHE increases base by 3.2x (replaces prefetch)
-        - BRANCH_PRED adds 120 LUTs (additive, handled as percentage)
-    """
-    factor = 1.0
-    
-    # I-Cache impact (multiplicative)
-    if features.get('FATORI_ICACHE', 0) == 1:
-        factor *= ICACHE_FACTOR
-    
-    # Branch predictor impact (additive - approximate as percentage)
-    if features.get('FATORI_BRANCH_PRED', 0) == 1:
-        # 120 LUTs on baseline 431L = 28% increase
-        # On cached IF_STAGE (1382L), it's 9% increase
-        # Use average: ~15% increase
-        factor *= 1.15
-    
-    return factor
+# =============================================================================
+# ADDITIVE FEATURE OVERHEADS (ΣS terms)
+# =============================================================================
 
-
-def get_id_stage_feature_factor(features):
-    """
-    Calculate ID_STAGE feature factor based on BRANCH_TALU.
-    
-    Returns:
-        float: Scaling factor
-    """
-    if features.get('FATORI_BRANCH_TALU', 0) == 1:
-        return BRANCH_TALU_FACTOR
-    return 1.0
-
-
-def get_ex_block_feature_factor(features):
-    """
-    Calculate EX_BLOCK feature factor.
-    
-    Returns:
-        float: Effective size considering ALU + MULTDIV
-    
-    Notes:
-        - EX_BLOCK = ALU + MULTDIV
-        - Both can scale independently
-        - This function returns a composite effective factor
-    """
-    # EX_BLOCK contains ALU (which scales with RV32B)
-    alu_base = BASELINE_SIZES['ALU']
-    rv32b = features.get('FATORI_RV32B', 'None')
-    alu_size = alu_base * RV32B_FACTORS.get(rv32b, 1.0)
-    
-    # Add multiplier if enabled
+def get_alu_additive(features):
+    """ALU additive overhead: MULTDIV integration."""
+    overhead = 0
     rv32m = features.get('FATORI_RV32M', 'None')
-    mul_size = MULTIPLIER_SIZES.get(rv32m, 0)
+    if rv32m != 'None':
+        overhead += S_MULTDIV_ALU
+    return overhead
+
+
+def get_decoder_additive(features):
+    """DECODER additive overhead: RV32B decode logic + WSTAGE."""
+    overhead = 0
     
-    # Total EX_BLOCK size before MON and margin
-    total_size = alu_size + mul_size
+    # RV32B decode logic
+    rv32b = features.get('FATORI_RV32B', 'None')
+    overhead += S_RV32B_DECODER.get(rv32b, 0)
     
-    # Return as factor relative to baseline EX_BLOCK
-    ex_base = BASELINE_SIZES['EX_BLOCK']
-    return total_size / ex_base
+    # WSTAGE overhead
+    if features.get('FATORI_WSTAGE', 0) == 1:
+        overhead += S_WSTAGE_DEC
+    
+    return overhead
+
+
+def get_if_stage_additive(features):
+    """IF_STAGE additive overhead: BRANCH_PRED integration."""
+    overhead = 0
+    if features.get('FATORI_BRANCH_PRED', 0) == 1:
+        overhead += S_BP_IF
+    return overhead
+
+
+def get_id_stage_additive(features):
+    """ID_STAGE additive overhead: BTALU + MULTDIV integration."""
+    overhead = 0
+    
+    if features.get('FATORI_BRANCH_TALU', 0) == 1:
+        overhead += S_BTALU_ID
+    
+    rv32m = features.get('FATORI_RV32M', 'None')
+    if rv32m != 'None':
+        overhead += S_MULTDIV_ID
+    
+    return overhead
+
+
+def get_wb_stage_additive(features):
+    """WB_STAGE additive overhead: WSTAGE pipeline logic."""
+    overhead = 0
+    if features.get('FATORI_WSTAGE', 0) == 1:
+        overhead += S_WSTAGE_WB
+    return overhead
+
+
+def get_controller_additive(features):
+    """CONTROLLER additive overhead: WSTAGE control logic."""
+    overhead = 0
+    if features.get('FATORI_WSTAGE', 0) == 1:
+        overhead += S_WSTAGE_CTRL
+    return overhead
 
 
 # =============================================================================
@@ -276,38 +460,52 @@ def get_ex_block_feature_factor(features):
 
 def get_size_breakdown(module, config):
     """
-    Get detailed breakdown of size calculation for a module.
+    Get detailed breakdown of size calculation per equation 7.1.
     
     Args:
         module (str): Module name
         config (dict): User configuration
     
     Returns:
-        dict: Breakdown with base, factors, and final size
-    
-    Useful for debugging and reporting.
+        dict: Breakdown showing each term in the calculation
     """
     features = config.get('features', {})
-    mon_config = config.get('mon_config', {})
-    
+    logic_mon_config = config.get('logic_mon_config', {})
+    reg_mon_config = config.get('reg_mon_config', {})
+
     base_size = get_baseline_size(module, features)
-    feature_factor = get_feature_factor(module, features)
-    mon_n = mon_config.get(module, {}).get('MON_N', 1)
-    mon_factor = get_mon_factor(module, mon_n)
+    mult_factor = get_multiplicative_feature_factor(module, features)
+    additive_overhead = get_additive_feature_overhead(module, features)
+
+    size_after_mult = base_size * mult_factor
+    size_after_add = size_after_mult + additive_overhead
+
+    mon_n = logic_mon_config.get(module, {}).get('MON_N', 1)
+    mon_overhead = S_MON if mon_n >= 2 else 0
+    size_after_mon = size_after_add + mon_overhead
+
+    # Step 5: voter overhead from register M-of-N replication
+    reg_mon_n = reg_mon_config.get(module, 1)
+    ff_baseline = FF_BASELINE_SIZES.get(module, 0)
+    voter_overhead = ff_baseline * max(0, reg_mon_n - 1)
+    size_after_voter = size_after_mon + voter_overhead
+
     margin = get_safety_margin(module)
-    
-    size_after_features = base_size * feature_factor
-    size_after_mon = size_after_features * mon_factor
-    final_size = int(size_after_mon * margin)
-    
+    final_size = int(size_after_voter * margin)
+
     return {
         'module': module,
         'base_size': base_size,
-        'feature_factor': feature_factor,
-        'size_after_features': int(size_after_features),
+        'mult_factor': mult_factor,
+        'size_after_mult': int(size_after_mult),
+        'additive_overhead': additive_overhead,
+        'size_after_additive': int(size_after_add),
         'mon_n': mon_n,
-        'mon_factor': mon_factor,
+        'mon_overhead': mon_overhead,
         'size_after_mon': int(size_after_mon),
+        'reg_mon_n': reg_mon_n,
+        'voter_overhead': voter_overhead,
+        'size_after_voter': int(size_after_voter),
         'safety_margin': margin,
         'final_size': final_size,
     }
@@ -326,39 +524,26 @@ def validate_configuration(config):
     
     Returns:
         list: List of warning/error messages (empty if valid)
-    
-    Checks:
-        - Required fields present
-        - Valid feature values
-        - MON_N in valid range
-        - WB_STAGE not enabled (currently broken)
     """
     warnings = []
     
     features = config.get('features', {})
-    mon_config = config.get('mon_config', {})
-    
-    # Check RV32B value
+    logic_mon_config = config.get('logic_mon_config', {})
+
+    # Check RV32B value (updated to include OTEarlGrey)
     rv32b = features.get('FATORI_RV32B', 'None')
-    if rv32b not in ['None', 'Balanced', 'Full']:
-        warnings.append(f"Invalid FATORI_RV32B value: {rv32b}. Use None/Balanced/Full.")
-    
-    # Check RV32M value
+    if rv32b not in ['None', 'Balanced', 'OTEarlGrey', 'Full']:
+        warnings.append(f"Invalid FATORI_RV32B value: {rv32b}. Use None/Balanced/OTEarlGrey/Full.")
+
+    # Check RV32M value (updated to include Single_cycle)
     rv32m = features.get('FATORI_RV32M', 'None')
-    if rv32m not in ['None', 'Slow', 'Fast']:
-        warnings.append(f"Invalid FATORI_RV32M value: {rv32m}. Use None/Slow/Fast.")
-    
-    # Check WB_STAGE
-    if features.get('FATORI_WSTAGE', 0) == 1:
-        warnings.append("WARNING: FATORI_WSTAGE is enabled but currently breaks architecture. Set to 0.")
-    
-    # Check MON_N values
-    for module, mon_cfg in mon_config.items():
+    if rv32m not in ['None', 'Slow', 'Fast', 'Single_cycle']:
+        warnings.append(f"Invalid FATORI_RV32M value: {rv32m}. Use None/Slow/Fast/Single_cycle.")
+
+    # Check MON_N values (empirically N≥2 gives same overhead)
+    for module, mon_cfg in logic_mon_config.items():
         mon_n = mon_cfg.get('MON_N', 1)
         if not (1 <= mon_n <= 5):
             warnings.append(f"{module}: MON_N={mon_n} out of valid range [1-5].")
-        
-        if mon_n > 3 and module not in ['ALU']:
-            warnings.append(f"{module}: MON_N={mon_n} > 3 is untested and may cause issues.")
     
     return warnings

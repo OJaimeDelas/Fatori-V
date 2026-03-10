@@ -21,18 +21,19 @@ from scripts.logging.logger import log_event
 import fatori_settings as cfg
 
 
-def get_all_sessions(results_dir: Path):
+def get_all_sessions(config, results_dir):
     """
     Get all session objects from results directory.
     
     Args:
+        config: The loaded YAML configuration dictionary
         results_dir: Results directory path
     
     Returns:
         List of Session objects
     """
     # Create session manager
-    session_manager = SessionManager()
+    session_manager = SessionManager(config, results_dir)
     
     # Get all sessions
     all_sessions = session_manager.get_all_sessions()
@@ -65,94 +66,113 @@ def execute_results_phase(context: RunContext) -> bool:
     log_event('RESULTS_PHASE_START')
     
     try:
-        # Step 1: Collect session metrics
-        log_event('RESULTS_SESSION_COLLECTION_START')
+        # Step 1: Distribute generated files to appropriate locations
+        import shutil
+        log_event('RESULTS_GEN_FILES_DISTRIBUTING')
         
-        sessions = get_all_sessions(context.results_dir)
+        gen_source_dir = cfg.ROOT_DIR / 'tmp' / 'generated'
         
-        if not sessions:
-            log_event('RESULTS_NO_SESSIONS')
-            session_metrics = []
+        if gen_source_dir.exists():
+            # Create run-level gen/ directory for non-benchmark-specific files
+            run_gen_dir = context.results_dir / 'gen'
+            run_gen_dir.mkdir(parents=True, exist_ok=True)
+            
+            copied_count = 0
+            benchmark_configs_distributed = 0
+            
+            # Iterate through all generated files
+            for gen_file in gen_source_dir.iterdir():
+                if not gen_file.is_file():
+                    continue
+                
+                # Check if this is a benchmark-specific config file
+                # Format: bench_config_<benchmark_name>.h
+                if gen_file.name.startswith('bench_config_') and gen_file.name.endswith('.h'):
+                    # Extract benchmark name from filename
+                    # Example: bench_config_hello_world.h -> hello_world
+                    bench_name = gen_file.name.replace('bench_config_', '').replace('.h', '')
+                    
+                    # Copy to session-specific gen/ folder
+                    session_gen_dir = context.results_dir / 'sessions' / bench_name / 'gen'
+                    session_gen_dir.mkdir(parents=True, exist_ok=True)
+                    
+                    dest_file = session_gen_dir / gen_file.name
+                    shutil.copy2(gen_file, dest_file)
+                    benchmark_configs_distributed += 1
+                else:
+                    # Non-benchmark-specific files go to run-level gen/
+                    dest_file = run_gen_dir / gen_file.name
+                    shutil.copy2(gen_file, dest_file)
+                    copied_count += 1
+            
+            log_event('RESULTS_GEN_FILES_DISTRIBUTED',
+                      run_level_count=copied_count,
+                      benchmark_configs_count=benchmark_configs_distributed)
         else:
-            session_metrics = collect_all_session_metrics(sessions)
-            log_event('RESULTS_SESSION_METRICS_COLLECTED', count=len(session_metrics))
+            log_event('RESULTS_GEN_DIR_NOT_FOUND', gen_dir=str(gen_source_dir))
         
-        # Step 2: Collect build metrics
-        log_event('RESULTS_BUILD_COLLECTION_START')
-        build_metrics = collect_build_metrics(context.config)
+        # Step 1.5: Copy TCL files to results/gen/tcl/
+        tcl_source_dir = cfg.ROOT_DIR / 'tmp' / 'tcl'
         
-        if build_metrics.get('reports_available'):
-            log_event('RESULTS_BUILD_METRICS_COLLECTED')
+        if tcl_source_dir.exists():
+            # Create gen/tcl/ directory
+            tcl_dest_dir = context.results_dir / 'gen' / 'tcl'
+            tcl_dest_dir.mkdir(parents=True, exist_ok=True)
+            
+            tcl_copied_count = 0
+            
+            # Copy all TCL files
+            for tcl_file in tcl_source_dir.iterdir():
+                if tcl_file.is_file() and tcl_file.suffix == '.tcl':
+                    dest_file = tcl_dest_dir / tcl_file.name
+                    shutil.copy2(tcl_file, dest_file)
+                    tcl_copied_count += 1
+            
+            log_event('RESULTS_TCL_FILES_COPIED', count=tcl_copied_count)
         else:
-            log_event('RESULTS_BUILD_METRICS_UNAVAILABLE')
+            log_event('RESULTS_TCL_DIR_NOT_FOUND', tcl_dir=str(tcl_source_dir))
         
-        # Step 3: Aggregate metrics
-        log_event('RESULTS_AGGREGATION_START')
-        aggregator = MetricsAggregator()
+        # Step 2: Collect metrics from all sessions
+        from scripts.results.reports_copier import copy_reports_to_results
+        from scripts.results.vivado_parser_runner import parse_vivado_reports
         
-        # Add session metrics
-        for metrics in session_metrics:
-            aggregator.add_session_metrics(metrics)
-        
-        # Add build metrics
-        aggregator.add_build_metrics(build_metrics)
-        
-        # Compute aggregates
-        aggregates = aggregator.compute_aggregates()
-        log_event('RESULTS_AGGREGATION_COMPLETE', 
-                  session_count=aggregates.get('session_count', 0))
-        
-        # Step 4: Generate summary report
-        log_event('RESULTS_SUMMARY_GENERATION_START')
-        summary_text = generate_run_summary(context.config, aggregator)
-        summary_path = context.results_dir / "run_summary.txt"
-        with summary_path.open('w', encoding='utf-8') as f:
-            f.write(summary_text)
-        log_event('RESULTS_SUMMARY_GENERATED', summary_path=str(summary_path))
-        
-        # Step 5: Export to Excel
-        log_event('RESULTS_EXCEL_EXPORT_START')
-        excel_path = context.results_dir / "metrics.xlsx"
-        if export_to_excel(aggregator, excel_path, context.config):
-            log_event('RESULTS_EXCEL_EXPORTED', excel_path=str(excel_path))
+        log_event('RESULTS_REPORTS_COPYING')
+        if copy_reports_to_results(context.results_dir):
+            log_event('RESULTS_REPORTS_COPY_SUCCESS')
+            
+            # Run vivado parser on copied reports
+            log_event('RESULTS_PARSER_RUNNING')
+            if parse_vivado_reports(context.results_dir):
+                log_event('RESULTS_PARSER_SUCCESS')
+            else:
+                log_event('RESULTS_PARSER_FAILED')
         else:
-            log_event('RESULTS_EXCEL_EXPORT_FAILED')
+            log_event('RESULTS_REPORTS_COPY_FAILED')
         
-        # Step 6: Export to CSV
-        log_event('RESULTS_CSV_EXPORT_START')
-        csv_results = export_all_csvs(aggregator, context.results_dir)
-        log_event('RESULTS_CSV_EXPORTED', csv_count=len(csv_results))
+        # Step 3: Generate benchmark metrics table
+        from scripts.results.bench_metrics_table import generate_bench_metrics_csv
         
-        # Step 7: Validate results package
-        log_event('RESULTS_VALIDATION_START')
-        is_valid, errors, warnings = validate_results(context.results_dir)
-        
-        if not is_valid:
-            log_event('RESULTS_VALIDATION_FAILED', 
-                      error_count=len(errors),
-                      errors=errors)
+        log_event('RESULTS_BENCH_METRICS_GENERATING')
+        if generate_bench_metrics_csv(context.results_dir, context.config):
+            log_event('RESULTS_BENCH_METRICS_SUCCESS')
         else:
-            log_event('RESULTS_VALIDATION_PASSED')
+            log_event('RESULTS_BENCH_METRICS_FAILED')
         
-        if warnings:
-            log_event('RESULTS_VALIDATION_WARNINGS',
-                      warning_count=len(warnings))
+        # Step 4: Merge results tables and export to XLS
+        from scripts.results.results_table_merger import merge_results_csvs
         
-        # Step 8: Final summary
-        log_event('RESULTS_PHASE_SUMMARY',
-                  results_dir=str(context.results_dir),
-                  session_count=len(session_metrics),
-                  build_metrics_available=build_metrics.get('reports_available', False),
-                  excel_generated=excel_path.exists(),
-                  csv_count=len(csv_results))
+        log_event('RESULTS_MERGER_START')
+        if merge_results_csvs(context.results_dir):
+            log_event('RESULTS_MERGER_SUCCESS')
+        else:
+            log_event('RESULTS_MERGER_FAILED')
         
+        log_event('RESULTS_PHASE_COMPLETE')
         return True
     
     except Exception as e:
         log_event('RESULTS_PHASE_EXCEPTION', error_message=str(e))
         import traceback
-        log_event('RESULTS_TRACEBACK', traceback=traceback.format_exc())
-        return False
 
 
 class ResultsPhaseExecutor(PhaseExecutor):

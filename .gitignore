@@ -18,6 +18,7 @@ runs/*
 # Testing Scripts
 test.py
 update_imports.sh
+query_dsp.tcl
 
 # Python
 __pycache__/

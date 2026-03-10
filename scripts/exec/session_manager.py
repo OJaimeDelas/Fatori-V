@@ -116,6 +116,9 @@ class SessionManager:
         """
         Create a new execution session.
         
+        Uses bench_id-based directory structure:
+        results/<run_id>/sessions/<bench_id>/
+        
         This allocates a session ID, creates the session directory,
         and initializes session metadata.
         
@@ -127,17 +130,21 @@ class SessionManager:
         Returns:
             Session object
         """
+        from scripts.results.directory_manager import get_session_directory
+        
         # Allocate session ID
         session_id = self.get_next_session_id()
         
-        # Create session directory
-        session_dir = self.get_session_dir(session_id)
-        session_dir.mkdir(parents=True, exist_ok=True)
+        # Use benchmark name as bench_id
+        bench_id = benchmark_name
         
-        # Define file paths
-        console_output = session_dir / "console.log"
-        metrics_file = session_dir / "metrics.json"
-        fi_log = session_dir / "fi.log" if injection_enabled else None
+        # Create session directory using new structure
+        session_dir = get_session_directory(self.results_dir, bench_id)
+        
+        # Define file paths with proper naming
+        console_output = session_dir / f"fatori_{bench_id}_log.txt"
+        metrics_file = session_dir / "metrics.txt"
+        fi_log = session_dir / "fi" / "injection_log.txt" if injection_enabled else None
         
         # Create session object
         session = Session(

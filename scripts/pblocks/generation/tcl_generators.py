@@ -99,7 +99,11 @@ def generate_post_opt_tcl(config, output_path):
     # Check if FI is enabled
     fi_enabled = any_benchmark_has_fi(config)
     
-    if fi_enabled:
+    # Check if FI is enabled AND area_profile is 'modules'
+    fi_enabled = any_benchmark_has_fi(config)
+    area_profile = get_nested(config, KEY_GENERAL, "fault_injection", "area_profile", default="device")
+    
+    if fi_enabled and area_profile == "modules":
         # Section: Pblock Constraints
         content_lines.append(generate_section_comment("Pblock Placement Constraints"))
         content_lines.append("")
@@ -179,6 +183,22 @@ def generate_pre_bitstream_tcl(config, output_path):
     file_name = PRE_BITSTREAM_TCL
     
     content_lines = []
+    
+    # Check if FI is enabled
+    fi_enabled = any_benchmark_has_fi(config)
+    
+    if fi_enabled:
+        # Section: Essential Bits Configuration
+        content_lines.append(generate_section_comment("Essential Bits Configuration"))
+        content_lines.append("")
+        
+        content_lines.append(generate_puts_statement("FATORI-V: Enabling essential bits for SEU"))
+        content_lines.append("")
+        
+        # Enable essential bits for SEU (Soft Error Upset) detection
+        content_lines.append(generate_comment("Enable essential bits for bitstream"))
+        content_lines.append("set_property BITSTREAM.SEU.ESSENTIALBITS yes [current_design]")
+        content_lines.append("")
     
     # Section: Report Generation
     content_lines.append(generate_section_comment("Report Generation"))

@@ -227,14 +227,17 @@ def validate_benchmark_config(benchmark_name, bench_config, category):
     errors = []
     warnings = []
     
-    # Check iterations if present
+   # Check iterations if present
     if 'iterations' in bench_config:
         iterations = bench_config['iterations']
         
-        if iterations <= 0:
-            errors.append(f"{benchmark_name}: iterations must be positive (got {iterations})")
+        # -1 means infinite iterations (supported by fatori_stress)
+        if iterations < -1 or iterations == 0:
+            errors.append(f"{benchmark_name}: iterations must be positive or -1 for infinite (got {iterations})")
         elif iterations > 100000:
             warnings.append(f"{benchmark_name}: very high iterations ({iterations}), may take long time")
+        elif iterations == -1:
+            warnings.append(f"{benchmark_name}: infinite iterations mode enabled (iterations=-1)")
     
     # Category-specific validation
     if category == "fatori_stress":

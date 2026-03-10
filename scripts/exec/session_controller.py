@@ -10,8 +10,6 @@ from typing import List, Optional
 import fatori_settings as cfg
 from scripts.exec.session_manager import SessionManager
 from scripts.exec.benchmark_executor import execute_benchmark
-from scripts.exec.sync_file_manager import wait_for_sync_file_deletion, cleanup_sync_file
-from scripts.build.path_resolver import resolve_sync_file
 from scripts.logging import logger
 
 
@@ -44,16 +42,18 @@ def execute_session(config, benchmark_info, session_manager, fi_controller=None)
     
     This handles:
     1. Session creation
-    2. Benchmark execution
-    3. Sync file coordination (if FI enabled)
-    4. FI launch (if enabled and sync file deleted)
-    5. Result collection
+    2. Parallel launch of FI (if enabled) and benchmark
+    3. Sync file coordination between processes
+    4. Result collection from both processes
+    
+    The FI console and benchmark run in parallel as separate subprocesses.
+    The FI console waits for the sync file (--wait-for-file) before starting injections.
     
     Args:
         config: The loaded YAML configuration dictionary
         benchmark_info: BenchmarkInfo object
         session_manager: SessionManager instance
-        fi_controller: Optional FI controller (Phase 12)
+        fi_controller: Optional FI controller
     
     Returns:
         SessionResult object
@@ -70,70 +70,125 @@ def execute_session(config, benchmark_info, session_manager, fi_controller=None)
     
     logger.log_event('SESSION_START', session_id=session.session_id, benchmark=benchmark_info.name)
     
-    # Execute benchmark
-    logger.log_event('DEBUG', debug_message="Executing benchmark...")
-    exec_result = execute_benchmark(config, benchmark_info, session)
-    
     # Initialize session result
     session_result = SessionResult(
         session_id=session.session_id,
         benchmark_name=benchmark_info.name,
-        execution_success=exec_result.success,
-        execution_timed_out=exec_result.timed_out,
-        error_message=exec_result.error_message
+        execution_success=False,
+        execution_timed_out=False
     )
     
-    # Handle FI if enabled and benchmark succeeded
-    if benchmark_info.injection and exec_result.success:
-        logger.log_event('DEBUG', debug_message="Fault injection is enabled for this benchmark")
+    # Launch FI first if enabled (it will wait for sync file)
+    fi_result = None
+    fi_process_pid = None
+    
+    if benchmark_info.injection and fi_controller:
+        logger.log_event('DEBUG', debug_message="[FI-WAIT-DEBUG] Launching fault injection subprocess...")
         
-        # Get sync file path
-        sync_path = resolve_sync_file()
-        
-        # Wait for sync file deletion (benchmark signals FI can begin)
-        logger.log_event('DEBUG', debug_message="Waiting for benchmark to signal FI readiness...")
-        sync_deleted = wait_for_sync_file_deletion(
-            sync_path,
-            timeout_s=60  # Give benchmark 60s to signal
-        )
-        
-        if sync_deleted:
-            logger.log_event('DEBUG', debug_message="Benchmark ready for FI")
+        try:
+            # Start FI subprocess - it will wait for sync file before injecting
+            # This is non-blocking - FI runs in background while benchmark executes
+            fi_result = fi_controller.launch_async(
+                benchmark_info.name,
+                session,
+                timeout_s=session.timeout_s
+            )
             
-            # Launch FI if controller is available
-            if fi_controller:
-                logger.log_event('DEBUG', debug_message="Launching fault injection...")
-                
-                try:
-                    # Launch FI via controller
-                    fi_result = fi_controller.launch(
-                        benchmark_info.name,
-                        session,
-                        timeout_s=session.timeout_s
-                    )
-                    
-                    session_result.fi_launched = True
-                    session_result.fi_success = fi_result.success
-                    
-                    if fi_result.success:
-                        logger.log_event('DEBUG', debug_message=f"FI completed: {fi_result.injection_count} injections")
-                    else:
-                        logger.log_event('ERROR', error_message=f"FI failed: {fi_result.error_message}")
-                
-                except Exception as e:
-                    logger.log_event('ERROR', error_message=f"Exception during FI launch: {e}")
-                    session_result.fi_launched = True
-                    session_result.fi_success = False
-            else:
-                logger.log_event('WARNING', warning_message="FI controller not available, skipping FI launch")
+            if fi_result is None:
+                logger.log_event('ERROR', error_message="[FI-WAIT-DEBUG] FI launch returned None!")
                 session_result.fi_launched = False
-        else:
-            logger.log_event('WARNING', warning_message="Sync file not deleted - benchmark may have failed initialization")
-            session_result.fi_launched = False
-            session_result.fi_success = False
+                session_result.fi_success = False
+            else:
+                fi_process_pid = fi_result.process.pid
+                session_result.fi_launched = True
+                logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] FI subprocess started with PID {fi_process_pid}")
         
-        # Cleanup sync file
-        cleanup_sync_file(sync_path)
+        except Exception as e:
+            logger.log_event('ERROR', error_message=f"[FI-WAIT-DEBUG] Exception during FI launch: {e}")
+            import traceback
+            logger.log_event('ERROR', error_message=f"Traceback: {traceback.format_exc()}")
+            session_result.fi_launched = True
+            session_result.fi_success = False
+    
+    # Execute benchmark (runs in parallel with FI)
+    logger.log_event('DEBUG', debug_message="[FI-WAIT-DEBUG] Executing benchmark...")
+    exec_result = execute_benchmark(config, benchmark_info, session)
+    logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] Benchmark completed with success={exec_result.success}")
+    
+    # Update session result with benchmark execution status
+    session_result.execution_success = exec_result.success
+    session_result.execution_timed_out = exec_result.timed_out
+    session_result.error_message = exec_result.error_message
+    
+    # Delete sync file to signal FI to stop gracefully
+    # The benchmark has finished, so FI should detect the file is gone and stop
+    if benchmark_info.injection and fi_result:
+        from scripts.build.path_resolver import resolve_sync_file
+        sync_file_path = resolve_sync_file()
+        
+        if sync_file_path.exists():
+            logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] Deleting sync file to signal FI to stop: {sync_file_path}")
+            try:
+                sync_file_path.unlink()
+                logger.log_event('DEBUG', debug_message="[FI-WAIT-DEBUG] Sync file deleted successfully")
+            except Exception as e:
+                logger.log_event('WARNING', warning_message=f"[FI-WAIT-DEBUG] Could not delete sync file: {e}")
+        else:
+            logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] Sync file already gone: {sync_file_path}")
+    
+    # CRITICAL: Wait for FI to complete before moving to next benchmark
+    # Both benchmark AND FI must finish before continuing
+    if benchmark_info.injection and fi_result:
+        logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] BLOCKING: Waiting for FI subprocess (PID {fi_process_pid}) to complete...")
+        logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] Current FI process state: poll()={fi_result.process.poll()}")
+        
+        try:
+            # This MUST block until FI subprocess completes
+            import time
+            wait_start_time = time.time()
+            
+            fi_completion = fi_controller.wait_for_completion(fi_result)
+            
+            wait_duration = time.time() - wait_start_time
+            logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] FI wait_for_completion returned after {wait_duration:.2f}s")
+            logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] FI completion result: success={fi_completion.success}, timed_out={fi_completion.timed_out}, exit_code={fi_completion.exit_code}")
+            
+            session_result.fi_success = fi_completion.success
+            
+            if fi_completion.success:
+                logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] FI completed successfully: {fi_completion.injection_count} injections")
+            elif fi_completion.timed_out:
+                logger.log_event('ERROR', error_message=f"[FI-WAIT-DEBUG] FI timed out after {session.timeout_s}s")
+            else:
+                logger.log_event('ERROR', error_message=f"[FI-WAIT-DEBUG] FI failed: {fi_completion.error_message}")
+            
+            # Verify FI process actually terminated
+            final_poll = fi_result.process.poll()
+            logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] After wait, FI process poll()={final_poll}")
+            
+            if final_poll is None:
+                logger.log_event('WARNING', warning_message=f"[FI-WAIT-DEBUG] FI process (PID {fi_process_pid}) still running after wait_for_completion, forcing termination...")
+                fi_result.process.terminate()
+                try:
+                    fi_result.process.wait(timeout=5)
+                    logger.log_event('DEBUG', debug_message="[FI-WAIT-DEBUG] FI process terminated successfully")
+                except subprocess.TimeoutExpired:
+                    logger.log_event('WARNING', warning_message="[FI-WAIT-DEBUG] FI process did not terminate within 5s, sending SIGKILL...")
+                    fi_result.process.kill()
+                    fi_result.process.wait()
+                    logger.log_event('DEBUG', debug_message="[FI-WAIT-DEBUG] FI process killed")
+            else:
+                logger.log_event('DEBUG', debug_message=f"[FI-WAIT-DEBUG] FI process properly terminated with exit code {final_poll}")
+        
+        except Exception as e:
+            logger.log_event('ERROR', error_message=f"[FI-WAIT-DEBUG] Exception waiting for FI: {e}")
+            import traceback
+            logger.log_event('ERROR', error_message=f"[FI-WAIT-DEBUG] Traceback: {traceback.format_exc()}")
+            session_result.fi_success = False
+    elif benchmark_info.injection and not fi_result:
+        logger.log_event('ERROR', error_message="[FI-WAIT-DEBUG] FI was enabled but fi_result is None/False - skipping wait")
+    else:
+        logger.log_event('DEBUG', debug_message="[FI-WAIT-DEBUG] No FI for this benchmark, continuing immediately")
     
     # Complete session
     if exec_result.success:
@@ -147,33 +202,60 @@ def execute_session(config, benchmark_info, session_manager, fi_controller=None)
         status = "failed"
     
     session_manager.complete_session(session, status=status)
+
+    # Copy generated files to session gen/ directory
+    from scripts.results.directory_manager import create_session_gen_directory
+    import shutil
     
-    # Save session info
-    session_info = {
-        'execution_result': {
-            'success': exec_result.success,
-            'timed_out': exec_result.timed_out,
-            'exit_code': exec_result.exit_code,
-            'metrics': exec_result.metrics,
-        },
-        'fi_launched': session_result.fi_launched,
-        'fi_success': session_result.fi_success,
-    }
+    session_gen_dir = create_session_gen_directory(session.session_dir)
     
-    session_manager.save_session_info(session, session_info)
+    # Copy bench_config file from tmp/generated
+    bench_config_src = cfg.TMP_GENERATED_DIR / f"bench_config_{benchmark_info.name}.h"
+    if bench_config_src.exists():
+        bench_config_dest = session_gen_dir / f"bench_config_{benchmark_info.name}.h"
+        shutil.copy2(bench_config_src, bench_config_dest)
+        logger.log_event('DEBUG', debug_message=f"Copied bench_config to session gen: {bench_config_dest}")
+    
+    # Move tpool file and cleanup gen/ directory if FI was enabled
+    if benchmark_info.injection:
+        import shutil
+        
+        # Move gen/tpool/last_tpool.yaml to session fi/ folder
+        gen_tpool_dir = cfg.ROOT_DIR / 'gen' / 'tpool'
+        tpool_file = gen_tpool_dir / 'last_tpool.yaml'
+        
+        if tpool_file.exists():
+            session_fi_dir = session.session_dir / 'fi'
+            session_fi_dir.mkdir(parents=True, exist_ok=True)
+            dest_tpool_file = session_fi_dir / 'last_tpool.yaml'
+            
+            try:
+                shutil.move(str(tpool_file), str(dest_tpool_file))
+                logger.log_event('DEBUG', debug_message=f"Moved tpool file to {dest_tpool_file}")
+            except Exception as e:
+                logger.log_event('WARNING', warning_message=f"Failed to move tpool file: {e}")
+        
+        # Delete entire gen/ folder in ROOT_DIR
+        gen_dir = cfg.ROOT_DIR / 'gen'
+        if gen_dir.exists():
+            try:
+                shutil.rmtree(gen_dir)
+                logger.log_event('DEBUG', debug_message=f"Deleted gen/ directory: {gen_dir}")
+            except Exception as e:
+                logger.log_event('WARNING', warning_message=f"Failed to delete gen/ directory: {e}")
     
     logger.log_event('SESSION_END', session_id=session.session_id, status=status)
     
     return session_result
 
 
-def run_session_loop(config, benchmark_manager, fi_controller=None):
+def run_session_loop(config, benchmark_manager, fi_controller=None, results_dir=None):
     """
     Run execution loop for all enabled benchmarks.
     
     This is the main orchestrator for benchmark execution. It:
     1. Gets execution-ordered list of benchmarks
-    2. Creates session manager
+    2. Creates session manager with run-specific results directory
     3. Executes each benchmark as a session
     4. Collects all results
     5. Reports summary
@@ -181,7 +263,8 @@ def run_session_loop(config, benchmark_manager, fi_controller=None):
     Args:
         config: The loaded YAML configuration dictionary
         benchmark_manager: BenchmarkManager instance
-        fi_controller: Optional FI controller (Phase 12)
+        fi_controller: Optional FI controller
+        results_dir: Run-specific results directory (e.g., results/baseline_example_210126_0037/)
     
     Returns:
         List of SessionResult objects
@@ -199,8 +282,8 @@ def run_session_loop(config, benchmark_manager, fi_controller=None):
     for i, bench in enumerate(benchmarks, 1):
         logger.log_event('DEBUG', debug_message=f"  {i}. {bench.name} (timeout: {bench.timeout_s}s, FI: {bench.injection})")
     
-    # Create session manager
-    session_manager = SessionManager(config)
+    # Create session manager with run-specific results directory
+    session_manager = SessionManager(config, results_dir=results_dir)
     
     # Execute each benchmark
     results = []

@@ -1,0 +1,135 @@
+# FATORI-V System Hierarchy
+# FPGA: Xilinx XCKU040-FBVA676-1-C (Kintex UltraScale)
+# Target: Pblock-based fault injection for RISC-V Ibex core
+#
+# Hierarchy shows parent-child relationships for all pblock targets
+# Notation: module_name (instance_name) [conditionally present]
+
+system:
+  ibex_top:
+    register_file:
+      # Not a pblock target - register file implementation
+    
+    ibex_core:
+      # Top-level processor core
+      # Conditional: Always present
+      # Size: Varies with features (2.3k-8k LUTs)
+      
+      if_stage:
+        # Instruction fetch stage
+        # Conditional: Always present
+        # Size: ~431 LUTs (no cache) to ~1640 LUTs (with cache + MON)
+        # Contains: prefetch_buffer OR icache (mutually exclusive)
+        
+        prefetch_buffer:
+          # Instruction prefetch buffer
+          # Conditional: FATORI_ICACHE = 0
+          # Size: ~168 LUTs, 196 FFs
+        
+        icache:
+          # Instruction cache
+          # Conditional: FATORI_ICACHE = 1
+          # Size: ~4 LUTs (wrapper, actual cache in BRAM)
+        
+        branch_predict:
+          # Branch predictor
+          # Conditional: FATORI_BRANCH_PRED = 1
+          # Size: ~38 LUTs
+      
+      id_stage:
+        # Instruction decode stage
+        # Conditional: Always present
+        # Size: ~365 LUTs (baseline) to ~1457 LUTs (with features + MON)
+        
+        decoder:
+          # Instruction decoder
+          # Conditional: Always present
+          # Size: ~93 LUTs (no MON) to ~1028 LUTs (MON_N=3)
+          # Note: May be optimized/merged when FATORI_FI=1 (drops to 27L)
+        
+        controller:
+          # Controller FSM
+          # Conditional: Always present
+          # Size: ~129 LUTs, 14 FFs (no MON)
+          # Note: May be optimized/merged when FATORI_FI=1 (drops to 18L)
+      
+      ex_block:
+        # Execution stage
+        # Conditional: Always present
+        # Size: ~238 LUTs (just ALU) to ~2825 LUTs (ALU+MUL with MON)
+        
+        alu:
+          # Arithmetic Logic Unit
+          # Conditional: Always present
+          # Size: Varies with RV32B:
+          #   - RV32BNone: 238 LUTs
+          #   - RV32BBalanced: 1006 LUTs
+          #   - RV32BFull: 2118 LUTs
+        
+        multdiv:
+          # Multiplier/Divider unit
+          # Conditional: FATORI_RV32M != RV32MNone
+          # Variants:
+          #   - multdiv_slow: ~621 LUTs, 76 FFs
+          #   - multdiv_fast: ~466 LUTs, 75 FFs
+      
+      load_store_unit:
+        # Memory load/store unit
+        # Conditional: Always present
+        # Size: ~154 LUTs, 68 FFs (baseline)
+        # Note: Relatively stable across configs
+      
+      wb_stage:
+        # Writeback stage
+        # Conditional: FATORI_WSTAGE = 1
+        # Size: ~33 LUTs (minimal, mostly glue logic)
+        # Note: CURRENTLY DISABLED - breaks architecture
+      
+      cs_registers:
+        # Control and Status Registers
+        # Conditional: Always present
+        # Size: Varies with METRIC_LAYER:
+        #   - METRIC_LAYER 0: 929 LUTs, 435 FFs
+        #   - METRIC_LAYER 1: 1177 LUTs, 763 FFs
+        #   - METRIC_LAYER 5: 1152 LUTs, 763 FFs
+    
+    fault_mgr:
+      # Fault management and metrics collection
+      # Conditional: FATORI_FAULT_MGR = 1 (typically with FATORI_FI)
+      # Size: Varies with METRIC_LAYER:
+      #   - METRIC_LAYER 2: 2 LUTs, 33 FFs
+      #   - METRIC_LAYER 5: 38 LUTs, 194 FFs
+      # Note: NOT a pblock target
+
+# Pblock Targets Summary (11 modules)
+pblock_targets:
+  - alu                # Arithmetic Logic Unit
+  - controller         # Control FSM
+  - decoder            # Instruction decoder
+  - load_store_unit    # LSU (memory interface)
+  - if_stage          # Instruction fetch stage
+  - id_stage          # Instruction decode stage
+  - ex_block          # Execution block (contains ALU + multdiv)
+  - wb_stage          # Writeback stage (DISABLED)
+  - prefetch_buffer   # Prefetch buffer (when ICACHE=0)
+  - branch_predict    # Branch predictor (when enabled)
+  - multdiv           # Multiplier/Divider (when RV32M enabled)
+
+# Non-target modules (infrastructure)
+infrastructure:
+  - register_file     # Register file (FF-based or LUTRAM)
+  - cs_registers      # CSR block (affects core size but not targeted)
+  - fault_mgr         # Fault manager (metrics collection)
+  - fi_coms           # FI communication (UART command parser)
+  - sem_ip            # Xilinx SEM IP (configuration memory scrubbing)
+
+# Notes on module relationships:
+# 1. Nested pblocks: id_stage contains controller and decoder
+#    - Allows targeting either individually or together
+# 2. Mutually exclusive: prefetch_buffer XOR icache (never both)
+# 3. MON wrappers: When MON_N > 1, module is replicated N times
+#    - Wrapper has keep_hierarchy, replicas do not (for timing)
+#    - Vivado optimizes replicas, sizes scale sub-linearly
+# 4. Optimization effects: With FATORI_FI=1, some modules merge/optimize
+#    - Controller: 129L → 18L
+#    - Decoder: 93L → 27L

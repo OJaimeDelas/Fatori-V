@@ -100,19 +100,26 @@ def generate_coremark_config(bench_config):
     Generate configuration macros for CoreMark benchmark.
     
     Args:
-        bench_config: Configuration dictionary for CoreMark
+        bench_config: Full benchmark configuration dictionary (includes enable, timeout_s, config, etc.)
     
     Returns:
         List of C macro definition lines
     """
     lines = []
     
+    # Extract config sub-dictionary if present
+    if isinstance(bench_config, dict) and "config" in bench_config:
+        config_dict = bench_config["config"]
+    elif isinstance(bench_config, dict):
+        config_dict = bench_config
+    else:
+        config_dict = {}
+    
     # Get iterations value (default to 1000 if not specified)
-    iterations = bench_config.get("iterations", 1000) if isinstance(bench_config, dict) else 1000
+    iterations = config_dict.get("iterations", 1000)
     
     # Define iterations macro
-    macro_name = get_iterations_macro("coremark")
-    lines.append(f"#define {macro_name} {iterations}")
+    lines.append(f"#define ITERATIONS {iterations}")
     
     return lines
 
@@ -122,19 +129,26 @@ def generate_dhrystone_config(bench_config):
     Generate configuration macros for Dhrystone benchmark.
     
     Args:
-        bench_config: Configuration dictionary for Dhrystone
+        bench_config: Full benchmark configuration dictionary (includes enable, timeout_s, config, etc.)
     
     Returns:
         List of C macro definition lines
     """
     lines = []
     
+    # Extract config sub-dictionary if present
+    if isinstance(bench_config, dict) and "config" in bench_config:
+        config_dict = bench_config["config"]
+    elif isinstance(bench_config, dict):
+        config_dict = bench_config
+    else:
+        config_dict = {}
+    
     # Get iterations value (default to 1000 if not specified)
-    iterations = bench_config.get("iterations", 1000) if isinstance(bench_config, dict) else 1000
+    iterations = config_dict.get("iterations", 1000)
     
     # Define iterations macro
-    macro_name = get_iterations_macro("dhrystone")
-    lines.append(f"#define {macro_name} {iterations}")
+    lines.append(f"#define ITERATIONS {iterations}")
     
     return lines
 
@@ -144,42 +158,47 @@ def generate_fatori_stress_config(bench_config):
     Generate configuration macros for FATORI stress tests.
     
     Args:
-        bench_config: Configuration dictionary for FATORI stress
+        bench_config: Full benchmark configuration dictionary (includes enable, timeout_s, config, etc.)
     
     Returns:
         List of C macro definition lines
     """
     lines = []
     
-    # Get iterations value (default to 100 if not specified)
-    iterations = bench_config.get("iterations", 100) if isinstance(bench_config, dict) else 100
+    # Extract config sub-dictionary if present
+    if isinstance(bench_config, dict) and "config" in bench_config:
+        config_dict = bench_config["config"]
+    elif isinstance(bench_config, dict):
+        config_dict = bench_config
+    else:
+        config_dict = {}
     
-    # Define iterations macro
-    lines.append(f"#define {MACRO_PREFIX}FATORI_ITERATIONS {iterations}")
+    # Get iterations value (default to 100 if not specified)
+    iterations = config_dict.get("iterations", 100)
+    
+    # Define iterations macro (matches default bench_config.h)
+    lines.append(f"#define FATORI_ITERATIONS {iterations}")
     lines.append("")
     
     # Get enabled targets
     stress_macros = get_fatori_stress_target_macros()
     
-    if isinstance(bench_config, dict):
-        targets = bench_config.get("targets", [])
-        
-        # If targets is a list, enable those specific targets
-        if isinstance(targets, list) and targets:
-            lines.append("// Enabled stress test targets:")
-            for target in targets:
-                if target.lower() in stress_macros:
-                    macro_name = stress_macros[target.lower()]
-                    lines.append(f"#define {macro_name} 1")
-        else:
-            # Enable all targets by default
-            lines.append("// All stress test targets enabled:")
-            for target, macro_name in stress_macros.items():
-                lines.append(f"#define {macro_name} 1")
+    targets_config = config_dict.get("targets", {})
+    
+    # If targets is a dict with on/off values, use those
+    if isinstance(targets_config, dict) and targets_config:
+        from scripts.common.yaml_io.yaml_helpers import is_enabled
+        lines.append("// Target enables (1=enabled, 0=disabled)")
+        for target_name, macro_name in stress_macros.items():
+            # Check if this target is enabled in config
+            target_value = targets_config.get(target_name, True)
+            enabled = is_enabled(target_value)
+            value = 1 if enabled else 0
+            lines.append(f"#define {macro_name} {value}")
     else:
         # Enable all targets by default
-        lines.append("// All stress test targets enabled:")
-        for target, macro_name in stress_macros.items():
+        lines.append("// Target enables (1=enabled, 0=disabled)")
+        for target_name, macro_name in stress_macros.items():
             lines.append(f"#define {macro_name} 1")
     
     return lines
@@ -190,47 +209,45 @@ def generate_embench_config(bench_config):
     Generate configuration macros for Embench-IoT benchmark suite.
     
     Args:
-        bench_config: Configuration dictionary for Embench-IoT
+        bench_config: Full benchmark configuration dictionary (includes enable, timeout_s, config, etc.)
     
     Returns:
         List of C macro definition lines
     """
     lines = []
     
-    # Get iterations value (default to 1 if not specified)
-    iterations = bench_config.get("iterations", 1) if isinstance(bench_config, dict) else 1
-    
-    # Define iterations macro
-    macro_name = get_iterations_macro("embench_iot")
-    lines.append(f"#define {macro_name} {iterations}")
-    lines.append("")
-    
     # Get sub-benchmark enable macros
     embench_macros = get_embench_subbench_macros()
     
-    if isinstance(bench_config, dict):
-        sub_benchmarks = bench_config.get("sub_benchmarks", [])
-        
-        # If sub_benchmarks is specified, enable only those
-        if isinstance(sub_benchmarks, list) and sub_benchmarks:
-            lines.append("// Enabled Embench-IoT sub-benchmarks:")
-            for subbench in sub_benchmarks:
-                if subbench.lower() in [k.lower() for k in embench_macros.keys()]:
-                    # Find the correct macro name (case-insensitive)
-                    for bench_name, macro_name in embench_macros.items():
-                        if bench_name.lower() == subbench.lower():
-                            lines.append(f"#define {macro_name} 1")
-                            break
-        else:
-            # Enable all sub-benchmarks by default
-            lines.append("// All Embench-IoT sub-benchmarks enabled:")
-            for bench_name, macro_name in embench_macros.items():
-                lines.append(f"#define {macro_name} 1")
+    lines.append("// Enable/disable individual benchmarks")
+    lines.append("")
+    
+    # Extract config sub-dictionary if present
+    if isinstance(bench_config, dict) and "config" in bench_config:
+        config_dict = bench_config["config"]
+    elif isinstance(bench_config, dict):
+        config_dict = bench_config
+    else:
+        config_dict = {}
+    
+    # Look for embench-benchmarks (hyphen) or embench_benchmarks (underscore) key
+    sub_benchmarks = config_dict.get("embench-benchmarks", config_dict.get("embench_benchmarks", config_dict.get("sub_benchmarks", {})))
+    
+    # If sub_benchmarks is a dict with on/off values, use those
+    if isinstance(sub_benchmarks, dict) and sub_benchmarks:
+        from scripts.common.yaml_io.yaml_helpers import is_enabled
+        for bench_name, macro_name in embench_macros.items():
+            # Check if this sub-benchmark is enabled in config
+            # Try both hyphen and underscore versions of name
+            bench_name_underscore = bench_name.replace('-', '_')
+            bench_value = sub_benchmarks.get(bench_name, sub_benchmarks.get(bench_name_underscore, False))
+            enabled = is_enabled(bench_value)
+            value = 1 if enabled else 0
+            lines.append(f"#define {macro_name:<30} {value}")
     else:
         # Enable all sub-benchmarks by default
-        lines.append("// All Embench-IoT sub-benchmarks enabled:")
         for bench_name, macro_name in embench_macros.items():
-            lines.append(f"#define {macro_name} 1")
+            lines.append(f"#define {macro_name:<30} 1")
     
     return lines
 

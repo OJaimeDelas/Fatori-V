@@ -41,22 +41,34 @@ class BuildResult:
         else:
             return f"Build failed at {self.step_completed}: {self.error_message}"
 
-
-def ensure_builddir_exists():
+def skip_build_for_execution_phase(config, benchmarks):
     """
-    Ensure the build directory exists.
+    Skip build phase when using FULL_MAKE_BUILD strategy.
+    
+    When FULL_MAKE_BUILD is True, fpga-run does both build and execution.
+    This means the BUILD phase should do nothing, and let the EXECUTION
+    phase handle running fpga-run commands.
+    
+    Args:
+        config: The loaded YAML configuration dictionary
+        benchmarks: List of benchmark names
     
     Returns:
-        Tuple of (success: bool, builddir: Path)
+        BuildResult indicating build was skipped
     """
-    builddir = resolve_builddir()
+    log_event('BUILD_SKIP_FULL_STRATEGY',
+              reason='fpga-run will be called in EXECUTION phase',
+              benchmark_count=len(benchmarks))
     
-    if not builddir.exists():
-        log_event('BUILD_DIR_NOT_FOUND', builddir=str(builddir))
-        return False, builddir
+    # Create log file for consistency
+    log_file = cfg.TMP_DIR / "build.log"
+    log_file.parent.mkdir(parents=True, exist_ok=True)
     
-    log_event('BUILD_DIR_FOUND', builddir=str(builddir))
-    return True, builddir
+    return BuildResult(
+        success=True,
+        step_completed='skipped_for_execution',
+        log_file=log_file
+    )
 
 def execute_full_build_strategy(config, benchmarks, builddir, log_file):
     """
@@ -104,7 +116,7 @@ def execute_full_build_strategy(config, benchmarks, builddir, log_file):
         # Execute build
         success, error_message, exit_code = execute_make_command(
             cmd,
-            cwd=builddir,
+            cwd=cfg.ARCHITECTURE_DIR,
             log_file=log_file,
             timeout=None
         )
@@ -180,7 +192,7 @@ def execute_split_build_strategy(config, benchmarks, builddir, log_file):
     
     success, error_message, exit_code = execute_make_command(
         bitstream_cmd,
-        cwd=builddir,
+        cwd=cfg.ARCHITECTURE_DIR,
         log_file=log_file,
         timeout=None
     )
@@ -219,7 +231,7 @@ def execute_split_build_strategy(config, benchmarks, builddir, log_file):
         # Execute build
         success, error_message, exit_code = execute_make_command(
             firmware_cmd,
-            cwd=builddir,
+            cwd=cfg.ARCHITECTURE_DIR,
             log_file=log_file,
             timeout=None
         )
@@ -263,21 +275,14 @@ def build_hardware(config, benchmarks):
               strategy='full' if cfg.FULL_MAKE_BUILD else 'split',
               benchmark_count=len(benchmarks))
     
-    # Ensure build directory exists
-    success, builddir = ensure_builddir_exists()
-    if not success:
-        return BuildResult(
-            success=False,
-            step_completed=None,
-            error_message="Build directory not found"
-        )
-    
     # Create build log file
     log_file = cfg.TMP_DIR / "build.log"
     log_file.parent.mkdir(parents=True, exist_ok=True)
     
     # Execute build strategy
     if cfg.FULL_MAKE_BUILD:
-        return execute_full_build_strategy(config, benchmarks, builddir, log_file)
+        # Skip build - EXECUTION phase will call fpga-run
+        return skip_build_for_execution_phase(config, benchmarks)
     else:
+        # Split strategy: build bitstream now, firmware in execution
         return execute_split_build_strategy(config, benchmarks, builddir, log_file)

@@ -32,7 +32,7 @@ MINIMAL = {
     'PHASE_SUCCESS': {'console': False, 'file': False},
     'PHASE_EXCEPTION': {'console': True, 'file': True},
     
-    # Validation
+    # Validation events
     'VALIDATION_START': {'console': False, 'file': False},
     'VALIDATION_END': {'console': False, 'file': False},
     'VALIDATION_ERROR': {'console': True, 'file': True},
@@ -46,14 +46,27 @@ MINIMAL = {
     'VALIDATION_PHASE_PASSED': {'console': False, 'file': False},
     'VALIDATION_PHASE_FAILED': {'console': True, 'file': True},
     'VALIDATION_PHASE_WARNINGS': {'console': False, 'file': False},
-    'VALIDATION_PHASE_EXECUTING': {'console': False, 'file': False},
-    'VALIDATION_PHASE_PASSED': {'console': False, 'file': False},
-    'VALIDATION_PHASE_WARNINGS': {'console': False, 'file': False},
+    'VALIDATION_START_FULL': {'console': False, 'file': False},
+    'VALIDATION_STRICT_MODE': {'console': False, 'file': False},
+    'VALIDATION_SUMMARY_START': {'console': False, 'file': False},
+    'VALIDATION_SUMMARY_END': {'console': False, 'file': False},
+    'VALIDATION_CONFIG_VALID': {'console': True, 'file': True},
+    'VALIDATION_ERROR_COUNT': {'console': True, 'file': True},
+    'VALIDATION_ERROR_ITEM': {'console': True, 'file': True},
+    'VALIDATION_ERROR_MORE': {'console': True, 'file': True},
+    'VALIDATION_WARNING_COUNT': {'console': False, 'file': False},
+    'VALIDATION_WARNING_ITEM': {'console': False, 'file': False},
+    'VALIDATION_WARNING_MORE': {'console': False, 'file': False},
+    'VALIDATION_CORRECTIONS_APPLIED': {'console': False, 'file': False},
+    'ERROR_VALIDATION_EXCEPTION': {'console': True, 'file': True},
+    'ERROR_VALIDATION_FAILED_CANNOT_PROCEED': {'console': True, 'file': True},
     
+    # Dry-run mode
     'DRY_RUN_MODE_ENABLED': {'console': True, 'file': True},
     'DRY_RUN_COMMAND': {'console': True, 'file': True},
+    'DRY_RUN_REMINDER': {'console': True, 'file': True},
 
-    # Generation
+    # Generation events
     'GENERATION_PHASE_EXECUTING': {'console': False, 'file': False},
     'GENERATION_PHASE_COMPLETE': {'console': False, 'file': False},
     'GENERATION_START': {'console': False, 'file': False},
@@ -81,7 +94,7 @@ MINIMAL = {
     'GENERATION_SYSTEM_INTEGRATION_COMPLETE': {'console': False, 'file': False},
     'GENERATION_COMPLETE': {'console': False, 'file': False},
     
-    # File movement
+    # File movement events
     'FILE_MOVEMENT_START': {'console': False, 'file': False},
     'FILE_MOVEMENT_END': {'console': False, 'file': False},
     'FILE_ALLOCATED': {'console': False, 'file': False},
@@ -93,7 +106,7 @@ MINIMAL = {
     'FILE_MOVEMENT_ERROR': {'console': True, 'file': True},
     'TCL_INPUTS_COPIED': {'console': False, 'file': False},
     
-    # Build
+    # Build events
     'BUILD_START': {'console': False, 'file': False},
     'BUILD_END': {'console': False, 'file': False},
     'BUILD_STEP': {'console': False, 'file': False},
@@ -114,8 +127,19 @@ MINIMAL = {
     'BUILD_ERRORS_SUMMARY': {'console': True, 'file': True},
     'BUILD_LOG_LOCATION': {'console': True, 'file': True},
     'BUILD_BITSTREAM_READY': {'console': False, 'file': False},
+
+    # Pblock system
+    'PBLOCK_SCRIPT_NOT_FOUND': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_CALLING': {'console': False, 'file': False},
+    'PBLOCK_SYSTEM_SUCCESS': {'console': False, 'file': False},
+    'PBLOCK_SYSTEM_FAILED': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_TIMEOUT': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_ERROR': {'console': True, 'file': True},
+    'PBLOCK_OUTPUT_MISSING': {'console': True, 'file': True},
+    'PBLOCK_DICT_MISSING': {'console': False, 'file': False},
+    'PBLOCK_SUMMARY_MISSING': {'console': False, 'file': False},
     
-    # Execution
+    # Execution events
     'EXECUTION_START': {'console': False, 'file': False},
     'EXECUTION_END': {'console': False, 'file': False},
     'BENCHMARK_START': {'console': False, 'file': False},
@@ -128,6 +152,8 @@ MINIMAL = {
     'SESSION_FAILED': {'console': True, 'file': True},
     'BENCHMARK_DISCOVERY': {'console': False, 'file': False},
     'FI_LAUNCH': {'console': False, 'file': False},
+    'FI_COMMAND_BUILD_FAILED': {'console': True, 'file': True},
+    'FI_COMMAND_BUILT': {'console': True, 'file': True},
     'FI_COMPLETE': {'console': False, 'file': False},
     'FI_ERROR': {'console': True, 'file': True},
     'CONSOLE_OUTPUT': {'console': False, 'file': False},
@@ -150,7 +176,7 @@ MINIMAL = {
     'EXECUTION_TRACEBACK': {'console': True, 'file': True},
     'EXECUTION_DATA_READY': {'console': False, 'file': False},
     
-    # Pblocks
+    # Pblock events
     'PBLOCK_CONFIG_CREATED': {'console': False, 'file': False},
     'PBLOCK_GENERATION_START': {'console': False, 'file': False},
     'PBLOCK_GENERATION_END': {'console': False, 'file': False},
@@ -158,14 +184,96 @@ MINIMAL = {
     'PBLOCK_MODULE_PROCESSED': {'console': False, 'file': False},
     'PBLOCK_TCL_GENERATED': {'console': False, 'file': False},
     
-    # Results
+    # Results events
     'RESULTS_START': {'console': False, 'file': False},
     'RESULTS_END': {'console': False, 'file': False},
     'RESULTS_SUMMARY': {'console': True, 'file': True},
     'RESULTS_FILE_CREATED': {'console': False, 'file': False},
     'RESULTS_METRICS_COLLECTED': {'console': False, 'file': False},
+    'RESULTS_PHASE_START': {'console': False, 'file': False},
+    'RESULTS_SESSION_COLLECTION_START': {'console': False, 'file': False},
+    'RESULTS_NO_SESSIONS': {'console': True, 'file': True},
+    'RESULTS_SESSION_METRICS_COLLECTED': {'console': False, 'file': False},
+    'RESULTS_SESSIONS_FOUND': {'console': False, 'file': False},
+    'RESULTS_BUILD_COLLECTION_START': {'console': False, 'file': False},
+    'RESULTS_BUILD_METRICS_COLLECTED': {'console': False, 'file': False},
+    'RESULTS_BUILD_METRICS_UNAVAILABLE': {'console': False, 'file': False},
+    'RESULTS_AGGREGATION_START': {'console': False, 'file': False},
+    'RESULTS_AGGREGATION_COMPLETE': {'console': False, 'file': False},
+    'RESULTS_SUMMARY_GENERATION_START': {'console': False, 'file': False},
+    'RESULTS_SUMMARY_GENERATED': {'console': False, 'file': False},
+    'RESULTS_EXCEL_EXPORT_START': {'console': False, 'file': False},
+    'RESULTS_EXCEL_EXPORTED': {'console': False, 'file': False},
+    'RESULTS_EXCEL_EXPORT_FAILED': {'console': False, 'file': False},
+    'RESULTS_CSV_EXPORT_START': {'console': False, 'file': False},
+    'RESULTS_CSV_EXPORTED': {'console': False, 'file': False},
+    'RESULTS_VALIDATION_START': {'console': False, 'file': False},
+    'RESULTS_VALIDATION_FAILED': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_PASSED': {'console': False, 'file': False},
+    'RESULTS_VALIDATION_WARNINGS': {'console': False, 'file': False},
+    'RESULTS_PHASE_SUMMARY': {'console': False, 'file': False},
+    'RESULTS_PHASE_EXCEPTION': {'console': True, 'file': True},
+    'RESULTS_TRACEBACK': {'console': True, 'file': True},
+    'RESULTS_RUN_DIR_CREATED': {'console': True, 'file': True},
+    'RESULTS_STRUCTURE_INITIALIZED': {'console': True, 'file': True},
+
+    # Results - Metrics & Logs
+    'METRICS_RETRIEVAL_SOURCE_MISSING': {'console': False, 'file': True},
+    'METRICS_RETRIEVED': {'console': False, 'file': True},
+    'METRICS_RETRIEVAL_FAILED': {'console': True, 'file': True},
+    'FI_LOG_SOURCE_MISSING': {'console': False, 'file': True},
+    'FI_LOG_COLLECTED': {'console': False, 'file': True},
+    'FI_LOG_COLLECTION_FAILED': {'console': True, 'file': True},
+    'YAML_COPY_SOURCE_MISSING': {'console': True, 'file': True},
+    'YAML_ORIGINAL_COPIED': {'console': False, 'file': True},
+    'YAML_VERIFIED_SAVED': {'console': False, 'file': True},
+    'YAML_COPY_FAILED': {'console': True, 'file': True},
+    'YAML_SAVE_FAILED': {'console': True, 'file': True},
+    'REPORTS_COPY_SOURCE_MISSING': {'console': False, 'file': True},
+    'REPORTS_COPIED': {'console': True, 'file': True},
+    'REPORTS_COPY_FAILED': {'console': True, 'file': True},
+    'VIVADO_PARSER_NOT_FOUND': {'console': True, 'file': True},
+    'VIVADO_PARSER_REPORTS_MISSING': {'console': True, 'file': True},
+    'VIVADO_PARSER_START': {'console': True, 'file': True},
+    'VIVADO_PARSER_SUCCESS': {'console': True, 'file': True},
+    'VIVADO_PARSER_NO_OUTPUT': {'console': True, 'file': True},
+    'VIVADO_PARSER_FAILED': {'console': True, 'file': True},
+    'VIVADO_PARSER_TIMEOUT': {'console': True, 'file': True},
+    'VIVADO_PARSER_EXCEPTION': {'console': True, 'file': True},
+
+    # User Validation
+    'USER_VALIDATION_START': {'console': True, 'file': True},
+    'USER_VALIDATION_INVALID_CHECK': {'console': True, 'file': True},
+    'USER_VALIDATION_CHECK_ERROR': {'console': True, 'file': True},
+    'USER_VALIDATION_ERROR': {'console': True, 'file': True},
+    'USER_VALIDATION_WARNING': {'console': True, 'file': True},
+    'USER_VALIDATION_CORRECTION_APPLIED': {'console': True, 'file': True},
+    'USER_VALIDATION_CORRECTION_FAILED': {'console': True, 'file': True},
+    'USER_VALIDATION_COMPLETE': {'console': True, 'file': True},
+    'USER_VALIDATION_NOT_AVAILABLE': {'console': True, 'file': True},
+    'USER_VALIDATION_EXCEPTION': {'console': True, 'file': True},
     
-    # Parser
+    # Session Results
+    'SESSION_RESULTS_PARSE_ERROR': {'console': True, 'file': True},
+    'SESSION_RESULTS_NO_METRICS': {'console': True, 'file': True},
+    'SESSION_RESULTS_CSV_GENERATED': {'console': True, 'file': True},
+    'SESSION_RESULTS_CSV_FAILED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_GENERATED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_FAILED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_UNAVAILABLE': {'console': True, 'file': True},
+    'SESSION_RESULTS_NO_SESSIONS_DIR': {'console': True, 'file': True},
+    'SESSION_RESULTS_GENERATION_COMPLETE': {'console': True, 'file': True},
+    
+    # Run Results
+    'RUN_RESULTS_NO_VIVADO_METRICS': {'console': True, 'file': True},
+    'RUN_RESULTS_VIVADO_LOAD_ERROR': {'console': True, 'file': True},
+    'RUN_RESULTS_CSV_GENERATED': {'console': True, 'file': True},
+    'RUN_RESULTS_CSV_FAILED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_GENERATED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_FAILED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_UNAVAILABLE': {'console': True, 'file': True},
+    
+    # Parser events
     'PARSER_START': {'console': False, 'file': False},
     'PARSER_REPORT_PARSED': {'console': False, 'file': False},
     'PARSER_COMPLETE': {'console': False, 'file': False},
@@ -173,7 +281,7 @@ MINIMAL = {
     'PARSER_ERROR_PARSE_FAILED': {'console': True, 'file': True},
     'PARSER_METRICS_EXTRACTED': {'console': False, 'file': False},
     
-    # CLI/UI
+    # CLI/UI events
     'CLI_DRY_RUN_START': {'console': False, 'file': False},
     'CLI_CONFIG_SUMMARY': {'console': False, 'file': False},
     'CLI_FILES_TO_GENERATE': {'console': False, 'file': False},
@@ -189,15 +297,36 @@ MINIMAL = {
     'RECOVERY_STATE_SAVED': {'console': False, 'file': False},
     'RECOVERY_STATE_LOADED': {'console': False, 'file': False},
     'RECOVERY_RESUME_START': {'console': False, 'file': False},
-    
+
+    # Architecture Restoration
+    'ARCH_RESTORE_START': {'console': True, 'file': True},
+    'ARCH_RESTORE_NO_BACKUP': {'console': True, 'file': True},
+    'ARCH_RESTORE_NO_ARCH_DIR': {'console': True, 'file': True},
+    'ARCH_RESTORE_REMOVING_CURRENT': {'console': True, 'file': True},
+    'ARCH_RESTORE_COPYING_BACKUP': {'console': True, 'file': True},
+    'ARCH_RESTORE_SUCCESS': {'console': True, 'file': True},
+    'ARCH_RESTORE_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_CLEANUP_TMP': {'console': True, 'file': True},
+    'ARCH_RESTORE_TMP_CLEANED': {'console': True, 'file': True},
+    'ARCH_RESTORE_TMP_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_START': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_PARTIAL': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_COMPLETE': {'console': True, 'file': True},
+
     # Mapping
     'MAPPING_BOARD': {'console': False, 'file': False},
     'MAPPING_ISA': {'console': False, 'file': False},
     
     # Cleanup
-    'CLEANUP_START': {'console': False, 'file': False},
-    'CLEANUP_END': {'console': False, 'file': False},
-    'CLEANUP_TMP_DIR': {'console': False, 'file': False},
+    'CLEANUP_START': {'console': True, 'file': True},
+    'CLEANUP_END': {'console': True, 'file': True},
+    'CLEANUP_TMP_DIR': {'console': True, 'file': True},
+    'CLEANUP_SKIP_DRY_RUN': {'console': True, 'file': True},
+    'CLEANUP_PRESERVING_TMP': {'console': True, 'file': True},
+    'CLEANUP_TMP_CLEANED': {'console': True, 'file': True}, 
+    'CLEANUP_TMP_FAILED': {'console': True, 'file': True},
+    'DEBUG_TMP_DIR_NOT_EXISTS': {'console': False, 'file': False},
     
     # Setup
     'SETUP_START': {'console': False, 'file': False},
@@ -256,7 +385,7 @@ NORMAL = {
     'PHASE_SUCCESS': {'console': True, 'file': True},
     'PHASE_EXCEPTION': {'console': True, 'file': True},
     
-    # Validation
+    # Validation events
     'VALIDATION_START': {'console': True, 'file': True},
     'VALIDATION_END': {'console': True, 'file': True},
     'VALIDATION_ERROR': {'console': True, 'file': True},
@@ -270,14 +399,27 @@ NORMAL = {
     'VALIDATION_PHASE_PASSED': {'console': True, 'file': True},
     'VALIDATION_PHASE_FAILED': {'console': True, 'file': True},
     'VALIDATION_PHASE_WARNINGS': {'console': True, 'file': True},
-    'VALIDATION_PHASE_EXECUTING': {'console': True, 'file': True},
-    'VALIDATION_PHASE_PASSED': {'console': True, 'file': True},
-    'VALIDATION_PHASE_WARNINGS': {'console': True, 'file': True},
+    'VALIDATION_START_FULL': {'console': False, 'file': True},
+    'VALIDATION_STRICT_MODE': {'console': False, 'file': True},
+    'VALIDATION_SUMMARY_START': {'console': False, 'file': True},
+    'VALIDATION_SUMMARY_END': {'console': False, 'file': True},
+    'VALIDATION_CONFIG_VALID': {'console': True, 'file': True},
+    'VALIDATION_ERROR_COUNT': {'console': True, 'file': True},
+    'VALIDATION_ERROR_ITEM': {'console': True, 'file': True},
+    'VALIDATION_ERROR_MORE': {'console': True, 'file': True},
+    'VALIDATION_WARNING_COUNT': {'console': True, 'file': True},
+    'VALIDATION_WARNING_ITEM': {'console': True, 'file': True},
+    'VALIDATION_WARNING_MORE': {'console': True, 'file': True},
+    'VALIDATION_CORRECTIONS_APPLIED': {'console': True, 'file': True},
+    'ERROR_VALIDATION_EXCEPTION': {'console': True, 'file': True},
+    'ERROR_VALIDATION_FAILED_CANNOT_PROCEED': {'console': True, 'file': True},
     
+    # Dry-run mode
     'DRY_RUN_MODE_ENABLED': {'console': True, 'file': True},
     'DRY_RUN_COMMAND': {'console': True, 'file': True},
+    'DRY_RUN_REMINDER': {'console': True, 'file': True},
 
-    # Generation
+    # Generation events
     'GENERATION_START': {'console': True, 'file': True},
     'GENERATION_END': {'console': True, 'file': True},
     'FILE_GENERATED': {'console': False, 'file': True},
@@ -303,7 +445,7 @@ NORMAL = {
     'GENERATION_SYSTEM_INTEGRATION_COMPLETE': {'console': True, 'file': True},
     'GENERATION_COMPLETE': {'console': True, 'file': True},
     
-    # File movement
+    # File movement events
     'FILE_MOVEMENT_START': {'console': True, 'file': True},
     'FILE_MOVEMENT_END': {'console': True, 'file': True},
     'FILE_ALLOCATED': {'console': False, 'file': True},
@@ -315,7 +457,7 @@ NORMAL = {
     'FILE_MOVEMENT_ERROR': {'console': True, 'file': True},
     'TCL_INPUTS_COPIED': {'console': True, 'file': True},
     
-    # Build
+    # Build events
     'BUILD_START': {'console': True, 'file': True},
     'BUILD_END': {'console': True, 'file': True},
     'BUILD_STEP': {'console': True, 'file': True},
@@ -337,7 +479,18 @@ NORMAL = {
     'BUILD_LOG_LOCATION': {'console': True, 'file': True},
     'BUILD_BITSTREAM_READY': {'console': True, 'file': True},
     
-    # Execution
+    # Pblock system
+    'PBLOCK_SCRIPT_NOT_FOUND': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_CALLING': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_SUCCESS': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_FAILED': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_TIMEOUT': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_ERROR': {'console': True, 'file': True},
+    'PBLOCK_OUTPUT_MISSING': {'console': True, 'file': True},
+    'PBLOCK_DICT_MISSING': {'console': True, 'file': True},
+    'PBLOCK_SUMMARY_MISSING': {'console': True, 'file': True},
+
+    # Execution events
     'EXECUTION_START': {'console': True, 'file': True},
     'EXECUTION_END': {'console': True, 'file': True},
     'BENCHMARK_START': {'console': True, 'file': True},
@@ -350,6 +503,8 @@ NORMAL = {
     'SESSION_FAILED': {'console': True, 'file': True},
     'BENCHMARK_DISCOVERY': {'console': True, 'file': True},
     'FI_LAUNCH': {'console': True, 'file': True},
+    'FI_COMMAND_BUILD_FAILED': {'console': True, 'file': True},
+    'FI_COMMAND_BUILT': {'console': True, 'file': True},
     'FI_COMPLETE': {'console': True, 'file': True},
     'FI_ERROR': {'console': True, 'file': True},
     'CONSOLE_OUTPUT': {'console': False, 'file': True},
@@ -372,7 +527,7 @@ NORMAL = {
     'EXECUTION_TRACEBACK': {'console': True, 'file': True},
     'EXECUTION_DATA_READY': {'console': True, 'file': True},
     
-    # Pblocks
+    # Pblock events
     'PBLOCK_CONFIG_CREATED': {'console': True, 'file': True},
     'PBLOCK_GENERATION_START': {'console': True, 'file': True},
     'PBLOCK_GENERATION_END': {'console': True, 'file': True},
@@ -380,14 +535,96 @@ NORMAL = {
     'PBLOCK_MODULE_PROCESSED': {'console': False, 'file': True},
     'PBLOCK_TCL_GENERATED': {'console': True, 'file': True},
     
-    # Results
+    # Results events
     'RESULTS_START': {'console': True, 'file': True},
     'RESULTS_END': {'console': True, 'file': True},
     'RESULTS_SUMMARY': {'console': True, 'file': True},
     'RESULTS_FILE_CREATED': {'console': True, 'file': True},
     'RESULTS_METRICS_COLLECTED': {'console': True, 'file': True},
+    'RESULTS_PHASE_START': {'console': True, 'file': True},
+    'RESULTS_SESSION_COLLECTION_START': {'console': True, 'file': True},
+    'RESULTS_NO_SESSIONS': {'console': True, 'file': True},
+    'RESULTS_SESSION_METRICS_COLLECTED': {'console': True, 'file': True},
+    'RESULTS_SESSIONS_FOUND': {'console': True, 'file': True},
+    'RESULTS_BUILD_COLLECTION_START': {'console': True, 'file': True},
+    'RESULTS_BUILD_METRICS_COLLECTED': {'console': True, 'file': True},
+    'RESULTS_BUILD_METRICS_UNAVAILABLE': {'console': True, 'file': True},
+    'RESULTS_AGGREGATION_START': {'console': True, 'file': True},
+    'RESULTS_AGGREGATION_COMPLETE': {'console': True, 'file': True},
+    'RESULTS_SUMMARY_GENERATION_START': {'console': True, 'file': True},
+    'RESULTS_SUMMARY_GENERATED': {'console': True, 'file': True},
+    'RESULTS_EXCEL_EXPORT_START': {'console': True, 'file': True},
+    'RESULTS_EXCEL_EXPORTED': {'console': True, 'file': True},
+    'RESULTS_EXCEL_EXPORT_FAILED': {'console': True, 'file': True},
+    'RESULTS_CSV_EXPORT_START': {'console': True, 'file': True},
+    'RESULTS_CSV_EXPORTED': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_START': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_FAILED': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_PASSED': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_WARNINGS': {'console': True, 'file': True},
+    'RESULTS_PHASE_SUMMARY': {'console': True, 'file': True},
+    'RESULTS_PHASE_EXCEPTION': {'console': True, 'file': True},
+    'RESULTS_TRACEBACK': {'console': True, 'file': True},
+    'RESULTS_RUN_DIR_CREATED': {'console': True, 'file': True},
+    'RESULTS_STRUCTURE_INITIALIZED': {'console': True, 'file': True},
+
+    # Results - Metrics & Logs
+    'METRICS_RETRIEVAL_SOURCE_MISSING': {'console': False, 'file': True},
+    'METRICS_RETRIEVED': {'console': False, 'file': True},
+    'METRICS_RETRIEVAL_FAILED': {'console': True, 'file': True},
+    'FI_LOG_SOURCE_MISSING': {'console': False, 'file': True},
+    'FI_LOG_COLLECTED': {'console': False, 'file': True},
+    'FI_LOG_COLLECTION_FAILED': {'console': True, 'file': True},
+    'YAML_COPY_SOURCE_MISSING': {'console': True, 'file': True},
+    'YAML_ORIGINAL_COPIED': {'console': False, 'file': True},
+    'YAML_VERIFIED_SAVED': {'console': False, 'file': True},
+    'YAML_COPY_FAILED': {'console': True, 'file': True},
+    'YAML_SAVE_FAILED': {'console': True, 'file': True},
+    'REPORTS_COPY_SOURCE_MISSING': {'console': False, 'file': True},
+    'REPORTS_COPIED': {'console': True, 'file': True},
+    'REPORTS_COPY_FAILED': {'console': True, 'file': True},
+    'VIVADO_PARSER_NOT_FOUND': {'console': True, 'file': True},
+    'VIVADO_PARSER_REPORTS_MISSING': {'console': True, 'file': True},
+    'VIVADO_PARSER_START': {'console': True, 'file': True},
+    'VIVADO_PARSER_SUCCESS': {'console': True, 'file': True},
+    'VIVADO_PARSER_NO_OUTPUT': {'console': True, 'file': True},
+    'VIVADO_PARSER_FAILED': {'console': True, 'file': True},
+    'VIVADO_PARSER_TIMEOUT': {'console': True, 'file': True},
+    'VIVADO_PARSER_EXCEPTION': {'console': True, 'file': True},
+
+    # User Validation
+    'USER_VALIDATION_START': {'console': True, 'file': True},
+    'USER_VALIDATION_INVALID_CHECK': {'console': True, 'file': True},
+    'USER_VALIDATION_CHECK_ERROR': {'console': True, 'file': True},
+    'USER_VALIDATION_ERROR': {'console': True, 'file': True},
+    'USER_VALIDATION_WARNING': {'console': True, 'file': True},
+    'USER_VALIDATION_CORRECTION_APPLIED': {'console': True, 'file': True},
+    'USER_VALIDATION_CORRECTION_FAILED': {'console': True, 'file': True},
+    'USER_VALIDATION_COMPLETE': {'console': True, 'file': True},
+    'USER_VALIDATION_NOT_AVAILABLE': {'console': True, 'file': True},
+    'USER_VALIDATION_EXCEPTION': {'console': True, 'file': True},
     
-    # Parser
+    # Session Results
+    'SESSION_RESULTS_PARSE_ERROR': {'console': True, 'file': True},
+    'SESSION_RESULTS_NO_METRICS': {'console': True, 'file': True},
+    'SESSION_RESULTS_CSV_GENERATED': {'console': True, 'file': True},
+    'SESSION_RESULTS_CSV_FAILED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_GENERATED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_FAILED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_UNAVAILABLE': {'console': True, 'file': True},
+    'SESSION_RESULTS_NO_SESSIONS_DIR': {'console': True, 'file': True},
+    'SESSION_RESULTS_GENERATION_COMPLETE': {'console': True, 'file': True},
+    
+    # Run Results
+    'RUN_RESULTS_NO_VIVADO_METRICS': {'console': True, 'file': True},
+    'RUN_RESULTS_VIVADO_LOAD_ERROR': {'console': True, 'file': True},
+    'RUN_RESULTS_CSV_GENERATED': {'console': True, 'file': True},
+    'RUN_RESULTS_CSV_FAILED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_GENERATED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_FAILED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_UNAVAILABLE': {'console': True, 'file': True},
+    
+    # Parser events
     'PARSER_START': {'console': True, 'file': True},
     'PARSER_REPORT_PARSED': {'console': True, 'file': True},
     'PARSER_COMPLETE': {'console': True, 'file': True},
@@ -395,7 +632,7 @@ NORMAL = {
     'PARSER_ERROR_PARSE_FAILED': {'console': True, 'file': True},
     'PARSER_METRICS_EXTRACTED': {'console': True, 'file': True},
     
-    # CLI/UI
+    # CLI/UI events
     'CLI_DRY_RUN_START': {'console': True, 'file': True},
     'CLI_CONFIG_SUMMARY': {'console': True, 'file': True},
     'CLI_FILES_TO_GENERATE': {'console': True, 'file': True},
@@ -411,6 +648,22 @@ NORMAL = {
     'RECOVERY_STATE_SAVED': {'console': True, 'file': True},
     'RECOVERY_STATE_LOADED': {'console': True, 'file': True},
     'RECOVERY_RESUME_START': {'console': True, 'file': True},
+
+    # Architecture Restoration
+    'ARCH_RESTORE_START': {'console': True, 'file': True},
+    'ARCH_RESTORE_NO_BACKUP': {'console': True, 'file': True},
+    'ARCH_RESTORE_NO_ARCH_DIR': {'console': True, 'file': True},
+    'ARCH_RESTORE_REMOVING_CURRENT': {'console': True, 'file': True},
+    'ARCH_RESTORE_COPYING_BACKUP': {'console': True, 'file': True},
+    'ARCH_RESTORE_SUCCESS': {'console': True, 'file': True},
+    'ARCH_RESTORE_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_CLEANUP_TMP': {'console': True, 'file': True},
+    'ARCH_RESTORE_TMP_CLEANED': {'console': True, 'file': True},
+    'ARCH_RESTORE_TMP_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_START': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_PARTIAL': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_COMPLETE': {'console': True, 'file': True},
     
     # Mapping
     'MAPPING_BOARD': {'console': False, 'file': True},
@@ -419,7 +672,12 @@ NORMAL = {
     # Cleanup
     'CLEANUP_START': {'console': True, 'file': True},
     'CLEANUP_END': {'console': True, 'file': True},
-    'CLEANUP_TMP_DIR': {'console': False, 'file': True},
+    'CLEANUP_TMP_DIR': {'console': True, 'file': True},
+    'CLEANUP_SKIP_DRY_RUN': {'console': True, 'file': True},
+    'CLEANUP_PRESERVING_TMP': {'console': True, 'file': True},
+    'CLEANUP_TMP_CLEANED': {'console': True, 'file': True}, 
+    'CLEANUP_TMP_FAILED': {'console': True, 'file': True},
+    'DEBUG_TMP_DIR_NOT_EXISTS': {'console': False, 'file': False},
     
     # Setup
     'SETUP_START': {'console': True, 'file': True},
@@ -478,7 +736,7 @@ VERBOSE = {
     'PHASE_SUCCESS': {'console': True, 'file': True},
     'PHASE_EXCEPTION': {'console': True, 'file': True},
     
-    # Validation
+    # Validation events
     'VALIDATION_START': {'console': True, 'file': True},
     'VALIDATION_END': {'console': True, 'file': True},
     'VALIDATION_ERROR': {'console': True, 'file': True},
@@ -492,14 +750,27 @@ VERBOSE = {
     'VALIDATION_PHASE_PASSED': {'console': True, 'file': True},
     'VALIDATION_PHASE_FAILED': {'console': True, 'file': True},
     'VALIDATION_PHASE_WARNINGS': {'console': True, 'file': True},
-    'VALIDATION_PHASE_EXECUTING': {'console': True, 'file': True},
-    'VALIDATION_PHASE_PASSED': {'console': True, 'file': True},
-    'VALIDATION_PHASE_WARNINGS': {'console': True, 'file': True},
+    'VALIDATION_START_FULL': {'console': True, 'file': True},
+    'VALIDATION_STRICT_MODE': {'console': True, 'file': True},
+    'VALIDATION_SUMMARY_START': {'console': True, 'file': True},
+    'VALIDATION_SUMMARY_END': {'console': True, 'file': True},
+    'VALIDATION_CONFIG_VALID': {'console': True, 'file': True},
+    'VALIDATION_ERROR_COUNT': {'console': True, 'file': True},
+    'VALIDATION_ERROR_ITEM': {'console': True, 'file': True},
+    'VALIDATION_ERROR_MORE': {'console': True, 'file': True},
+    'VALIDATION_WARNING_COUNT': {'console': True, 'file': True},
+    'VALIDATION_WARNING_ITEM': {'console': True, 'file': True},
+    'VALIDATION_WARNING_MORE': {'console': True, 'file': True},
+    'VALIDATION_CORRECTIONS_APPLIED': {'console': True, 'file': True},
+    'ERROR_VALIDATION_EXCEPTION': {'console': True, 'file': True},
+    'ERROR_VALIDATION_FAILED_CANNOT_PROCEED': {'console': True, 'file': True},
     
+    # Dry-run mode
     'DRY_RUN_MODE_ENABLED': {'console': True, 'file': True},
     'DRY_RUN_COMMAND': {'console': True, 'file': True},
+    'DRY_RUN_REMINDER': {'console': True, 'file': True},
     
-    # Generation
+    # Generation events
     'GENERATION_START': {'console': True, 'file': True},
     'GENERATION_END': {'console': True, 'file': True},
     'FILE_GENERATED': {'console': True, 'file': True},
@@ -527,7 +798,7 @@ VERBOSE = {
     'GENERATION_SYSTEM_INTEGRATION_COMPLETE': {'console': True, 'file': True},
     'GENERATION_COMPLETE': {'console': True, 'file': True},
     
-    # File movement
+    # File movement events
     'FILE_MOVEMENT_START': {'console': True, 'file': True},
     'FILE_MOVEMENT_END': {'console': True, 'file': True},
     'FILE_ALLOCATED': {'console': True, 'file': True},
@@ -539,7 +810,7 @@ VERBOSE = {
     'FILE_MOVEMENT_ERROR': {'console': True, 'file': True},
     'TCL_INPUTS_COPIED': {'console': True, 'file': True},
     
-    # Build
+    # Build events
     'BUILD_START': {'console': True, 'file': True},
     'BUILD_END': {'console': True, 'file': True},
     'BUILD_STEP': {'console': True, 'file': True},
@@ -561,7 +832,18 @@ VERBOSE = {
     'BUILD_LOG_LOCATION': {'console': True, 'file': True},
     'BUILD_BITSTREAM_READY': {'console': True, 'file': True},
     
-    # Execution
+    # Pblock system
+    'PBLOCK_SCRIPT_NOT_FOUND': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_CALLING': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_SUCCESS': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_FAILED': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_TIMEOUT': {'console': True, 'file': True},
+    'PBLOCK_SYSTEM_ERROR': {'console': True, 'file': True},
+    'PBLOCK_OUTPUT_MISSING': {'console': True, 'file': True},
+    'PBLOCK_DICT_MISSING': {'console': True, 'file': True},
+    'PBLOCK_SUMMARY_MISSING': {'console': True, 'file': True},
+
+    # Execution events
     'EXECUTION_START': {'console': True, 'file': True},
     'EXECUTION_END': {'console': True, 'file': True},
     'BENCHMARK_START': {'console': True, 'file': True},
@@ -574,6 +856,8 @@ VERBOSE = {
     'SESSION_FAILED': {'console': True, 'file': True},
     'BENCHMARK_DISCOVERY': {'console': True, 'file': True},
     'FI_LAUNCH': {'console': True, 'file': True},
+    'FI_COMMAND_BUILD_FAILED': {'console': True, 'file': True},
+    'FI_COMMAND_BUILT': {'console': True, 'file': True},
     'FI_COMPLETE': {'console': True, 'file': True},
     'FI_ERROR': {'console': True, 'file': True},
     'CONSOLE_OUTPUT': {'console': False, 'file': True},
@@ -596,7 +880,7 @@ VERBOSE = {
     'EXECUTION_TRACEBACK': {'console': True, 'file': True},
     'EXECUTION_DATA_READY': {'console': True, 'file': True},
     
-    # Pblocks
+    # Pblock events
     'PBLOCK_CONFIG_CREATED': {'console': True, 'file': True},
     'PBLOCK_GENERATION_START': {'console': True, 'file': True},
     'PBLOCK_GENERATION_END': {'console': True, 'file': True},
@@ -604,14 +888,96 @@ VERBOSE = {
     'PBLOCK_MODULE_PROCESSED': {'console': True, 'file': True},
     'PBLOCK_TCL_GENERATED': {'console': True, 'file': True},
     
-    # Results
+    # Results events
     'RESULTS_START': {'console': True, 'file': True},
     'RESULTS_END': {'console': True, 'file': True},
     'RESULTS_SUMMARY': {'console': True, 'file': True},
     'RESULTS_FILE_CREATED': {'console': True, 'file': True},
     'RESULTS_METRICS_COLLECTED': {'console': True, 'file': True},
+    'RESULTS_PHASE_START': {'console': True, 'file': True},
+    'RESULTS_SESSION_COLLECTION_START': {'console': True, 'file': True},
+    'RESULTS_NO_SESSIONS': {'console': True, 'file': True},
+    'RESULTS_SESSION_METRICS_COLLECTED': {'console': True, 'file': True},
+    'RESULTS_SESSIONS_FOUND': {'console': True, 'file': True},
+    'RESULTS_BUILD_COLLECTION_START': {'console': True, 'file': True},
+    'RESULTS_BUILD_METRICS_COLLECTED': {'console': True, 'file': True},
+    'RESULTS_BUILD_METRICS_UNAVAILABLE': {'console': True, 'file': True},
+    'RESULTS_AGGREGATION_START': {'console': True, 'file': True},
+    'RESULTS_AGGREGATION_COMPLETE': {'console': True, 'file': True},
+    'RESULTS_SUMMARY_GENERATION_START': {'console': True, 'file': True},
+    'RESULTS_SUMMARY_GENERATED': {'console': True, 'file': True},
+    'RESULTS_EXCEL_EXPORT_START': {'console': True, 'file': True},
+    'RESULTS_EXCEL_EXPORTED': {'console': True, 'file': True},
+    'RESULTS_EXCEL_EXPORT_FAILED': {'console': True, 'file': True},
+    'RESULTS_CSV_EXPORT_START': {'console': True, 'file': True},
+    'RESULTS_CSV_EXPORTED': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_START': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_FAILED': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_PASSED': {'console': True, 'file': True},
+    'RESULTS_VALIDATION_WARNINGS': {'console': True, 'file': True},
+    'RESULTS_PHASE_SUMMARY': {'console': True, 'file': True},
+    'RESULTS_PHASE_EXCEPTION': {'console': True, 'file': True},
+    'RESULTS_TRACEBACK': {'console': True, 'file': True},
+    'RESULTS_RUN_DIR_CREATED': {'console': True, 'file': True},
+    'RESULTS_STRUCTURE_INITIALIZED': {'console': True, 'file': True},
+
+    # Results - Metrics & Logs
+    'METRICS_RETRIEVAL_SOURCE_MISSING': {'console': False, 'file': True},
+    'METRICS_RETRIEVED': {'console': False, 'file': True},
+    'METRICS_RETRIEVAL_FAILED': {'console': True, 'file': True},
+    'FI_LOG_SOURCE_MISSING': {'console': False, 'file': True},
+    'FI_LOG_COLLECTED': {'console': False, 'file': True},
+    'FI_LOG_COLLECTION_FAILED': {'console': True, 'file': True},
+    'YAML_COPY_SOURCE_MISSING': {'console': True, 'file': True},
+    'YAML_ORIGINAL_COPIED': {'console': False, 'file': True},
+    'YAML_VERIFIED_SAVED': {'console': False, 'file': True},
+    'YAML_COPY_FAILED': {'console': True, 'file': True},
+    'YAML_SAVE_FAILED': {'console': True, 'file': True},
+    'REPORTS_COPY_SOURCE_MISSING': {'console': False, 'file': True},
+    'REPORTS_COPIED': {'console': True, 'file': True},
+    'REPORTS_COPY_FAILED': {'console': True, 'file': True},
+    'VIVADO_PARSER_NOT_FOUND': {'console': True, 'file': True},
+    'VIVADO_PARSER_REPORTS_MISSING': {'console': True, 'file': True},
+    'VIVADO_PARSER_START': {'console': True, 'file': True},
+    'VIVADO_PARSER_SUCCESS': {'console': True, 'file': True},
+    'VIVADO_PARSER_NO_OUTPUT': {'console': True, 'file': True},
+    'VIVADO_PARSER_FAILED': {'console': True, 'file': True},
+    'VIVADO_PARSER_TIMEOUT': {'console': True, 'file': True},
+    'VIVADO_PARSER_EXCEPTION': {'console': True, 'file': True},
+
+    # User Validation
+    'USER_VALIDATION_START': {'console': True, 'file': True},
+    'USER_VALIDATION_INVALID_CHECK': {'console': True, 'file': True},
+    'USER_VALIDATION_CHECK_ERROR': {'console': True, 'file': True},
+    'USER_VALIDATION_ERROR': {'console': True, 'file': True},
+    'USER_VALIDATION_WARNING': {'console': True, 'file': True},
+    'USER_VALIDATION_CORRECTION_APPLIED': {'console': True, 'file': True},
+    'USER_VALIDATION_CORRECTION_FAILED': {'console': True, 'file': True},
+    'USER_VALIDATION_COMPLETE': {'console': True, 'file': True},
+    'USER_VALIDATION_NOT_AVAILABLE': {'console': True, 'file': True},
+    'USER_VALIDATION_EXCEPTION': {'console': True, 'file': True},
     
-    # Parser
+    # Session Results
+    'SESSION_RESULTS_PARSE_ERROR': {'console': True, 'file': True},
+    'SESSION_RESULTS_NO_METRICS': {'console': True, 'file': True},
+    'SESSION_RESULTS_CSV_GENERATED': {'console': True, 'file': True},
+    'SESSION_RESULTS_CSV_FAILED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_GENERATED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_FAILED': {'console': True, 'file': True},
+    'SESSION_RESULTS_XLSX_UNAVAILABLE': {'console': True, 'file': True},
+    'SESSION_RESULTS_NO_SESSIONS_DIR': {'console': True, 'file': True},
+    'SESSION_RESULTS_GENERATION_COMPLETE': {'console': True, 'file': True},
+    
+    # Run Results
+    'RUN_RESULTS_NO_VIVADO_METRICS': {'console': True, 'file': True},
+    'RUN_RESULTS_VIVADO_LOAD_ERROR': {'console': True, 'file': True},
+    'RUN_RESULTS_CSV_GENERATED': {'console': True, 'file': True},
+    'RUN_RESULTS_CSV_FAILED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_GENERATED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_FAILED': {'console': True, 'file': True},
+    'RUN_RESULTS_XLSX_UNAVAILABLE': {'console': True, 'file': True},
+    
+    # Parser events
     'PARSER_START': {'console': True, 'file': True},
     'PARSER_REPORT_PARSED': {'console': True, 'file': True},
     'PARSER_COMPLETE': {'console': True, 'file': True},
@@ -619,7 +985,7 @@ VERBOSE = {
     'PARSER_ERROR_PARSE_FAILED': {'console': True, 'file': True},
     'PARSER_METRICS_EXTRACTED': {'console': True, 'file': True},
     
-    # CLI/UI
+    # CLI/UI events
     'CLI_DRY_RUN_START': {'console': True, 'file': True},
     'CLI_CONFIG_SUMMARY': {'console': True, 'file': True},
     'CLI_FILES_TO_GENERATE': {'console': True, 'file': True},
@@ -635,6 +1001,22 @@ VERBOSE = {
     'RECOVERY_STATE_SAVED': {'console': True, 'file': True},
     'RECOVERY_STATE_LOADED': {'console': True, 'file': True},
     'RECOVERY_RESUME_START': {'console': True, 'file': True},
+
+    # Architecture Restoration
+    'ARCH_RESTORE_START': {'console': True, 'file': True},
+    'ARCH_RESTORE_NO_BACKUP': {'console': True, 'file': True},
+    'ARCH_RESTORE_NO_ARCH_DIR': {'console': True, 'file': True},
+    'ARCH_RESTORE_REMOVING_CURRENT': {'console': True, 'file': True},
+    'ARCH_RESTORE_COPYING_BACKUP': {'console': True, 'file': True},
+    'ARCH_RESTORE_SUCCESS': {'console': True, 'file': True},
+    'ARCH_RESTORE_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_CLEANUP_TMP': {'console': True, 'file': True},
+    'ARCH_RESTORE_TMP_CLEANED': {'console': True, 'file': True},
+    'ARCH_RESTORE_TMP_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_START': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_FAILED': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_PARTIAL': {'console': True, 'file': True},
+    'ARCH_RESTORE_WORKFLOW_COMPLETE': {'console': True, 'file': True},
     
     # Mapping
     'MAPPING_BOARD': {'console': True, 'file': True},
@@ -644,6 +1026,11 @@ VERBOSE = {
     'CLEANUP_START': {'console': True, 'file': True},
     'CLEANUP_END': {'console': True, 'file': True},
     'CLEANUP_TMP_DIR': {'console': True, 'file': True},
+    'CLEANUP_SKIP_DRY_RUN': {'console': True, 'file': True},
+    'CLEANUP_PRESERVING_TMP': {'console': True, 'file': True},
+    'CLEANUP_TMP_CLEANED': {'console': True, 'file': True}, 
+    'CLEANUP_TMP_FAILED': {'console': True, 'file': True},
+    'DEBUG_TMP_DIR_NOT_EXISTS': {'console': False, 'file': False},
     
     # Setup
     'SETUP_START': {'console': True, 'file': True},
@@ -686,5 +1073,4 @@ LOG_LEVELS = {
     'verbose': VERBOSE,
 }
 
-# Default log level
-DEFAULT_LOG_LEVEL = 'normal'
+DEFAULT_LOG_LEVEL = 'verbose'

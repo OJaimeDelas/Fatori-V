@@ -18,8 +18,18 @@ modules:
     id: 5
   - name: state_q
     id: 6
+  - name: reg_inj_cnt_q
+    id: 197
+  - name: logic_inj_cnt_q
+    id: 198
   - name: corrected_cnt_q
     id: 187
+  - name: major_internal_cnt_q
+    id: 199
+  - name: major_bus_cnt_q
+    id: 200
+  - name: double_fault_cnt_q
+    id: 201
   - name: cycle_counter_q
     id: 188
   - name: first_min_latched_q

@@ -56,13 +56,13 @@ def resolve_sync_file():
     """
     Resolve path to sync file used for UART synchronization.
     
-    The sync file is in tmp/sync/ and is used to coordinate between
-    FPGA runs and the monitoring system.
+    The sync file is in iob_soc_V1.0/hardware/fpga/ and is used to 
+    coordinate between FPGA runs and the fault injection system.
     
     Returns:
         Path object to sync file
     """
-    sync_dir = cfg.TMP_SYNC_DIR
+    sync_dir = cfg.BUILDDIR / "hardware" / "fpga"
     sync_dir.mkdir(parents=True, exist_ok=True)
     return sync_dir / "sync_file.sync"
 

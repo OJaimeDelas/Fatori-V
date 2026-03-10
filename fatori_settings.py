@@ -71,11 +71,12 @@ VIVADO_PARSER_SCRIPT = SCRIPTS_DIR / "reports" / "vivado_report_system.py"
 
 # Board configuration
 DEFAULT_BOARD = "xcku040"
-BOARD_GRAB_TIMEOUT_DEFAULT = 1000
+BOARD_GRAB_TIMEOUT_DEFAULT = 800
 
 # FI configuration defaults
 FI_DEVICE_DEFAULT = "/dev/ttyUSB1"
-FI_BAUDRATE_DEFAULT = 1250000
+FI_BAUDRATE_DEFAULT = 115200
+FI_SEM_CLK_HZ = 60000000
 FI_LOG_LEVEL_DEFAULT = "verbose"
 
 # Build strategy
@@ -96,9 +97,11 @@ DEFAULT_MON_N = 3
 DEFAULT_MON_M = 2
 DEFAULT_BENCHMARK_TIMEOUT = -1
 
-# Validation defaults
 VALIDATION_STRICT_DEFAULT = True
 VALIDATION_SAVE_VERIFIED_DEFAULT = True
+
+# Dry-run architecture restoration
+DRY_ARCH_CLEAN = False  # True: restore architecture in dry-run, False: keep as-is
 
 # ==============================================================================
 # File Names (for reference in path helpers)

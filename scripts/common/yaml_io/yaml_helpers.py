@@ -178,52 +178,66 @@ def is_benchmark_enabled(config, benchmark_name):
 
 def is_fi_enabled_for_benchmark(config, benchmark_name):
     """
-    Check if fault injection is enabled for a specific benchmark.
+    Check if fault injection is enabled globally (applies to all benchmarks).
+    
+    Note: FI is now controlled globally via general.fault_injection.enable,
+    not per-benchmark. This function maintains compatibility with existing code.
     
     Args:
         config: The loaded YAML configuration dictionary
-        benchmark_name: Name of the benchmark
+        benchmark_name: Name of the benchmark (unused, kept for compatibility)
     
     Returns:
-        Boolean indicating if FI is enabled for this benchmark
+        Boolean indicating if FI is enabled globally
     """
-    benchmarks = get_benchmarks(config)
-    
-    # Check if benchmark exists
-    if benchmark_name not in benchmarks:
-        return False
-    
-    bench_config = benchmarks[benchmark_name]
-    
-    # Only dictionaries can have injection config
-    if not isinstance(bench_config, dict):
-        return False
-    
-    injection_value = bench_config.get(KEY_BENCH_INJECTION)
-    
-    if isinstance(injection_value, bool):
-        return injection_value
-    
-    if injection_value is None:
-        return False
-    
-    return is_on(injection_value)
+    return any_benchmark_has_fi(config)
 
 
 def any_benchmark_has_fi(config):
     """
-    Check if any benchmark has fault injection enabled.
+    Check if fault injection is enabled globally for all benchmarks.
+    
+    FI is controlled by general.fault_injection.enable (on/off).
+    When enabled, ALL active benchmarks will have FI enabled.
     
     Args:
         config: The loaded YAML configuration dictionary
     
     Returns:
-        Boolean indicating if any benchmark has FI enabled
+        Boolean indicating if FI is enabled globally
     """
-    benchmarks = get_benchmarks(config)
+    fi_config = get_nested(config, KEY_GENERAL, "fault_injection", default={})
+    fi_enable = fi_config.get("enable", False)
     
-    for benchmark_name in benchmarks:
-        if is_fi_enabled_for_benchmark(config, benchmark_name):
-            return True
+    # Normalize to boolean
+    if isinstance(fi_enable, str):
+        return is_on(fi_enable)
     
-    return False
+    return bool(fi_enable)
+
+def is_enabled(value):
+    """
+    Check if a configuration value indicates enabled state.
+    
+    Handles multiple representations:
+    - Boolean: True = enabled, False = disabled
+    - String: "on"/"yes"/"true"/"1" = enabled, "off"/"no"/"false"/"0" = disabled
+    - None: disabled
+    
+    Args:
+        value: Configuration value to check
+    
+    Returns:
+        Boolean indicating if value represents enabled state
+    """
+    if value is None:
+        return False
+    
+    if isinstance(value, bool):
+        return value
+    
+    if isinstance(value, str):
+        return value.lower() in ('on', 'yes', 'true', '1')
+    
+    # Numeric non-zero is enabled
+    return bool(value)

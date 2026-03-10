@@ -57,12 +57,16 @@ def load_allocation_maps():
     These files specify where generated/static files should be copied
     within the architecture directory structure.
     
+    The gen_locations.yaml file can contain an 'exclude' section listing
+    intermediate files that should be skipped without warnings.
+    
     Returns:
-        Dictionary with three allocation maps:
+        Dictionary with allocation maps and exclude list:
         {
             'gen_locations': {source: destination, ...},
             'hardware_locations': {source: destination, ...},
-            'software_locations': {source: destination, ...}
+            'software_locations': {source: destination, ...},
+            'exclude_list': [list of filenames to skip]
         }
     """
     log_event('ALLOCATION_MAPS_LOADING')
@@ -78,10 +82,34 @@ def load_allocation_maps():
     
     # Load generated files allocation map
     gen_locations_path = get_gen_locations_yaml()
-    allocation_maps['gen_locations'] = load_yaml_allocation_file(
+    gen_locations_data = load_yaml_allocation_file(
         gen_locations_path,
         "gen_locations.yaml (generated files)"
     )
+    
+    # Extract exclude list if present
+    exclude_list = []
+    if isinstance(gen_locations_data, dict):
+        # Check for 'exclude' section
+        if 'exclude' in gen_locations_data:
+            exclude_section = gen_locations_data['exclude']
+            # Exclude section can be a list or a dict with a list
+            if isinstance(exclude_section, list):
+                exclude_list = exclude_section
+            elif isinstance(exclude_section, dict) and 'files' in exclude_section:
+                exclude_list = exclude_section['files']
+            
+            # Remove exclude section from gen_locations to get clean mapping
+            gen_locations_clean = {k: v for k, v in gen_locations_data.items() if k != 'exclude'}
+            allocation_maps['gen_locations'] = gen_locations_clean
+            
+            log_event('ALLOCATION_EXCLUDE_LIST_LOADED', exclude_count=len(exclude_list))
+        else:
+            allocation_maps['gen_locations'] = gen_locations_data
+    else:
+        allocation_maps['gen_locations'] = gen_locations_data
+    
+    allocation_maps['exclude_list'] = exclude_list
     
     # Load hardware files allocation map
     hardware_locations_path = get_hardware_locations_yaml()
@@ -98,7 +126,7 @@ def load_allocation_maps():
     )
     
     # Count total mappings
-    total_mappings = sum(len(m) for m in allocation_maps.values())
+    total_mappings = sum(len(m) for m in allocation_maps.values() if isinstance(m, dict))
     log_event('ALLOCATION_MAPS_LOADED', total_mappings=total_mappings)
     
     return allocation_maps

@@ -65,7 +65,8 @@ class EventLogger:
         try:
             self.general_log_file = Path(self.general_log_file)
             self.general_log_file.parent.mkdir(parents=True, exist_ok=True)
-            self.general_handle = self.general_log_file.open('a', encoding='utf-8')
+            # Reset general log on each fatori-v.py invocation (write mode, not append)
+            self.general_handle = self.general_log_file.open('w', encoding='utf-8')
         except Exception as e:
             print(f"WARNING: Could not open general log file {self.general_log_file}: {e}")
             self.general_handle = None

@@ -130,7 +130,7 @@ def validate_results(results_dir):
     """
     results_dir = Path(results_dir)
     
-    log_event('VALIDATION_START', results_dir=str(results_dir))
+    log_event('RESULTS_VALIDATION_START', results_dir=str(results_dir))
     
     errors = []
     warnings = []

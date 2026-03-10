@@ -12,14 +12,13 @@ from typing import Dict, List, Optional
 from scripts.logging import logger
 
 
-def find_injection_log(session_dir):
+def find_injection_log(session_dir, suppress_warning=False):
     """
     Find injection log file in session directory.
     
-    Searches for injection_log.txt or fi.log in the session directory.
-    
     Args:
         session_dir: Path to session directory
+        suppress_warning: If True, don't warn when log not found
     
     Returns:
         Path to injection log, or None if not found
@@ -34,8 +33,7 @@ def find_injection_log(session_dir):
         if log_path.exists():
             logger.log_event('DEBUG', debug_message=f"Found injection log: {log_path}")
             return log_path
-    
-    logger.log_event('WARNING', warning_message=f"No injection log found in {session_dir}")
+
     return None
 
 
@@ -272,7 +270,7 @@ def collect_fi_output(session_dir):
     log_path = find_injection_log(session_dir)
     
     if not log_path:
-        logger.log_event('WARNING', warning_message=f"No FI output found in {session_dir}")
+        # find_injection_log already logged at DEBUG level
         return {
             'log_path': None,
             'log_exists': False,

@@ -61,10 +61,11 @@ def generate_header_guard(file_name):
 
 def generate_metrics_config_h(config, output_path):
     """
-    Generate metrics_config.h header file with metrics layer definition.
+    Generate metrics_config.h header file with metrics layer and FI flag.
     
-    This file defines the METRICS_LAYER macro based on general.metrics_level
-    from the run configuration.
+    This file defines:
+    - METRICS_LAYER macro based on general.metrics_level
+    - FATORI_FI macro based on general.fault_injection.enable
     
     Metrics levels:
     - 0: Minimal (mcycle, minstret only)
@@ -98,12 +99,23 @@ def generate_metrics_config_h(config, output_path):
         log_event('WARNING', warning_message=f"Invalid metrics_level {metrics_level}, using 0")
         metrics_level = 0
     
-    log_event('DEBUG', debug_message=f"Generating metrics_config.h with METRICS_LAYER={metrics_level}")
+    # Extract FI enable flag from config
+    fi_config = get_nested(config, KEY_GENERAL, "fault_injection", default={})
+    fi_enable = fi_config.get("enable", False)
+    
+    # Normalize to boolean then to 0/1
+    if isinstance(fi_enable, str):
+        from scripts.common.yaml_io.yaml_helpers import is_on
+        fi_value = 1 if is_on(fi_enable) else 0
+    else:
+        fi_value = 1 if fi_enable else 0
+    
+    log_event('DEBUG', debug_message=f"Generating metrics_config.h with METRICS_LAYER={metrics_level}, FATORI_FI={fi_value}")
     
     lines = []
     
     # Header comment
-    lines.append(generate_c_header_comment(file_name, "Metrics layer configuration"))
+    lines.append(generate_c_header_comment(file_name, "Metrics layer and FI configuration"))
     lines.append("")
     
     # Header guard start
@@ -117,6 +129,13 @@ def generate_metrics_config_h(config, output_path):
     lines.append("// 0: Minimal, 1: Basic, 2: Error, 3: Mitigation, 4: Full FI, 5: Latency")
     lines.append("#ifndef METRICS_LAYER")
     lines.append(f"#define METRICS_LAYER {metrics_level}")
+    lines.append("#endif")
+    lines.append("")
+    
+    # FATORI_FI definition
+    lines.append("// Fault injection enabled flag")
+    lines.append("#ifndef FATORI_FI")
+    lines.append(f"#define FATORI_FI {fi_value}")
     lines.append("#endif")
     lines.append("")
     

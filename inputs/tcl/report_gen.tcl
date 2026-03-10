@@ -14,6 +14,16 @@ report_methodology -file reports/$NAME\_$PART\_methodology.rpt
 # More detailed DRC if you want comprehensive design rule checks
 report_drc -file reports/$NAME\_$PART\_drc.rpt
 
+# Add pblock reports (if pblocks exist)
+if {[llength [get_pblocks]] > 0} {
+    foreach pb [get_pblocks] {
+        set pb_name [get_property NAME $pb]
+        report_utilization -pblock $pb_name -file reports/$NAME\_$PART\_${pb_name}_util.rpt
+    }
+    puts "Generated [llength [get_pblocks]] pblock utilization reports"
+}
+
+
 # # Control Sets Report (shows FF grouping efficiency)
 # report_control_sets -file reports/$NAME\_$PART\_control_sets.rpt
 
@@ -35,10 +45,5 @@ report_drc -file reports/$NAME\_$PART\_drc.rpt
 # # QoR Suggestions (Vivado's recommendations for improvement)
 # report_qor_suggestions -file reports/$NAME\_$PART\_qor_suggestions.rpt
 
-# # Pblock utilization (if you're using pblocks for fault targeting)
-# report_utilization -pblocks [get_pblocks] -file reports/$NAME\_$PART\_pblock_utilization.rpt
-
 # # Timing per pblock (critical for your SEM IP fault injection work)
 # report_timing_summary -pblocks [get_pblocks] -file reports/$NAME\_$PART\_pblock_timing.rpt
-
-set_property BITSTREAM.SEU.ESSENTIALBITS yes [current_design]

@@ -109,10 +109,7 @@ class RunController:
                 # Mark phase as failed
                 error_msg = "Phase execution returned failure"
                 context.run_state.mark_phase_failed(phase_name, error_msg)
-                log_event('PHASE_FAILED', phase_name=phase_name, error_message=error_msg)
-            
-            # Save state after each phase
-            context.save_state()
+                log_event('PHASE_FAILED', phase_name=phase_name, error_message=error_msg)           
             
             return success
         
@@ -122,9 +119,6 @@ class RunController:
             context.run_state.mark_phase_failed(phase_name, error_msg)
             log_event('PHASE_EXCEPTION', phase_name=phase_name, error_message=error_msg)
 
-            # Save state
-            context.save_state()
-            
             return False
     
     def _execute_phase(self, phase_name: str, context: RunContext) -> bool:
@@ -180,7 +174,8 @@ class RunController:
         """
         Execute complete workflow.
         
-        This runs all phases in order until completion or failure.
+        Runs all phases in order. RESULTS phase always runs even if earlier phases fail
+        or if user interrupts (Ctrl+C), to ensure cleanup and reporting complete.
         
         Returns:
             Boolean indicating if run succeeded
@@ -189,23 +184,94 @@ class RunController:
             # Setup
             self.context = self.setup()
             
+            # Track if any phase failed or was interrupted
+            any_phase_failed = False
+            failed_phase = None
+            interrupted_phase = None
+            
             # Execute phases in order
             for phase_name in PHASE_ORDER:
-                success = self.run_phase(phase_name, self.context)
+                try:
+                    success = self.run_phase(phase_name, self.context)
+                    
+                    if not success:
+                        log_event('RUN_FAILED_AT_PHASE', phase_name=phase_name)
+                        any_phase_failed = True
+                        if failed_phase is None:
+                            failed_phase = phase_name
+                        
+                        # Continue to RESULTS phase even if earlier phases failed
+                        # This ensures metrics aggregation and cleanup happen
+                        if phase_name != RunPhase.RESULTS:
+                            continue
+                        else:
+                            # RESULTS phase failed - stop now
+                            return False
                 
-                if not success:
-                    log_event('RUN_FAILED_AT_PHASE', phase_name=phase_name)
+                except KeyboardInterrupt:
+                    # User interrupted with Ctrl+C
+                    log_event('RUN_INTERRUPTED', phase_name=phase_name)
+                    
+                    # Mark interrupted phase as failed
+                    error_msg = "User interrupt (Ctrl+C)"
+                    self.context.run_state.mark_phase_failed(phase_name, error_msg)
+                    
+                    interrupted_phase = phase_name
+                    any_phase_failed = True
+                    if failed_phase is None:
+                        failed_phase = phase_name
+                    
+                    # Skip to RESULTS phase unless we're already there
+                    if phase_name != RunPhase.RESULTS:
+                        log_event('RUN_SKIPPING_TO_RESULTS_AFTER_INTERRUPT')
+                        break
+                    else:
+                        # Interrupted during RESULTS phase
+                        return False
+            
+            # If interrupted before RESULTS, run RESULTS phase now for cleanup
+            if interrupted_phase and interrupted_phase != RunPhase.RESULTS:
+                log_event('RUN_EXECUTING_RESULTS_AFTER_INTERRUPT')
+                try:
+                    self.run_phase(RunPhase.RESULTS, self.context)
+                except KeyboardInterrupt:
+                    # Double Ctrl+C during RESULTS - abort immediately
+                    log_event('RUN_DOUBLE_INTERRUPT_ABORTING')
                     return False
+                except Exception as e:
+                    # RESULTS phase failed but don't crash
+                    log_event('ERROR_RESULTS_PHASE_EXCEPTION', error_message=str(e))
             
             # Mark run as complete
             self.context.mark_complete()
             
-            log_event('RUN_COMPLETED_SUCCESS')
-            
-            return True
+            if any_phase_failed:
+                termination = 'interrupted' if interrupted_phase else 'failed'
+                log_event('RUN_COMPLETED_WITH_FAILURES', 
+                         first_failed_phase=failed_phase,
+                         termination_type=termination)
+                return False
+            else:
+                log_event('RUN_COMPLETED_SUCCESS')
+                return True
+        
+        except KeyboardInterrupt:
+            # Ctrl+C during setup - no context yet, just exit
+            log_event('RUN_INTERRUPTED_DURING_SETUP')
+            return False
         
         except Exception as e:
+            # Unexpected exception - try to run RESULTS for cleanup
             log_event('ERROR_RUN_EXCEPTION', error_message=str(e))
+            
+            if self.context:
+                try:
+                    log_event('RUN_EXECUTING_RESULTS_AFTER_EXCEPTION')
+                    self.run_phase(RunPhase.RESULTS, self.context)
+                except Exception:
+                    # RESULTS failed too - don't crash further
+                    pass
+            
             return False
         
         finally:
@@ -217,13 +283,25 @@ class RunController:
         """
         Perform cleanup after run completes or fails.
         
+        Restores architecture/ and benchmarks/ directories from backup,
+        ensuring clean state for next run.
+        
         Args:
             context: Run context
         """
         log_event('CLEANUP_START')
         
-        # Save final state
-        context.save_state()
+        # Restore architecture and benchmarks from backup
+        from scripts.orchestration.arch_restore import restore_architecture_from_backup
+        from scripts.build.backup_manager import cleanup_backup_dir
+        
+        restore_success = restore_architecture_from_backup()
+        if restore_success:
+            log_event('CLEANUP_ARCH_RESTORED')
+            # Clean backup directory after successful restore
+            cleanup_backup_dir()
+        else:
+            log_event('WARNING', warning_message="Architecture restore failed during cleanup")
         
         # Print summary
         summary = context.get_summary()
@@ -249,5 +327,3 @@ class RunController:
         if context:
             log_event('RUN_ERROR_PHASE', phase_name=context.run_state.get_current_phase())
             
-            # Save state
-            context.save_state()

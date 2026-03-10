@@ -45,12 +45,12 @@ Examples:
         """
     )
     
-    # Positional arguments
+    # Positional arguments (now optional - will auto-discover if not provided)
     parser.add_argument(
         'yaml_files',
-        nargs='+',
+        nargs='*',  # Allow zero YAML files for auto-discovery or --arch-restore
         type=Path,
-        help='One or more run configuration YAML files'
+        help='One or more run configuration YAML files (auto-discovers all .yaml in runs/ if not provided)'
     )
     
     # Logging options
@@ -105,9 +105,26 @@ Examples:
     # Run control options
     control_group = parser.add_argument_group('Run Control Options')
     control_group.add_argument(
+        '--single-run',
+        type=str,
+        default=None,
+        metavar='FILENAME',
+        help='Run only the specified YAML file from runs/ directory (e.g., --single-run example.yaml)'
+    )
+    control_group.add_argument(
         '--dry-run',
         action='store_true',
         help='Show what would be executed without running'
+    )
+    control_group.add_argument(
+        '--display-checks',
+        action='store_true',
+        help='Display all validation checks and exit (no execution)'
+    )
+    control_group.add_argument(
+        '--arch-restore',
+        action='store_true',
+        help='Restore architecture from tmp/backup/ (cleanup after dry-run)'
     )
     control_group.add_argument(
         '--output-dir',
@@ -167,11 +184,7 @@ def parse_arguments(args=None):
     """
     parser = create_argument_parser()
     
-    # If no args provided and sys.argv has no args, show help
-    if args is None and len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(0)
-    
+    # Parse arguments (allow no args for auto-discovery)
     parsed_args = parser.parse_args(args)
     
     # Handle verbose/quiet shortcuts
@@ -180,10 +193,31 @@ def parse_arguments(args=None):
     elif parsed_args.quiet:
         parsed_args.log_level = 'ERROR'
     
-    # Validate YAML files exist
-    for yaml_file in parsed_args.yaml_files:
-        if not yaml_file.exists():
-            parser.error(f"Configuration file not found: {yaml_file}")
+    # Special handling for --arch-restore (doesn't require YAML files)
+    if parsed_args.arch_restore:
+        if parsed_args.yaml_files:
+            parser.error("--arch-restore does not accept YAML files")
+        return parsed_args
+    
+    # Special handling for --display-checks (doesn't require YAML files)
+    if parsed_args.display_checks:
+        if parsed_args.yaml_files:
+            parser.error("--display-checks does not accept YAML files")
+        return parsed_args
+    
+    # Handle --single-run (mutually exclusive with specifying YAML files)
+    if parsed_args.single_run:
+        if parsed_args.yaml_files:
+            parser.error("Cannot specify both --single-run and YAML files as positional arguments")
+        # Will be resolved to actual path in main()
+        return parsed_args
+    
+    # If no YAML files specified, will auto-discover in main()
+    # Just validate that any specified files exist
+    if parsed_args.yaml_files:
+        for yaml_file in parsed_args.yaml_files:
+            if not yaml_file.exists():
+                parser.error(f"Configuration file not found: {yaml_file}")
     
     # Validate mutually exclusive options
     if parsed_args.verbose and parsed_args.quiet:

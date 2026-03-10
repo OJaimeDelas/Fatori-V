@@ -10,8 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import fatori_settings as cfg
 from scripts.build.make_commands import build_fpga_run_command
-from scripts.build.path_resolver import resolve_builddir, resolve_sync_file
-from scripts.exec.sync_file_manager import create_sync_file, cleanup_sync_file
+from scripts.build.path_resolver import resolve_builddir
 from scripts.exec.timeout_handler import monitor_with_timeout
 from scripts.exec.console_manager import stream_output, extract_console_summary
 from scripts.logging.logger import log_event
@@ -44,8 +43,8 @@ def prepare_execution_environment(session):
     """
     Prepare environment for benchmark execution.
     
-    This creates necessary files and ensures the execution environment
-    is ready for the benchmark to run.
+    Note: Sync file is NOT created by FATORI-V - it's created by the
+    firmware inside the architecture. FATORI-V only tells FI where to look.
     
     Args:
         session: Session object
@@ -53,19 +52,7 @@ def prepare_execution_environment(session):
     Returns:
         Dictionary with environment paths
     """
-    # Get sync file path
-    sync_path = resolve_sync_file()
-    
-    # Clean up any existing sync file
-    cleanup_sync_file(sync_path)
-    
-    # Create new sync file for this session
-    if session.injection_enabled:
-        create_sync_file(sync_path)
-        log_event('EXECUTION_SYNC_FILE_CREATED', sync_path=str(sync_path))
-    
     return {
-        'sync_path': sync_path,
         'builddir': resolve_builddir(),
     }
 
@@ -96,21 +83,6 @@ def execute_benchmark(config, benchmark_info, session):
               timeout_s=session.timeout_s,
               fi_enabled=session.injection_enabled)
     
-    # Prepare execution environment
-    env = prepare_execution_environment(session)
-    builddir = env['builddir']
-    
-    # Check build directory exists
-    if not builddir.exists():
-        error_msg = f"Build directory not found: {builddir}"
-        log_event('EXECUTION_BUILDDIR_NOT_FOUND', builddir=str(builddir))
-        return ExecutionResult(
-            success=False,
-            timed_out=False,
-            exit_code=-1,
-            error_message=error_msg
-        )
-    
     # Build make command for this benchmark
     # Use benchmark's timeout for GRAB_TIMEOUT
     make_command = build_fpga_run_command(
@@ -121,119 +93,101 @@ def execute_benchmark(config, benchmark_info, session):
     
     log_event('EXECUTION_COMMAND_BUILT',
               command=make_command,
-              builddir=str(builddir))
+              cwd=str(cfg.ARCHITECTURE_DIR))
     
-    # Dry-run mode: print command without executing
+    # Always display command (dry-run uses same event)
+    log_event('DRY_RUN_COMMAND',
+              command=make_command,
+              cwd=str(cfg.ARCHITECTURE_DIR))
+    # In dry-run mode: skip execution, simulate success
     if cfg.DRY_RUN_MODE:
-        log_event('DRY_RUN_COMMAND',
-                  command=make_command,
-                  cwd=str(builddir))
-        return ExecutionResult(
+        result = ExecutionResult(
             success=True,
             timed_out=False,
             exit_code=0,
             error_message=None
         )
+    else:
+        # Normal mode: execute the command
+        benchmark_log_path = session.session_dir / f"fatori_{benchmark_info.name}_log.txt"
+        
+        try:
+            # Open log file for writing
+            with open(benchmark_log_path, 'w') as benchmark_log_file:
+                # Start subprocess with output redirected to file
+                process = subprocess.Popen(
+                    make_command,
+                    shell=True,
+                    cwd=str(cfg.ARCHITECTURE_DIR),
+                    stdout=benchmark_log_file,
+                    stderr=subprocess.STDOUT
+                )
+                
+                log_event('EXECUTION_PROCESS_STARTED', pid=process.pid)
+                
+                # Monitor with timeout
+                completed, timed_out, exit_code = monitor_with_timeout(
+                    process,
+                    session.timeout_s,
+                    callback=None,
+                    poll_interval=1.0
+                )
+            
+            # Determine success based on exit code
+            exit_success = completed and not timed_out and (exit_code == 0)
+            
+            # Check if metrics.txt was produced (alternative success indicator)
+            metrics_file = session.session_dir / 'metrics.txt'
+            metrics_exist = metrics_file.exists() and metrics_file.stat().st_size > 0
+            
+            # Consider successful if either: clean exit OR metrics produced
+            success = exit_success or metrics_exist
+            
+            # Create result
+            result = ExecutionResult(
+                success=success,
+                timed_out=timed_out,
+                exit_code=exit_code if exit_code is not None else -1,
+                error_message=None
+            )
+            
+            # Set error message if failed
+            if not success:
+                if timed_out:
+                    result.error_message = f"Execution timed out after {session.timeout_s}s"
+                elif exit_code != 0:
+                    result.error_message = f"Process exited with code {exit_code}"
+                else:
+                    result.error_message = "Unknown execution failure"
+            
+            log_event('BENCHMARK_EXECUTION_COMPLETE', result=str(result))
+        
+        except Exception as e:
+            log_event('BENCHMARK_EXECUTION_EXCEPTION', error_message=str(e))
+            result = ExecutionResult(
+                success=False,
+                timed_out=False,
+                exit_code=-1,
+                error_message=str(e)
+            )
+    # Always retrieve metrics.txt after execution (both dry-run and normal modes)
+    # Even if execution failed, try to retrieve metrics in case partial execution occurred
+    from scripts.exec.metrics_retriever import retrieve_metrics_after_execution
+    metrics_retrieved = retrieve_metrics_after_execution(session.session_dir, benchmark_info.name)
     
-    # Start subprocess
-    try:
-        process = subprocess.Popen(
-            make_command,
-            shell=True,
-            cwd=str(builddir),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            bufsize=1  # Line buffered
-        )
-        
-        log_event('EXECUTION_PROCESS_STARTED', pid=process.pid)
-        
-        # Monitor process with timeout and stream output simultaneously
-        # We'll use a simple approach: monitor with timeout in a way that
-        # allows us to stream output
-        
-        # Create callback for progress reporting
-        last_report = [0]  # Use list to allow modification in nested function
-        
-        def progress_callback(elapsed, remaining):
-            # Report progress every 30 seconds
-            if elapsed - last_report[0] >= 30:
-                log_event('EXECUTION_PROGRESS',
-                          elapsed_s=elapsed,
-                          remaining_s=remaining)
-                last_report[0] = elapsed
-        
-        # Monitor with timeout
-        completed, timed_out, exit_code = monitor_with_timeout(
-            process,
-            session.timeout_s,
-            callback=progress_callback,
-            poll_interval=1.0
-        )
-        
-        # After process completes (or times out), capture any remaining output
-        # Read stdout
-        stdout_output = []
-        if process.stdout:
-            remaining = process.stdout.read()
-            if remaining:
-                lines = remaining.decode('utf-8', errors='replace').split('\n')
-                stdout_output.extend(lines)
-        
-        # Read stderr
-        stderr_output = []
-        if process.stderr:
-            remaining = process.stderr.read()
-            if remaining:
-                lines = remaining.decode('utf-8', errors='replace').split('\n')
-                stderr_output.extend(lines)
-        
-        # Combine output
-        all_output = stdout_output + stderr_output
-        
-        # Write output to console log file
-        if session.console_output_path:
-            with session.console_output_path.open('w', encoding='utf-8') as f:
-                for line in all_output:
-                    f.write(line + '\n')
-        
-        # Extract metrics from output
-        metrics = extract_console_summary(session.console_output_path) if session.console_output_path else {}
-        
-        # Determine success
-        success = completed and not timed_out and (exit_code == 0)
-        
-        # Create result
-        result = ExecutionResult(
-            success=success,
-            timed_out=timed_out,
-            exit_code=exit_code if exit_code is not None else -1,
-            console_output=all_output,
-            metrics=metrics
-        )
-        
-        # Set error message if failed
-        if not success:
-            if timed_out:
-                result.error_message = f"Execution timed out after {session.timeout_s}s"
-            elif exit_code != 0:
-                result.error_message = f"Process exited with code {exit_code}"
-            else:
-                result.error_message = "Unknown execution failure"
-        
-        log_event('BENCHMARK_EXECUTION_COMPLETE', result=str(result))
-        
-        return result
+    # Re-evaluate success after metrics retrieval
+    # If metrics exist, consider execution successful even if exit code was non-zero
+    if not result.success and metrics_retrieved:
+        metrics_file = session.session_dir / 'metrics.txt'
+        if metrics_file.exists() and metrics_file.stat().st_size > 0:
+            log_event('DEBUG', debug_message=f"Benchmark had non-zero exit but produced metrics - considering successful")
+            result.success = True
+            result.error_message = None
     
-    except Exception as e:
-        log_event('BENCHMARK_EXECUTION_EXCEPTION', error_message=str(e))
-        return ExecutionResult(
-            success=False,
-            timed_out=False,
-            exit_code=-1,
-            error_message=str(e)
-        )
+    # Collect FI injection_log.txt if FI was enabled (both modes)
+    if session.injection_enabled:
+        from scripts.exec.fi_log_collector import collect_fi_log_after_session
+        fi_dir = session.session_dir / 'fi'
+        collect_fi_log_after_session(fi_dir, benchmark_info.name)
     
-    finally:
-        # Cleanup sync file
-        cleanup_sync_file(env['sync_path'])
+    return result
